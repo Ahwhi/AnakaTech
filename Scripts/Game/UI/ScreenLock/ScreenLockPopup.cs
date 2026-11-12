@@ -6,12 +6,12 @@ using UnityEngine;
 using static Enums;
 
 /// <summary>
-/// 화면 잠금(잠수) 모드. 화면 전체를 덮어 오조작을 막고 현재 시각을 시계로 보여 준다.
+/// 화면 잠금(절전) 모드. 화면 전체를 덮어 오조작을 막고 현재 시각과 방치 진행 현황, 배터리를 보여 준다.
 /// 방치형이라 게임은 뒤에서 그대로 돌아간다(타임스케일을 건드리지 않는다).
 ///
-/// 잠금 중에는 화면 절전을 허용한다. 평소에는 화면이 꺼지지 않게 막아 두지만(방치 화면을 계속 보는 게임),
-/// "잠갔다"는 것은 곧 "지금은 안 본다"는 뜻이기 때문이다. 이 규칙 덕분에 절전 설정을 따로 둘 필요가 없고,
-/// 유저가 정할 것은 자동 잠금 대기 시간 하나로 끝난다.
+/// 잠금 화면이 떠 있는 동안 절전 모드(PowerSaveMode)를 켠다. 화면은 꺼지지 않은 채로 사냥을 계속하고,
+/// 뒤의 전투/HUD 그리기, 소리, 프레임을 각 담당이 스스로 줄인다. 이 화면은 "켜고 끈다"만 알리고
+/// 무엇을 줄이는지는 모른다(PowerSaveMode 참고).
 ///
 /// 여는 경로는 둘이고 모두 이 프리팹을 그대로 띄운다.
 ///   - 수동: 메뉴의 잠금 버튼(HudMenuButton 에 이 프리팹을 지정)
@@ -32,14 +32,26 @@ public sealed class ScreenLockPopup : UIView, IHudPopup {
     [Tooltip("길게 눌러 잠금을 푸는 버튼. 실수로 풀리지 않도록 한 번의 탭으로는 열리지 않게 한다.")]
     [SerializeField] private UIHoldButton unlockButton;
 
-    private MainHudContext _ctx;
+    [Header("Status")]
+    [Tooltip("방치 진행 현황(스테이지/기력/부스트/쓴 기력/지속 시간). 비워 두면 표시하지 않는다.")]
+    [SerializeField] private ScreenLockStatusPanel statusPanel;
 
-    // 잠금 화면이 살아 있는 동안만 절전을 허용한다. 활성/비활성에 맞춰 두므로 어떤 경로로 닫히든 원복된다.
-    private void OnEnable() => DisplaySettings.SetSleepAllowed(true);
-    private void OnDisable() => DisplaySettings.SetSleepAllowed(false);
+    private MainHudContext _ctx;
+    private IDisposable _powerSave;
+
+    // 잠금 화면이 살아 있는 동안만 절전 모드를 켠다. 활성/비활성에 맞춰 두므로 어떤 경로로 닫히든 원복된다.
+    private void OnEnable() => _powerSave = PowerSaveMode.Enter();
+    private void OnDisable() => ExitPowerSave();
+
+    private void ExitPowerSave() {
+        _powerSave?.Dispose();
+        _powerSave = null;
+    }
 
     public void Initialize(MainHudContext ctx) {
         _ctx = ctx;
+
+        if (statusPanel != null) statusPanel.Initialize(ctx);
 
         RefreshClock();
         // 표시 형식에 초가 들어갈 수도 있으므로 1초마다 갱신한다. 타임스케일과 무관하게 흘러야 하므로 실시간 스케줄러를 쓴다.
@@ -52,6 +64,8 @@ public sealed class ScreenLockPopup : UIView, IHudPopup {
     }
 
     private void Unlock() {
+        // 절전 모드에서는 소리가 나지 않으므로, 해제 효과음이 들리도록 닫힘 연출을 기다리지 않고 먼저 푼다.
+        ExitPowerSave();
         _ctx?.Sound.PlaySfx(SfxKey.ButtonClick);
         CloseAsync().Forget();
     }

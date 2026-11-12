@@ -16,7 +16,7 @@ using static Enums;
 ///   3) 부트 진행 상태 BootStatus (읽기/진행률쓰기 분리)
 ///   4) 부트 단계 IBootStep 들 (등록 순서 = 실행 순서)
 ///   5) 부트 오케스트레이터 Bootstrapper (IBootFlow: 타이틀 진입/재접속 복귀 시 RunAsync 로 (재)실행)
-///   6) ConnectionGuard (게임 플레이 중 끊김 -> 타이틀 복귀)
+///   6) ConnectionGuard (게임 플레이 중 끊김 -> 조용히 재연결, 실패 시 타이틀 복귀)
 ///
 /// 타이틀 씬 뷰(TitleSceneManager/LoginPanel)는 이 루트가 아니라 타이틀 자식 스코프(TitleLifetimeScope)가 등록한다.
 /// 그래야 재접속으로 타이틀을 다시 로드할 때 새로 생긴 뷰들이 다시 주입된다(루트는 앱 시작 때 한 번만 빌드됨).
@@ -46,6 +46,10 @@ public sealed class GameLifetimeScope : LifetimeScope {
     [Tooltip("원격 앱 설정(RemoteAppConfig, Remote_Config 그룹 + preload_boot). 콘텐츠 버전 등 콘텐츠와 함께 배포되는 값. 부트에서 로드해 표시 버전 뒷자리로 쓴다.")]
     [SerializeField] private AssetReference remoteAppConfigRef;
 
+    [Header("Server Route")]
+    [Tooltip("원격 경로표 설정(ServerRouteConfig). 심사 중인 버전을 테스트 서버로 보낼 때 쓴다. 비워 두면 항상 NetworkManager 기본 접속 값으로 접속한다.")]
+    [SerializeField] private ServerRouteConfig serverRouteConfig;
+
     protected override void Awake() {
         // 컨테이너 빌드(및 빌드 직후 실행될 AppEntryPoint 의 씬 로드)보다 먼저 부트 오브젝트를 영속화한다.
         // 이 순서를 보장해야 AppEntryPoint 가 TitleScene 을 Single 로드할 때 부트 오브젝트가 함께 언로드되지 않는다.
@@ -55,7 +59,7 @@ public sealed class GameLifetimeScope : LifetimeScope {
 
     protected override void Configure(IContainerBuilder builder) {
         // 1) 플랫폼 값 (VersionCheckStep 생성자 주입용)
-        builder.RegisterInstance(DetectPlatform());
+        builder.RegisterInstance(CurrentPlatform.Value);
 
         // 1-1) 버전 표시 - 앞자리 Application.version(빌드) + 뒷자리 RemoteAppConfig.contentVersion(어드레서블).
         //      ContentVersionStep(부트에서 로드/설정)과 TitleSceneManager(표시)가 같은 인스턴스를 공유한다.
@@ -63,7 +67,7 @@ public sealed class GameLifetimeScope : LifetimeScope {
         builder.Register<VersionInfo>(Lifetime.Singleton).As<IVersionInfo>();
 
         // 2) 매니저를 서비스 인터페이스로 노출 - 소비자는 구현체가 아닌 계약에만 의존
-        builder.RegisterComponent(networkManager).As<INetworkService>();
+        builder.RegisterComponent(networkManager).As<INetworkService>().As<IServerRouteTarget>();
         builder.RegisterComponent(loginManager).As<ILoginService>();
         builder.RegisterComponent(soundManager).As<ISoundService>();
         builder.RegisterComponent(addressableManager).As<IAssetService>();
@@ -109,7 +113,10 @@ public sealed class GameLifetimeScope : LifetimeScope {
         // 버튼 알림등(Unread=NEW / Claimable=빨간 동그라미) 집계 + 출석체크 전용 통신.
         builder.Register<EventBadgeService>(Lifetime.Singleton).As<IEventBadgeService>();
         builder.Register<AttendanceService>(Lifetime.Singleton).As<IAttendanceService>();
+        builder.Register<AttendanceEventService>(Lifetime.Singleton).As<IAttendanceEventService>();
         builder.Register<EventMissionService>(Lifetime.Singleton).As<IEventMissionService>();
+        // 이벤트 돌림판(전용 재화 보유량 + 돌리기). 이벤트 페이지와 돌림판 팝업이 같은 보유량을 구독한다.
+        builder.Register<EventRouletteService>(Lifetime.Singleton).As<IEventRouletteService>();
 
         // 접속 유지 시간 적립(하트비트). 씬과 무관하게 계속 돌아야 하므로 루트에 둔다.
         builder.Register<HeartbeatService>(Lifetime.Singleton).As<IHeartbeatService>();
@@ -131,8 +138,16 @@ public sealed class GameLifetimeScope : LifetimeScope {
 
         // 4) 부트 단계 - "등록 순서"가 곧 "실행 순서". 단계 추가/제거/재배치는 이 블록만 수정하면 된다.
         builder.Register<AppInitializeStep>(Lifetime.Singleton).As<IBootStep>();
-        builder.Register<ConnectStep>(Lifetime.Singleton).As<IBootStep>();
-        builder.Register<VersionCheckStep>(Lifetime.Singleton).As<IBootStep>();
+        if (serverRouteConfig != null) {
+            // 연결 직전에 이 앱 버전의 접속 대상을 경로표에서 정한다(심사 중 버전 -> 테스트 서버).
+            builder.RegisterInstance(serverRouteConfig);
+            builder.Register<ServerRouteStep>(Lifetime.Singleton).As<IBootStep>();
+        } else {
+            Debug.LogWarning("[ServerRoute] ServerRouteConfig 미할당. 경로표 없이 기본 접속 값으로만 접속한다.");
+        }
+        // 연결/버전 확인은 게임 중 끊김 복구(SessionRecovery)도 같은 절차로 쓰므로 자기 타입으로도 노출한다.
+        builder.Register<ConnectStep>(Lifetime.Singleton).As<IBootStep>().AsSelf();
+        builder.Register<VersionCheckStep>(Lifetime.Singleton).As<IBootStep>().AsSelf();
         builder.Register<AddressableStep>(Lifetime.Singleton).As<IBootStep>();
         builder.Register<ContentVersionStep>(Lifetime.Singleton).As<IBootStep>();   // 다운로드 직후 콘텐츠 버전 로드 -> 표시 반영
         builder.Register<LoginStep>(Lifetime.Singleton).As<IBootStep>();
@@ -142,6 +157,8 @@ public sealed class GameLifetimeScope : LifetimeScope {
         builder.Register<Bootstrapper>(Lifetime.Singleton).As<IBootFlow>();
 
         // 6) 연결 끊김 가드(엔트리포인트) - 앱 내내 Disconnected 를 감시
+        //    끊기면 먼저 화면 그대로 재연결(SessionRecovery)하고, 안 될 때만 타이틀로 보낸다.
+        builder.Register<SessionRecovery>(Lifetime.Singleton).As<ISessionRecovery>();
         builder.RegisterEntryPoint<ConnectionGuard>();
 
         // 6-1) 안드로이드 뒤로가기 창구(엔트리포인트) - 팝업 닫기 -> 없으면 게임 종료 확인.
@@ -151,17 +168,10 @@ public sealed class GameLifetimeScope : LifetimeScope {
         //      새 버튼마다 사운드 코드를 붙이지 않아도 되고, 화면마다 소리가 빠지는 일이 없어진다.
         builder.RegisterEntryPoint<UIClickSfxRouter>();
 
+        // 6-3) 광고 설치 전환 측정(엔트리포인트) - iOS 에서만 Firebase Analytics 를 켠다(first_open).
+        builder.RegisterEntryPoint<InstallAttribution>();
+
         // 7) 앱 진입점(엔트리포인트) - 컨테이너 빌드 직후 TitleScene 을 로드한다.
         builder.RegisterEntryPoint<AppEntryPoint>();
-    }
-
-    private static PlatformType DetectPlatform() {
-#if UNITY_ANDROID
-        return PlatformType.Android;
-#elif UNITY_IOS
-        return PlatformType.IOS;
-#else
-        return PlatformType.Windows;
-#endif
     }
 }

@@ -24,7 +24,25 @@ public sealed class CostumeService : ICostumeService {
         foreach (var o in res.ownedCostumes) dto.Owned.Add(o.costumeId);
         foreach (var e in res.equippedCostumes)
             dto.Equipped.Add(new EquippedCostumeDto { CharDataId = e.charDataId, CostumeId = e.costumeId });
+        foreach (var o in res.ownedUnitSkins) dto.OwnedUnitSkins[o.unitSkinId] = o.count;
+        foreach (var e in res.equippedUnitSkins) dto.EquippedUnitSkins[e.charDataId] = e.unitSkinId;
         return dto;
+    }
+
+    public async UniTask<UnitSkinEquipResult> EquipUnitSkinAsync(int charDataId, int unitSkinId, CancellationToken ct = default) {
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.CancelAfter(ResponseTimeout);
+
+        var wait = _net.WaitPacketAsync<S_EquipUnitSkinResult>(cts.Token);
+        _net.Send(new C_EquipUnitSkin { charDataId = charDataId, unitSkinId = unitSkinId }.Write());
+        var res = await wait;
+
+        return new UnitSkinEquipResult {
+            IsSuccess = res.isSuccess,
+            FailReason = res.failReason,
+            CharDataId = res.charDataId,
+            UnitSkinId = res.unitSkinId
+        };
     }
 
     public async UniTask<CostumeEquipResult> EquipAsync(int charDataId, int costumeId, CancellationToken ct = default) {

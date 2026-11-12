@@ -27,6 +27,8 @@ public sealed class EquipmentSlotView : MonoBehaviour {
     [Tooltip("지금 바로 각성할 수 있는 상태(별레벨 여유 + 재료 + 다이아 충족)일 때 켜지는 표식. 선택.\n"
            + "판정은 슬롯을 채우는 쪽(EquipmentPopup)이 하고 SetAwakenReady 로 켜 준다.")]
     [SerializeField] private GameObject awakenReadyBadge;
+    [Tooltip("한계돌파한 장비를 착용 중일 때만 켜지는 그룹(마크/테두리 등). 빈 슬롯이면 숨김. 선택.")]
+    [SerializeField] private GameObject limitBreakGroup;
     [Tooltip("비었을 때 표시하는 + 오브젝트.")]
     [SerializeField] private GameObject emptyPlus;
     [SerializeField] private GameObject selectedFrame;
@@ -50,7 +52,7 @@ public sealed class EquipmentSlotView : MonoBehaviour {
         if (levelGroup != null) levelGroup.SetActive(!empty);
         if (gradeText != null) {
             gradeText.gameObject.SetActive(!empty);
-            if (!empty) gradeText.SetGrade(data.Grade);
+            if (!empty) gradeText.SetGrade(data.Grade, inst.LimitBroken);
         }
         if (starView != null) {
             starView.gameObject.SetActive(!empty);
@@ -61,6 +63,7 @@ public sealed class EquipmentSlotView : MonoBehaviour {
             if (!empty) levelText.text = $"Lv.{inst.Level}";
         }
         if (signatureBadge != null) signatureBadge.SetActive(!empty && data.IsOwnSignatureOf(viewerCharDataId));
+        if (limitBreakGroup != null) limitBreakGroup.SetActive(!empty && inst.LimitBroken);
         // 각성 가능 표식은 보유 재료와 다이아까지 봐야 하므로 상위가 SetAwakenReady 로 켜 준다.
         // 여기서는 먼저 꺼 두어 빈 슬롯이나 교체 직후에 옛 표식이 남지 않게 한다.
         if (awakenReadyBadge != null) awakenReadyBadge.SetActive(false);

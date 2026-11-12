@@ -13,7 +13,17 @@ public enum InvestmentEffect {
     OfflineExp = 1,
     RaidCommissionExp = 2,
     SkillGaugeStart = 3,
-    SquadRegen = 4
+    SquadRegen = 4,
+    // 전투 스탯 효과. 캐릭터 전원의 스탯 보정으로 합산된다(InvestmentRules.StatOf).
+    DoubleAttackChance = 5,
+    EvasionChance = 6,
+    CritRate = 7,
+    MinDamageRatio = 8,
+    MaxDamageRatio = 9,
+    DamageTakenReduction = 10,
+    FinalDamage = 11,
+    DoomExp = 12,
+    FrontlineExp = 13
 }
 
 /// <summary>투자 현황. 슬롯 해금은 별레벨 총합으로 그때그때 정해지므로 총합을 함께 받는다.</summary>
@@ -35,6 +45,8 @@ public sealed class InvestmentUpgradeResultDto {
     public int NewLevel;
     public int SpentGold;
     public int NewGold;
+    public int SpentDiamond;
+    public int NewDiamond;
     public int StarTotal;
 }
 
@@ -44,5 +56,6 @@ public sealed class InvestmentUpgradeResultDto {
 /// </summary>
 public interface IInvestmentService {
     UniTask<InvestmentDto> RequestAsync(CancellationToken ct = default);
-    UniTask<InvestmentUpgradeResultDto> UpgradeAsync(int slotIndex, CancellationToken ct = default);
+    /// <param name="expectedLevel">화면에서 보고 누른 현재 레벨. 서버 레벨과 다르면 서버가 거부한다(실패 7).</param>
+    UniTask<InvestmentUpgradeResultDto> UpgradeAsync(int slotIndex, int expectedLevel, CancellationToken ct = default);
 }

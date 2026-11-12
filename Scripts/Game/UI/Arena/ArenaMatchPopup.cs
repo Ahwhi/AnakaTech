@@ -211,7 +211,8 @@ public sealed class ArenaMatchPopup : UIView {
             var progress = ctx != null ? ctx.Store.GetProgress(charId) : null;
             slot.Bind(ctx != null ? ctx.Appearance.Mine(charId) : default,
                       progress != null ? progress.StarLevel : 0,
-                      progress != null ? progress.Level : 0);
+                      progress != null ? progress.Level : 0,
+                      progress != null && progress.LimitBroken);
         }
     }
 
@@ -226,7 +227,7 @@ public sealed class ArenaMatchPopup : UIView {
             var m = deck.Members[i];
             // 상대가 끼운 코스튬은 서버가 준 id 로 해석한다(내 화면에서도 그 코스튬 일러스트로 보인다).
             slot.Bind(ctx != null ? ctx.Appearance.Other(m.CharDataId, m.CostumeId) : default,
-                      m.StarLevel, m.Level);
+                      m.StarLevel, m.Level, m.LimitBroken);
         }
     }
 

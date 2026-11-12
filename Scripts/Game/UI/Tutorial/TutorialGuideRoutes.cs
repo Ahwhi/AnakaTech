@@ -51,6 +51,12 @@ public sealed class TutorialGuideRoutes : ScriptableObject {
 
         [Tooltip("앞에서부터 순서대로 놓인 지점들. 마지막 지점이 목표를 실제로 달성시키는 버튼이 되도록 만든다.")]
         public Step[] steps;
+
+        [Tooltip("목표를 달성한 뒤 보상 수령으로 돌아오기까지 거칠 지점들(선택). 고르는 규칙은 steps 와 같다" +
+                 "(보이는 것 중 가장 뒤). 여기 지점이 하나도 보이지 않으면 보상 수령 지점을 가리킨다.\n" +
+                 "예: 모집을 마친 뒤 [가챠 메뉴 닫기, 결과 팝업 닫기] 를 넣으면 결과를 닫고 메뉴를 닫을 때까지 안내한다. " +
+                 "비워 두면 달성 즉시 보상 수령을 가리킨다(기존 동작).")]
+        public Step[] completedSteps;
     }
 
     /// <summary>Route.param 에 넣으면 인자를 따지지 않는다.</summary>

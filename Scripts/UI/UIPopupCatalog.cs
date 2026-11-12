@@ -15,6 +15,8 @@ public sealed class UIPopupCatalog : ScriptableObject {
     [Header("Common")]
     [SerializeField] private AssetReferenceGameObject confirmPopup;
     [SerializeField] private AssetReferenceGameObject confirmCancelPopup;
+    [Tooltip("수량 선택 팝업(공용). 아이템 수량 선택 사용 등에서 사용.")]
+    [SerializeField] private AssetReferenceGameObject quantitySelectPopup;
     [Tooltip("3선택 확인 팝업(진행/제외/취소 등). 각성 재료 경고에서 사용.")]
     [SerializeField] private AssetReferenceGameObject threeChoicePopup;
 
@@ -57,6 +59,8 @@ public sealed class UIPopupCatalog : ScriptableObject {
     [SerializeField] private AssetReferenceGameObject gachaPopup;
     [Tooltip("장비 가챠/구매 시 뽑은 장비를 연출하는 팝업(캐릭터 GachaPopup 의 장비 버전).")]
     [SerializeField] private AssetReferenceGameObject equipGachaPopup;
+    [Tooltip("모집 마일리지 픽업 팝업(SSR 소녀 그리드). 가챠 화면의 마일리지 버튼에서 연다.")]
+    [SerializeField] private AssetReferenceGameObject mileagePickPopup;
     [Tooltip("가챠 확률 표시 팝업(풀 항목 이름/등급/확률 리스트).")]
     [SerializeField] private AssetReferenceGameObject gachaRatesPopup;
     [Tooltip("픽업 로테이션 안내 팝업(현재/다음 픽업 대상과 기간).")]
@@ -64,6 +68,8 @@ public sealed class UIPopupCatalog : ScriptableObject {
     [SerializeField] private AssetReferenceGameObject shardPopup;
     [Tooltip("스탯포인트 일괄 투자 팝업(스탯 드롭다운 + 수량 슬라이더). 육성 팝업의 일괄 투자 버튼에서 연다.")]
     [SerializeField] private AssetReferenceGameObject growthStatBulkPopup;
+    [Tooltip("장비 일괄 분해 팝업(등급 선택). 장비 화면 가방 패널의 일괄 분해 버튼에서 연다.")]
+    [SerializeField] private AssetReferenceGameObject equipmentDisassemblePopup;
 
     [Header("Commission (의뢰)")]
     [Tooltip("의뢰 목록 팝업. 메인 HUD 햄버거 메뉴의 의뢰 버튼(HudMenuButton)에서 연다.")]
@@ -96,6 +102,62 @@ public sealed class UIPopupCatalog : ScriptableObject {
     [SerializeField] private AssetReferenceGameObject arenaMatchPopup;
     [Tooltip("쟁탈전 내역 팝업(내가 공격했거나 방어자인 기록).")]
     [SerializeField] private AssetReferenceGameObject arenaLogPopup;
+    [Tooltip("쟁탈전 룬 장착 팝업(계열마다 1개, 총 7 코스트).")]
+    [SerializeField] private AssetReferenceGameObject arenaRunePopup;
+    [Tooltip("쟁탈전 역대 전적 팝업(시즌별 전적 + 총 전적).")]
+    [SerializeField] private AssetReferenceGameObject arenaHistoryPopup;
+
+    [Header("Expedition (원정대)")]
+    [Tooltip("원정대 팝업(파티원 5명 + 장소 5곳 + 새 매칭 카운트다운). 슬라이드 메뉴의 원정대 버튼에서 연다.")]
+    [SerializeField] private AssetReferenceGameObject expeditionPopup;
+    [Tooltip("원정대 기록 팝업(누가 어느 장소를 쳐서 피해를 얼마나 줬는지).")]
+    [SerializeField] private AssetReferenceGameObject expeditionLogPopup;
+    [Tooltip("원정대 결과 팝업(깎은 피해량 + 장소 상태 + 참여 보상). 원정대 씬에서 판이 끝나면 연다.")]
+    [SerializeField] private AssetReferenceGameObject expeditionResultPopup;
+
+    [Header("Doom (멸망전)")]
+    [Tooltip("멸망전 입구 팝업(최고 점수 + 보상 트랙 + 도전 시작). 슬라이드 메뉴의 멸망전 버튼에서 연다.")]
+    [SerializeField] private AssetReferenceGameObject doomPopup;
+    [Tooltip("멸망전 증강 선택 팝업(3장 중 1장). 멸망전 씬에서 페이즈마다 연다.")]
+    [SerializeField] private AssetReferenceGameObject doomAugmentSelectPopup;
+    [Tooltip("멸망전 결과 팝업(점수/최고 기록 + 재도전/나가기). 멸망전 씬에서 판이 끝나면 연다.")]
+    [SerializeField] private AssetReferenceGameObject doomResultPopup;
+
+    [Header("Tower (무한 타워)")]
+    [Tooltip("무한 타워 팝업(층/보너스/클리어 보상 + 릴레이 편성 + 등반). 슬라이드 메뉴의 무한 타워 버튼에서 연다.")]
+    [SerializeField] private AssetReferenceGameObject towerPopup;
+    [Tooltip("무한 타워 결과 팝업(등반 성공 보상 / 실패 시 재도전). 무한 타워 씬에서 판이 끝나면 연다.")]
+    [SerializeField] private AssetReferenceGameObject towerResultPopup;
+
+    [Header("Frontline (전선)")]
+    [Tooltip("전선 팝업(전선 6곳 카드 + 배치/참여/초기화). 슬라이드 메뉴의 전선 버튼에서 연다.")]
+    [SerializeField] private AssetReferenceGameObject frontlinePopup;
+    [Tooltip("전선 배치 팝업(전선 탭 + 스쿼드 5칸 + 보유 소녀 목록 드래그). 전선 카드의 배치 버튼에서 연다.")]
+    [SerializeField] private AssetReferenceGameObject frontlineDeployPopup;
+    [Tooltip("전선 종료 결과 팝업(클리어 횟수 + 받은 경험치 + 자동 나가기 카운트다운). 전선 씬에서 기력이 모자라면 연다.")]
+    [SerializeField] private AssetReferenceGameObject frontlineResultPopup;
+
+    [Header("Heroes (영웅전)")]
+    [Tooltip("영웅전 팝업(도전 횟수/단계/클리어 보상 + 소녀 1명 선택 + 도전). 슬라이드 메뉴의 영웅전 버튼에서 연다.")]
+    [SerializeField] private AssetReferenceGameObject heroesPopup;
+    [Tooltip("영웅전 결과 팝업(받은 보상 + 다음 단계 도전/재도전/나가기). 영웅전 씬에서 판이 끝나면 연다.")]
+    [SerializeField] private AssetReferenceGameObject heroesResultPopup;
+
+    [Header("Story (스토리)")]
+    [Tooltip("스토리 목록 팝업(19편 카드 + 읽기/보상 수령). 메인 화면의 스토리 버튼에서 연다.")]
+    [SerializeField] private AssetReferenceGameObject storyPopup;
+
+    [Header("Pass (패스)")]
+    [Tooltip("패스 팝업(사이클 탭 + 무료/패스 2줄 보상 트랙 + 평생 패스 구매). 슬라이드 메뉴의 패스 버튼에서 연다.")]
+    [SerializeField] private AssetReferenceGameObject passPopup;
+
+    [Header("Costume Preview (코스튬 미리보기)")]
+    [Tooltip("코스튬 미리보기 팝업(전신 일러스트 + 전투 모습 + 효과, 기본 외형 비교). 상점의 코스튬 상품에서 연다.")]
+    [SerializeField] private AssetReferenceGameObject costumePreviewPopup;
+
+    [Header("Event Roulette (이벤트 돌림판)")]
+    [Tooltip("이벤트 돌림판 팝업(원판 + 돌리기). 이벤트 페이지의 돌림판 입구(EventRoulettePanel)에서 연다.")]
+    [SerializeField] private AssetReferenceGameObject eventRoulettePopup;
 
     [Header("Reward Info (보상 정보)")]
     [Tooltip("보상 정보 팝업(공용). 조건별로 무엇을 받는지 표로 보여 준다. " +
@@ -177,6 +239,7 @@ public sealed class UIPopupCatalog : ScriptableObject {
 
     public AssetReference ConfirmPopup => confirmPopup;
     public AssetReference ConfirmCancelPopup => confirmCancelPopup;
+    public AssetReference QuantitySelectPopup => quantitySelectPopup;
     public AssetReference ThreeChoicePopup => threeChoicePopup;
     public AssetReference TermsAgreementPopup => termsAgreementPopup;
     public AssetReference TermsDetailPopup => termsDetailPopup;
@@ -200,9 +263,11 @@ public sealed class UIPopupCatalog : ScriptableObject {
     public AssetReference GachaPopup => gachaPopup;
     public AssetReference EquipGachaPopup => equipGachaPopup;
     public AssetReference GachaRatesPopup => gachaRatesPopup;
+    public AssetReference MileagePickPopup => mileagePickPopup;
     public AssetReference RotationInfoPopup => rotationInfoPopup;
     public AssetReference ShardPopup => shardPopup;
     public AssetReference GrowthStatBulkPopup => growthStatBulkPopup;
+    public AssetReference EquipmentDisassemblePopup => equipmentDisassemblePopup;
     public AssetReference CommissionPopup => commissionPopup;
     public AssetReference CommissionSweepPopup => commissionSweepPopup;
     public AssetReference CommissionPausePopup => commissionPausePopup;
@@ -213,6 +278,25 @@ public sealed class UIPopupCatalog : ScriptableObject {
     public AssetReference ArenaPopup => arenaPopup;
     public AssetReference ArenaMatchPopup => arenaMatchPopup;
     public AssetReference ArenaLogPopup => arenaLogPopup;
+    public AssetReference ArenaRunePopup => arenaRunePopup;
+    public AssetReference ArenaHistoryPopup => arenaHistoryPopup;
+    public AssetReference ExpeditionPopup => expeditionPopup;
+    public AssetReference ExpeditionLogPopup => expeditionLogPopup;
+    public AssetReference ExpeditionResultPopup => expeditionResultPopup;
+    public AssetReference DoomPopup => doomPopup;
+    public AssetReference DoomAugmentSelectPopup => doomAugmentSelectPopup;
+    public AssetReference DoomResultPopup => doomResultPopup;
+    public AssetReference TowerPopup => towerPopup;
+    public AssetReference TowerResultPopup => towerResultPopup;
+    public AssetReference FrontlinePopup => frontlinePopup;
+    public AssetReference FrontlineDeployPopup => frontlineDeployPopup;
+    public AssetReference FrontlineResultPopup => frontlineResultPopup;
+    public AssetReference HeroesPopup => heroesPopup;
+    public AssetReference HeroesResultPopup => heroesResultPopup;
+    public AssetReference StoryPopup => storyPopup;
+    public AssetReference PassPopup => passPopup;
+    public AssetReference EventRoulettePopup => eventRoulettePopup;
+    public AssetReference CostumePreviewPopup => costumePreviewPopup;
     public AssetReference RewardInfoPopup => rewardInfoPopup;
     public AssetReference TrainingPopup => trainingPopup;
     public AssetReference TrainingRatesPopup => trainingRatesPopup;

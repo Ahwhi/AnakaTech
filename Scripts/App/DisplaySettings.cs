@@ -45,8 +45,11 @@ public static class DisplaySettings {
     private static int _nativeWidth;
     private static int _nativeHeight;
 
-    // 화면 절전 허용 여부. 평소에는 막아 두고(방치 화면을 계속 보는 게임) 잠금 모드 동안에만 허용한다.
-    private static bool _sleepAllowed;
+    // 절전 모드(PowerSaveMode) 동안의 프레임 상한. 설정 화면의 최저 옵션(30)과 같은 값이다.
+    // 전투 쿨타임은 프레임 단위로 끊겨 흐르므로(남은 시간을 다음 쿨타임에 넘기지 않는다) 프레임이 낮을수록
+    // 공속이 빠른 유닛의 공격 횟수가 조금씩 줄어든다. 30 은 라이브에서 유저가 이미 고를 수 있는 값이라
+    // 전투 결과가 검증된 범위지만, 그 아래는 사냥 속도(시간당 보상)가 달라질 수 있어 내리지 않는다.
+    private const int PowerSaveFrameRate = 30;
 
     // 지금 적용 중인 UI 좌우 여백. SafeAreaFitter 가 매 프레임 읽어 비교하므로 세이브를 직접 뒤지지 않고
     // 검증까지 끝낸 값을 여기 한 번만 캐시해 둔다(세이브 로드 전에도 안전한 기본값 0 을 갖는다).
@@ -90,15 +93,6 @@ public static class DisplaySettings {
     }
 
     /// <summary>
-    /// 화면 절전을 허용할지 정한다. 화면 잠금(잠수) 모드가 들어올 때 true, 나갈 때 false 로 알린다.
-    /// 잠금 여부를 아는 것은 잠금 화면뿐이므로, 절전 정책은 저장 설정이 아니라 이 창구로만 바뀐다.
-    /// </summary>
-    public static void SetSleepAllowed(bool allowed) {
-        _sleepAllowed = allowed;
-        ApplySleepTimeout();
-    }
-
-    /// <summary>
     /// 저장된 목표 프레임에 해당하는 옵션 위치. 저장값이 "기기 기본"(0)이거나 옵션표에 없는 값이면
     /// 실제로 적용 중인 프레임에 가장 가까운 옵션을 고른다(라디오 버튼이 항상 하나는 선택되도록).
     /// </summary>
@@ -135,18 +129,24 @@ public static class DisplaySettings {
     }
 
     // 수직 동기화를 켜면 엔진이 주사율에 맞춰 그리므로 목표 프레임 값은 무시된다(설정 UI 가 그 사실을 알려 준다).
-    private static void ApplyVSync(bool on) => QualitySettings.vSyncCount = on ? 1 : 0;
+    // 절전 모드에서는 끈다. 켜 둔 채로는 고주사율 기기(120Hz)에서 프레임 상한이 먹지 않는다.
+    private static void ApplyVSync(bool on) =>
+        QualitySettings.vSyncCount = on && !PowerSaveMode.Active.Value ? 1 : 0;
 
-    private static void ApplyFrameRate(int limit) =>
-        Application.targetFrameRate = limit > 0 ? limit : PlatformDefaultFrameRate;
+    // 절전 모드에서는 유저 설정과 절전 상한 중 낮은 쪽을 쓴다(이미 30 으로 둔 유저는 그대로다).
+    private static void ApplyFrameRate(int limit) {
+        int target = limit > 0 ? limit : PlatformDefaultFrameRate;
+        Application.targetFrameRate = PowerSaveMode.Active.Value ? Mathf.Min(target, PowerSaveFrameRate) : target;
+    }
 
     // 들어온 값을 허용 범위로 정리해 캐시에 넣는다. NaN 은 비교가 전부 false 라 Clamp 를 그냥 통과하므로
     // 먼저 걸러 낸다(NaN 이 레이아웃에 들어가면 그 아래 UI 가 통째로 사라진다).
     private static void ApplyUiSideInset(float value) =>
         _uiSideInset = float.IsNaN(value) ? 0f : Mathf.Clamp(value, MinUiSideInset, MaxUiSideInset);
 
-    private static void ApplySleepTimeout() =>
-        Screen.sleepTimeout = _sleepAllowed ? SleepTimeout.SystemSetting : SleepTimeout.NeverSleep;
+    // 화면은 항상 켜 둔다. 화면이 꺼지면 모바일 OS 가 앱을 멈춰 방치 사냥도 함께 멈추기 때문이다.
+    // 절전 모드도 예외가 아니다(절전 모드는 "화면을 켠 채 최소 부하로 계속 사냥"이다).
+    private static void ApplySleepTimeout() => Screen.sleepTimeout = SleepTimeout.NeverSleep;
 
     // 기기 네이티브 해상도에 배율을 곱한 크기로 렌더한다. 화면 크기(UI 레이아웃)는 그대로고 픽셀 수만 줄어든다.
     private static void ApplyRenderScale(float scale) {

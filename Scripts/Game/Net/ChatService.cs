@@ -28,9 +28,12 @@ public sealed class ChatService : IChatService, IDisposable {
     // 이미 받은 줄의 순번. 재조회(History)와 푸시가 겹칠 때 같은 줄이 두 번 쌓이는 것을 막는다.
     private readonly HashSet<long> _seenIds = new();
 
-    // 귓속말 상대별로 마지막까지 읽은 줄의 순번. 채팅창을 닫아도 안 읽음 표식이 유지되도록
-    // 화면보다 오래 사는 이 자리에 둔다(대화 자체와 같은 이유다).
-    private readonly Dictionary<int, long> _whisperRead = new();
+    // 귓속말 상대별로 마지막까지 읽은 줄의 순번은 계정 로컬 데이터(AccountLocalData.whisperReadMarks)에 둔다.
+    // 서버가 재접속 때 최근 귓속말을 다시 보내 주므로, 메모리에만 두면 재접속마다 읽은 대화가 안 읽음으로 되살아난다.
+
+    // 안 읽은 귓속말 줄 수(모든 상대 합). 메인 화면 채팅 줄의 배지가 구독한다.
+    // 귓속말이 들어오거나 / 읽음 표시가 바뀌거나 / 대화를 지우면 다시 센다.
+    private readonly ReactiveProperty<int> _unreadWhispers = new(0);
 
     // 내 계정 id. 최근 대화 응답으로 알게 되며, 그 전에 받은 대화는 알게 된 시점에 다시 표시한다.
     private int _myAccountId;
@@ -38,6 +41,7 @@ public sealed class ChatService : IChatService, IDisposable {
     public IObservable<ChatMessageDto> Received => _received;
     public IReadOnlyReactiveProperty<ChatMessageDto> Latest => _latest;
     public int MyAccountId => _myAccountId;
+    public IReadOnlyReactiveProperty<int> UnreadWhisperCount => _unreadWhispers;
 
     public ChatService(INetworkService net) {
         _net = net;
@@ -122,7 +126,12 @@ public sealed class ChatService : IChatService, IDisposable {
             _seenIds.Remove(list[i].MessageId);
             list.RemoveAt(i);
         }
-        _whisperRead.Remove(partnerAccountId);
+        var account = UserDataManager.Account;
+        if (account != null) {
+            account.RemoveWhisperReadMark(partnerAccountId);
+            UserDataManager.RequestSave();
+        }
+        RecountUnreadWhispers();
     }
 
     // ── 귓속말 대화 상대 ─────────────────────────────────
@@ -163,15 +172,28 @@ public sealed class ChatService : IChatService, IDisposable {
         foreach (var m in Messages(ChatChannel.Whisper))
             if (PartnerOf(m) == accountId && m.MessageId > last) last = m.MessageId;
 
-        if (last > 0) _whisperRead[accountId] = last;
+        var account = UserDataManager.Account;
+        if (last > 0 && account != null && last > account.WhisperReadMarkOf(accountId)) {
+            account.SetWhisperReadMark(accountId, last);
+            UserDataManager.RequestSave();
+        }
+        RecountUnreadWhispers();
+    }
+
+    // 받은 귓속말 중 그 상대의 읽음 표시보다 뒤에 있는 줄을 센다(WhisperPartners 의 Unread 합과 같은 기준).
+    private void RecountUnreadWhispers() {
+        int unread = 0;
+        foreach (var m in Messages(ChatChannel.Whisper))
+            if (!m.IsMine && m.MessageId > ReadMarkOf(PartnerOf(m))) unread++;
+        _unreadWhispers.Value = unread;
     }
 
     // 이 줄의 대화 상대(내가 보냈으면 받는 사람, 받았으면 보낸 사람).
     private static int PartnerOf(ChatMessageDto m) =>
         m == null || !m.IsWhisper ? 0 : (m.IsMine ? m.TargetAccountId : m.AccountId);
 
-    private long ReadMarkOf(int accountId) =>
-        _whisperRead.TryGetValue(accountId, out long id) ? id : 0;
+    private static long ReadMarkOf(int accountId) =>
+        UserDataManager.Account != null ? UserDataManager.Account.WhisperReadMarkOf(accountId) : 0;
 
     // 소셜 설정은 조회와 저장이 같은 쌍을 쓴다(write 로만 갈린다).
     public UniTask<WhisperPolicy> RequestWhisperPolicyAsync(CancellationToken ct = default) =>
@@ -208,6 +230,7 @@ public sealed class ChatService : IChatService, IDisposable {
 
         foreach (var list in _buffers.Values)
             foreach (var m in list) m.IsMine = m.AccountId == accountId;
+        RecountUnreadWhispers();   // 내 말로 바뀐 줄은 안 읽음에서 빠진다
     }
 
     private void Accept(ChatMessageDto message, bool notify) {
@@ -230,7 +253,17 @@ public sealed class ChatService : IChatService, IDisposable {
 
         // 채널을 가리지 않고 가장 최근 줄을 들고 있는다. 어떤 채널을 보여 줄지는 화면의 판단이라
         // 여기서 미리 거르지 않는다(메인 화면 한 줄은 귓속말을 빼고 보여 준다 - ChatLineView).
-        _latest.Value = message;
+        //
+        // "들어온 순서"가 아니라 "순번(MessageId)"으로 견준다. 최근 대화 응답은 채널별 묶음으로 오기 때문이다
+        // (서버 Room.ChatHistory: 전체 -> 길드 -> 귓속말). 도착 순서대로 덮으면 마지막 묶음의 끝 줄이
+        // 최신으로 남아, 전체 채널에 더 새로운 말이 있어도 길드 대화가 최근으로 보인다.
+        // 순번은 채팅 로그 한 표의 auto-increment 라 채널이 달라도 그대로 견줄 수 있다(시간순 = 순번순).
+        if (_latest.Value == null || message.MessageId > _latest.Value.MessageId)
+            _latest.Value = message;
+
+        // 알림보다 먼저 센다. 채팅창이 이 줄을 보고 있으면 알림을 받자마자 읽음으로 바꿔 다시 0 이 된다.
+        if (message.Channel == ChatChannel.Whisper) RecountUnreadWhispers();
+
         if (notify) _received.OnNext(message);
     }
 
@@ -259,5 +292,6 @@ public sealed class ChatService : IChatService, IDisposable {
         _net.PacketReceived -= OnPacketReceived;
         _received.Dispose();
         _latest.Dispose();
+        _unreadWhispers.Dispose();
     }
 }

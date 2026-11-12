@@ -29,6 +29,8 @@ public sealed class ItemUsePopup : UIView {
     [SerializeField] private Button useButton;
     [Tooltip("일괄 사용 버튼. 고른 아이템을 보유한 개수만큼 한 번에 사용한다(확인을 받는다). 선택.")]
     [SerializeField] private Button useAllButton;
+    [Tooltip("수량 선택 사용 버튼. 수량 선택 팝업으로 개수를 고른 뒤 그만큼 사용한다. 선택.")]
+    [SerializeField] private Button useQuantityButton;
 
     [Header("Close")]
     [SerializeField] private Button closeButton;
@@ -52,11 +54,15 @@ public sealed class ItemUsePopup : UIView {
 
         if (useButton != null) {
             useButton.onClick.RemoveAllListeners();
-            useButton.onClick.AddListener(() => { _ctx.Sound.PlaySfx(SfxKey.ButtonClick); UseAsync(_selected, 1).Forget(); });
+            useButton.onClick.AddListener(() => { _ctx.Sound.PlaySfx(SfxKey.ButtonClick); UseOneAsync().Forget(); });
         }
         if (useAllButton != null) {
             useAllButton.onClick.RemoveAllListeners();
             useAllButton.onClick.AddListener(() => { _ctx.Sound.PlaySfx(SfxKey.ButtonClick); UseAllAsync().Forget(); });
+        }
+        if (useQuantityButton != null) {
+            useQuantityButton.onClick.RemoveAllListeners();
+            useQuantityButton.onClick.AddListener(() => { _ctx.Sound.PlaySfx(SfxKey.ButtonClick); UseQuantityAsync().Forget(); });
         }
         if (closeButton != null) {
             closeButton.onClick.RemoveAllListeners();
@@ -122,7 +128,103 @@ public sealed class ItemUsePopup : UIView {
 
         bool canUse = _selected != null && _charId != 0 && !_busy;
         if (useButton != null) useButton.interactable = canUse;
-        if (useAllButton != null) useAllButton.interactable = canUse;
+        // 하나씩만 쓰는 아이템과, 사용 버튼이 이미 보유량 전체를 쓰는 아이템은 일괄 사용이 따로 없다.
+        bool multi = canUse && _selected.AllowsMultiUse && !_selected.CountIsAmount;
+        if (useAllButton != null) useAllButton.interactable = multi;
+        // 수량을 고를 여지가 있을 때(2개 이상)만 연다. 캡슐은 보유량이 아니라 "지금 쓸 수 있는 개수"로 판단한다.
+        if (useQuantityButton != null)
+            useQuantityButton.interactable = canUse && _selected.AllowsMultiUse && QuantityMax(_selected) > 1;
+    }
+
+    // 수량 선택 상한. 캡슐은 최대 레벨까지 필요한 만큼만(넘게 골라도 서버가 쓰지 않는다), 그 밖은 보유량.
+    private int QuantityMax(ItemData item) {
+        int owned = _ctx.Store.ItemCount(item.Id);
+        return item.Kind == ItemKind.ExpCapsule
+            ? ItemRules.CapsuleUsableCount(item, _ctx.Store.GetProgress(_charId), owned)
+            : owned;
+    }
+
+    /// <summary>
+    /// 수량 선택 사용. 공용 수량 선택 팝업으로 개수를 고르고, 그 개수만큼 일괄 사용과 같은 경로로 쓴다.
+    /// 수량을 직접 고른 것이 곧 확인이므로 따로 확인을 받지 않는다.
+    /// 캡슐은 고르는 동안 들어갈 경험치와 레벨 변화를 바로 보여 준다.
+    /// </summary>
+    private async UniTaskVoid UseQuantityAsync() {
+        if (_busy || _selected == null || _charId == 0) return;
+        if (!_selected.AllowsMultiUse) return;
+
+        var item = _selected;
+        int max = QuantityMax(item);
+        if (max < 1) return;
+
+        try {
+            var reference = _ctx.Popups != null ? _ctx.Popups.QuantitySelectPopup : null;
+            if (reference == null || !reference.RuntimeKeyIsValid()) { _ctx.Ui.ShowToast("준비 중입니다."); return; }
+
+            var progress = _ctx.Store.GetProgress(_charId);
+            Func<int, string> describe = ItemRules.HasQuantityMessage(item)
+                ? n => ItemRules.QuantityMessage(item, progress, n)
+                : null;
+
+            var picker = await _ctx.Ui.ShowPopupAsync<QuantitySelectPopup>(reference, _ct);
+            // 안내 문구 자리를 결과 문구(경험치/레벨 변화)가 차지하므로, 그때는 아이템 이름을 제목으로 올린다.
+            string title = describe != null ? item.DisplayName : "수량 선택";
+            int? picked = await picker.ShowAsync(title, item.DisplayName, max, 1, describe);
+            if (picked == null) return;
+
+            // 고르는 사이에 다른 경로로 수량이 줄었을 수 있어 보낼 직전 보유량으로 자른다.
+            int count = Mathf.Min(picked.Value, _ctx.Store.ItemCount(item.Id));
+            if (count >= 1) await UseAsync(item, count);
+        } catch (OperationCanceledException) {
+        } catch (Exception e) {
+            Debug.LogException(e);
+            _ctx.Ui.ShowToast("아이템을 사용하지 못했습니다.");
+        }
+    }
+
+    /// <summary>
+    /// 사용 버튼. 보통은 1개를 쓰지만, 보유 개수가 곧 수량인 아이템(경험치 캡슐)은 보유량 전체를 쓴다
+    /// (최대 레벨을 넘길 만큼은 서버가 쓰지 않고 남긴다). 확인이 필요한 아이템은 서버 미리보기로 결과를 밝히고 확인을 받는다.
+    /// </summary>
+    private async UniTaskVoid UseOneAsync() {
+        if (_busy || _selected == null || _charId == 0) return;
+
+        // 확인을 기다리는 동안 선택이 바뀔 수 있으므로 지금 고른 아이템을 붙잡아 둔다.
+        var item = _selected;
+        try {
+            if (item.RequiresConfirm && !await ConfirmWithPreviewAsync(item)) return;
+
+            int count = item.CountIsAmount ? _ctx.Store.ItemCount(item.Id) : 1;
+            await UseAsync(item, count);
+        } catch (OperationCanceledException) {
+        } catch (Exception e) {
+            Debug.LogException(e);
+            _ctx.Ui.ShowToast("아이템을 사용하지 못했습니다.");
+        }
+    }
+
+    // 확인이 필요한 아이템의 사용 확인. 결과 수치(추출량, 레벨 변화 등)는 서버 미리보기 값을 그대로 보여 준다.
+    private async UniTask<bool> ConfirmWithPreviewAsync(ItemData item) {
+        _busy = true;
+        RefreshDetail();
+        ItemUsePreview preview;
+        try {
+            preview = await _ctx.Item.PreviewAsync(item.Id, _charId, _ct);
+        } finally {
+            _busy = false;
+            RefreshDetail();
+        }
+        if (preview.FailReason != 0) {
+            _ctx.Ui.ShowToast(ItemRules.UseFailMessage(preview.FailReason));
+            return false;
+        }
+
+        var reference = _ctx.Popups != null ? _ctx.Popups.ConfirmCancelPopup : null;
+        if (reference == null || !reference.RuntimeKeyIsValid()) { _ctx.Ui.ShowToast("준비 중입니다."); return false; }
+
+        var confirm = await _ctx.Ui.ShowPopupAsync<ConfirmCancelPopup>(reference, _ct);
+        return await confirm.ShowAsync(_ctx, item.DisplayName, ItemRules.ConfirmMessage(item, preview),
+                                       ItemRules.ConfirmRewards(item, preview, _charId));
     }
 
     /// <summary>
@@ -131,6 +233,7 @@ public sealed class ItemUsePopup : UIView {
     /// </summary>
     private async UniTaskVoid UseAllAsync() {
         if (_busy || _selected == null || _charId == 0) return;
+        if (!_selected.AllowsMultiUse || _selected.CountIsAmount) return;
 
         // 확인을 기다리는 동안 선택이 바뀔 수 있으므로 지금 고른 아이템을 붙잡아 둔다.
         var item = _selected;
@@ -162,6 +265,7 @@ public sealed class ItemUsePopup : UIView {
         RefreshDetail();
 
         try {
+            int oldLevel = _ctx.Store.GetProgress(_charId)?.Level ?? 0;
             var res = await _ctx.Item.UseAsync(item.Id, _charId, count, _ct);
             if (!res.IsSuccess) {
                 _ctx.Ui.ShowToast(ItemRules.UseFailMessage(res.FailReason));
@@ -172,8 +276,15 @@ public sealed class ItemUsePopup : UIView {
             _ctx.Sound.PlaySfx(SfxKey.Claim);
             Changed = true;
 
-            if (res.CharExp != null && res.CharExp.GainedExp > 0)
-                _ctx.Ui.ShowToast($"경험치 {res.CharExp.GainedExp:N0} 획득");
+            // 레벨이 바뀌었으면 "Lv.A -> Lv.B" 를 함께 보여 준다(올라가든 추출로 내려가든 같은 표기).
+            int newLevel = _ctx.Store.GetProgress(_charId)?.Level ?? oldLevel;
+            string levelChange = newLevel != oldLevel ? "\n" + ItemRules.LevelChange(oldLevel, newLevel) : "";
+            if (res.GainedExp > 0)
+                _ctx.Ui.ShowToast($"경험치 {res.GainedExp:N0} 획득{levelChange}");
+            else if (item.Kind == ItemKind.GrowthReset)
+                _ctx.Ui.ShowToast($"성장 초기화 완료\n{ItemRules.RefundText(res.Refund, res.ExtractedExp)}");
+            else if (res.ExtractedExp > 0)
+                _ctx.Ui.ShowToast($"경험치 {res.ExtractedExp:N0} 추출{levelChange}");
         } catch (OperationCanceledException) {
         } catch (Exception e) {
             Debug.LogException(e);

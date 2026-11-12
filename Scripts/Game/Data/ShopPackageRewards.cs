@@ -54,76 +54,84 @@ public static class ShopPackageRewards {
 
         // 한정 > 일간 수련 패키지(하루 3회).
         ["limited_daily_training_pack"] = new PackageInfo(new[] {
-            RewardItem.Diamond(1000),
-            RewardItem.Currency(CurrencyKeys.TrainingTicket, 3),
+            RewardItem.Diamond(5000),
+            RewardItem.Currency(CurrencyKeys.TrainingTicket, 5),
         }),
 
         // 한정 > 최적화 세트/패키지.
         ["limited_daily_set"] = new PackageInfo(new[] {
-            RewardItem.Stamina(100),
-            RewardItem.Currency(CurrencyKeys.StaminaBoostTicket, 10),
-            RewardItem.Diamond(500),
-            RewardItem.Shard(3, 5),                         // SSR 만능조각 5
-        }),
-        ["limited_weekly_burning"] = new PackageInfo(new[] {
             RewardItem.Stamina(300),
             RewardItem.Currency(CurrencyKeys.StaminaBoostTicket, 30),
+            RewardItem.Diamond(3000),
+            RewardItem.Shard(3, 10),                        // SSR 만능조각 10
+        }),
+        ["limited_weekly_burning"] = new PackageInfo(new[] {
+            RewardItem.Stamina(500),
+            RewardItem.Currency(CurrencyKeys.StaminaBoostTicket, 50),
             RewardItem.Currency(CurrencyKeys.CommissionTicket, 10),
-            RewardItem.Currency(CurrencyKeys.StageSweepTicket, 100),
+            RewardItem.Currency(CurrencyKeys.StageSweepTicket, 1000),
         }),
 
         // 한정 > 월간 반복 구매 패키지(주/월 한도 안에서 여러 번 구매).
         ["limited_monthly_special_ticket"] = new PackageInfo(new[] {
             RewardItem.Currency(CurrencyKeys.SpecialTicket, 10),
-            RewardItem.Diamond(1000),
+            RewardItem.Diamond(10000),
         }),
         ["limited_monthly_sr_shard"] = new PackageInfo(new[] {
-            RewardItem.Shard(2, 10),                        // SR 만능조각 10
-            RewardItem.Diamond(500),
+            RewardItem.Shard(2, 50),                        // SR 만능조각 50
+            RewardItem.Diamond(3000),
         }),
         ["limited_monthly_ssr_shard"] = new PackageInfo(new[] {
-            RewardItem.Shard(3, 10),                        // SSR 만능조각 10
-            RewardItem.Diamond(1000),
+            RewardItem.Shard(3, 50),                        // SSR 만능조각 50
+            RewardItem.Diamond(10000),
         }),
         ["limited_monthly_engraving_stone"] = new PackageInfo(new[] {
-            RewardItem.Currency(CurrencyKeys.EngravingStone, 500),
-            RewardItem.Currency(CurrencyKeys.CommissionTicket, 5),
+            RewardItem.Currency(CurrencyKeys.EngravingStone, 3000),
+            RewardItem.Currency(CurrencyKeys.CommissionTicket, 10),
         }),
         ["limited_monthly_renown"] = new PackageInfo(new[] {
-            RewardItem.Currency(CurrencyKeys.Renown, 500),
-            RewardItem.Currency(CurrencyKeys.CommissionTicket, 5),
+            RewardItem.Currency(CurrencyKeys.Renown, 3000),
+            RewardItem.Currency(CurrencyKeys.CommissionTicket, 10),
         }),
         ["limited_weekly_set"] = new PackageInfo(new[] {
-            RewardItem.Diamond(3000),
-            RewardItem.Shard(3, 30),                        // SSR 만능조각 30
-            RewardItem.Currency(CurrencyKeys.Renown, 1000),
-            RewardItem.Currency(CurrencyKeys.EngravingStone, 1000),
-        }),
-        ["limited_monthly_set"] = new PackageInfo(new[] {
             RewardItem.Diamond(10000),
             RewardItem.Shard(3, 50),                        // SSR 만능조각 50
-            RewardItem.Shard(2, 100),                       // SR 만능조각 100
-            RewardItem.Item(ItemKeys.ExpCoupon50, 50),      // 경험치 쿠폰 50% 50
+            RewardItem.Currency(CurrencyKeys.Renown, 3000),
+            RewardItem.Currency(CurrencyKeys.EngravingStone, 3000),
+        }),
+        ["limited_monthly_set"] = new PackageInfo(new[] {
+            RewardItem.Diamond(50000),
+            RewardItem.Shard(3, 100),                       // SSR 만능조각 100
+            RewardItem.Shard(2, 200),                       // SR 만능조각 200
+            RewardItem.Item(ItemKeys.ExpCoupon100, 300),    // 경험치 쿠폰 100% 300
+        }),
+        ["limited_monthly_limit_break"] = new PackageInfo(new[] {
+            RewardItem.Currency(CurrencyKeys.LimitBreakTicket, 3),
+            RewardItem.Item(ItemKeys.GrowthResetTicket, 1),
+            RewardItem.Shard(3, 100),                       // SSR 만능조각 100
+            RewardItem.Shard(2, 200),                       // SR 만능조각 200
         }),
         // 매일 30일 패키지: 구매 즉시분 + 이후 30일간 매일 접속 보상(반복 지급은 서버 후속 업데이트 예정, 표시는 안내용).
         ["limited_daily30_pack"] = new PackageInfo(
             new[] {
-                RewardItem.Stamina(300),
-                RewardItem.Currency(CurrencyKeys.StaminaBoostTicket, 30),
-                RewardItem.Diamond(300),
+                RewardItem.Stamina(5000),
+                RewardItem.Currency(CurrencyKeys.StaminaBoostTicket, 500),
+                RewardItem.Diamond(5000),
             },
             recurring: new[] {
-                RewardItem.Stamina(100),
-                RewardItem.Diamond(100),
-                RewardItem.Currency(CurrencyKeys.StaminaBoostTicket, 10),
+                RewardItem.Stamina(500),
+                RewardItem.Diamond(500),
+                RewardItem.Currency(CurrencyKeys.StaminaBoostTicket, 50),
             },
             recurringLabel: "매일 지급"),
         ["limited_starter_pack"] = new PackageInfo(new[] {
             RewardItem.Gold(500000),
-            RewardItem.Diamond(10000),
-            RewardItem.Currency(CurrencyKeys.StaminaBoostTicket, 50),
+            RewardItem.Diamond(50000),
+            RewardItem.Currency(CurrencyKeys.SpecialTicket, 50),
             RewardItem.ProfileFrame(2),                     // 병아리 테두리
         }),
+        // 평생 패스는 지급 품목이 없다(구매 기록이 곧 패스 보유). 구성품 자리에는 평생 패스 아이콘 하나만 보여 준다.
+        [PassRules.LifetimeOfferId] = new PackageInfo(new[] { RewardItem.LifetimePass() }),
     };
 
     /// <summary>해당 오퍼의 패키지 구성품. 패키지가 아니거나 미등록이면 null.</summary>
@@ -132,6 +140,17 @@ public static class ShopPackageRewards {
 
     /// <summary>구성품 슬롯을 가진 패키지 카드로 표시할 오퍼인지.</summary>
     public static bool IsPackage(string offerId) => Get(offerId) != null;
+
+    /// <summary>
+    /// 화면에 보여 줄 구성품(카드 미리보기, 상세, 구매 확인이 같은 값을 쓴다). 미러에 등록된 상품은 미러 값을,
+    /// 아니면 서버가 보낸 지급 목록을 쓴다. 지급 품목이 없는 상품(평생 패스)도 미러로 내용을 보여 줄 수 있다.
+    /// </summary>
+    public static IReadOnlyList<RewardItem> DisplayGrants(ShopOfferDto offer) {
+        if (offer == null) return Array.Empty<RewardItem>();
+        var info = Get(offer.OfferId);
+        if (info != null && info.Grants.Count > 0) return info.Grants;
+        return offer.Grants != null ? offer.Grants : (IReadOnlyList<RewardItem>)Array.Empty<RewardItem>();
+    }
 
     /// <summary>
     /// 서버가 내려준 지급 목록으로 구성품 정보를 만든다(미러에 등록되지 않은 상품용).

@@ -10,6 +10,8 @@ public static class RankingRules {
         RankingCategory.GuildCombatPower => "길드 랭킹",
         RankingCategory.Achievement => "업적 랭킹",
         RankingCategory.ArenaScore => "쟁탈전 랭킹",
+        RankingCategory.RepresentativePower => "대표 소녀 랭킹",
+        RankingCategory.DoomScore => "멸망전 랭킹",
         _ => "유저 랭킹"
     };
 

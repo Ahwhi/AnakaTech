@@ -19,15 +19,30 @@ public sealed class HeartbeatService : IHeartbeatService, IDisposable {
 
     private readonly INetworkService _net;
     private readonly IEventBadgeService _badges;
+    private readonly IDisposable _recoveredSubscription;
     private CancellationTokenSource _cts;
     private int _lastNotifiedMinutes = -1;
+    private bool _resumeOnRecovery;   // 끊기기 직전에 돌고 있었는지. 같은 계정으로 다시 붙으면 이어서 돈다.
 
-    public HeartbeatService(INetworkService net, IEventBadgeService badges) {
+    public HeartbeatService(INetworkService net, IEventBadgeService badges, ISessionRecovery recovery) {
         _net = net;
         _badges = badges;
         // 연결이 끊기면 이 계정의 세션은 끝난 것이다. 로그아웃(의도적 끊기)과 접속 장애가 모두 이 신호로
         // 모이므로, 여기서 멈추면 다음 로그인은 항상 빈 상태에서 시작한다.
-        _net.Disconnected += Stop;
+        _net.Disconnected += OnDisconnected;
+        // 화면 전환 없이 같은 계정으로 다시 붙은 경우에는 메인 진입이 다시 일어나지 않으므로 여기서 이어 간다.
+        // 전투 씬처럼 메인 밖에 있을 때 붙어도 접속 시간이 끊기지 않는다.
+        _recoveredSubscription = recovery.Recovered.Subscribe(_ => OnRecovered());
+    }
+
+    private void OnDisconnected() {
+        // 복구 재시도 중의 끊김이 이 값을 지우지 않도록 켜는 쪽으로만 기록한다. 다음 Start 에서 내려간다.
+        if (_cts != null) _resumeOnRecovery = true;
+        Stop();
+    }
+
+    private void OnRecovered() {
+        if (_resumeOnRecovery) Start();
     }
 
     /// <summary>가장 최근에 서버가 알려준 오늘 누적 접속 시간(초). 표시용이며 판정은 서버가 한다.</summary>
@@ -44,6 +59,7 @@ public sealed class HeartbeatService : IHeartbeatService, IDisposable {
     public IObservable<int> StaminaBoostTicket => _staminaBoostTicket;
 
     public void Start() {
+        _resumeOnRecovery = false;
         if (_cts != null) return;
         _cts = new CancellationTokenSource();
         RunAsync(_cts.Token).Forget();
@@ -101,7 +117,8 @@ public sealed class HeartbeatService : IHeartbeatService, IDisposable {
     }
 
     public void Dispose() {
-        _net.Disconnected -= Stop;
+        _net.Disconnected -= OnDisconnected;
+        _recoveredSubscription.Dispose();
         Stop();
         _staminaBoostTicket.Dispose();
     }

@@ -16,6 +16,29 @@ public sealed class CostumeInfoDto {
     public List<int> Owned = new();
     /// <summary>장착 중인 캐릭터만. 기본 일러스트인 캐릭터는 담기지 않는다.</summary>
     public List<EquippedCostumeDto> Equipped = new();
+    /// <summary>아웃핏 보유 개수(아웃핏 id -> 개수). 아웃핏은 개수가 있는 장착 아이템이다(V1.12).</summary>
+    public Dictionary<int, int> OwnedUnitSkins = new();
+    /// <summary>캐릭터 id -> 장착 아웃핏 id. 기본 아웃핏인 캐릭터는 담기지 않는다.</summary>
+    public Dictionary<int, int> EquippedUnitSkins = new();
+}
+
+/// <summary>아웃핏 장착/해제 결과.</summary>
+public sealed class UnitSkinEquipResult {
+    public bool IsSuccess;
+    /// <summary>UnitSkinRules.FailMessage 참고.</summary>
+    public int FailReason;
+    public int CharDataId;
+    public int UnitSkinId;
+}
+
+/// <summary>아웃핏 장착 실패 사유 문구. 서버 GameDataRepository.UnitSkinFail 과 짝을 이룬다.</summary>
+public static class UnitSkinRules {
+    public static string FailMessage(int failReason) => failReason switch {
+        1 => "보유하지 않은 캐릭터입니다.",
+        2 => "존재하지 않는 아웃핏입니다.",
+        3 => "남은 아웃핏이 없습니다. 다른 소녀에게서 먼저 해제해 주세요.",
+        _ => "아웃핏을 변경하지 못했습니다."
+    };
 }
 
 /// <summary>코스튬 장착/해제 결과.</summary>
@@ -33,6 +56,9 @@ public interface ICostumeService {
 
     /// <summary>코스튬 장착(costumeId=0 이면 기본 일러스트로 되돌린다). 보유/소유 판정은 서버가 최종 결정한다.</summary>
     UniTask<CostumeEquipResult> EquipAsync(int charDataId, int costumeId, CancellationToken ct = default);
+
+    /// <summary>아웃핏 장착(unitSkinId=0 이면 기본 아웃핏으로 되돌린다). 남은 개수 판정은 서버가 최종 결정한다.</summary>
+    UniTask<UnitSkinEquipResult> EquipUnitSkinAsync(int charDataId, int unitSkinId, CancellationToken ct = default);
 }
 
 /// <summary>코스튬 장착 실패 사유 문구. 서버 GameDataRepository.EquipCostume 의 실패 코드와 짝을 이룬다.</summary>

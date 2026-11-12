@@ -88,6 +88,12 @@ public interface IBattleRuntime {
 
     /// <summary>대시로 이동한 시전자의 시각 표현을 원위치로 seconds 동안 복귀시킨다(대시 스킬 종료 연출). 미지원 시전자는 무시.</summary>
     void ReturnCaster(ICombatUnit caster, float seconds);
+
+    /// <summary>
+    /// unit 의 체력을 최대 체력의 ratio(0.1 = 10%) 만큼 회복하고 회복 숫자를 띄운다(최대치를 넘지 않는다).
+    /// 실제로 회복된 양을 돌려준다. 죽었거나 회복할 수 없는 유닛이면 0.
+    /// </summary>
+    float HealByMaxHp(ICombatUnit unit, float ratio);
 }
 
 /// <summary>유닛 변신(일러스트 교체 + 지속시간 스탯 강화)에 필요한 데이터 묶음. 변신 스킬 SO 가 조립해 유닛에 전달한다.</summary>
@@ -124,4 +130,26 @@ public interface ITransformableUnit {
     /// <summary>변신을 적용한다. 이미 변신 중이면 지속시간만 spec.Duration 으로 원복하고 중첩하지 않는다.
     /// 지속시간이 끝나거나 사망하면 원래 모습/스탯으로 되돌아간다.</summary>
     void ApplyTransform(in UnitTransformSpec spec);
+}
+
+/// <summary>
+/// 무적(모든 피해를 회피하는 상태)을 지원하는 유닛의 계약. BattleUnit 이 구현하고, 무적을 거는 스킬은
+/// 시전자가 이 계약을 구현하는지 확인 후 호출한다(미구현 유닛이면 무시). 변신(ITransformableUnit)과 같은 확장점이다.
+///
+/// 무적 중에는 모든 피격이 MISS 로 처리되고(데미지/넉백/상태이상 없음) 지속 피해도 들어가지 않는다.
+/// 생존 판정(IsAlive)은 그대로라 적의 타게팅은 바뀌지 않는다.
+/// </summary>
+public interface IInvulnerableUnit {
+    /// <summary>지금 무적인지.</summary>
+    bool IsInvulnerable { get; }
+
+    /// <summary>
+    /// 무적을 건다. 이미 무적이면 남은 시간을 더 긴 쪽으로 늘린다(중첩하지 않는다).
+    /// maxSeconds 는 EndInvulnerability 가 오지 않아도 풀리는 안전 상한이다(예약 실행이 취소되는 경우 대비).
+    /// </summary>
+    /// <param name="vfxOverride">무적 동안 유닛을 따라다닐 VFX. null 이면 전투 설정의 공용 무적 VFX 를 쓴다.</param>
+    void BeginInvulnerability(float maxSeconds, GameObject vfxOverride = null);
+
+    /// <summary>무적을 즉시 해제한다(VFX 도 함께 사라진다). 무적이 아니면 아무 일도 하지 않는다.</summary>
+    void EndInvulnerability();
 }

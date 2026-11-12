@@ -56,7 +56,24 @@ public sealed class RankingService : IRankingService {
                 SubIconId = e.subIconId,
                 RepresentativeCharId = e.representativeCharId,
                 RepresentativeCostumeId = e.representativeCostumeId,
+                SubValue = e.subValue,
             });
+        }
+        if (res.hasMine) {
+            dto.Mine = new RankingEntryDto {
+                Rank = res.myRank,
+                Score = res.myScore,
+                Name = res.myName,
+                SubName = res.mySubName,
+                IconId = res.myIconId,
+                SubIconId = res.mySubIconId,
+                RepresentativeCharId = res.myRepresentativeCharId,
+                RepresentativeCostumeId = res.myRepresentativeCostumeId,
+                SubValue = res.mySubValue,
+            };
+        } else if (dto.HasMyRank) {
+            // 내 줄을 보내지 않는 서버라도 내가 목록 안에 있으면 그 줄이 곧 내 줄이다.
+            dto.Mine = dto.Entries.Find(e => e.Rank == dto.MyRank);
         }
         return dto;
     }

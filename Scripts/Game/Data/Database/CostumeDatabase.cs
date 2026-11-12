@@ -11,8 +11,13 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "CostumeDatabase", menuName = "Anaka/Database/Costume Database")]
 public sealed class CostumeDatabase : ScriptableObject {
     [SerializeField] private List<CostumeData> costumes = new();
+    [Tooltip("아웃핏(전투 유닛 프리팹 교체) 데이터. 꾸미기 데이터라 코스튬과 같은 경로로 주입되도록 여기 둔다(씬마다 배선하지 않는다).")]
+    [SerializeField] private UnitSkinCatalog unitSkins;
 
     private Dictionary<int, CostumeData> _byId;
+
+    /// <summary>아웃핏 데이터(미할당이면 null: 아웃핏 없이 기본 유닛만 쓴다).</summary>
+    public UnitSkinCatalog UnitSkins => unitSkins;
     private Dictionary<int, List<CostumeData>> _byCharacter;
 
     public IReadOnlyList<CostumeData> All => costumes;

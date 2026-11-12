@@ -9,7 +9,8 @@ using UnityEngine.UI;
 using static Enums;
 
 /// <summary>
-/// 캐릭터 육성 팝업(PLANNING 10 육성 부분). 스탯포인트 투자 페이지와 별레벨 승급 페이지를 버튼으로 전환한다.
+/// 캐릭터 육성 팝업(PLANNING 10 육성 부분). 스탯포인트 투자 / 별레벨 승급 / 한계돌파 페이지를 버튼으로 전환한다.
+/// 한계돌파 페이지의 표시와 요청은 LimitBreakPanel 이 맡고, 이 팝업은 페이지 전환과 배지만 담당한다.
 /// 스탯/별 승급은 서버 권위(AllocateStat/UpgradeStar)로 처리하고 응답으로 받은 최신 성장치를 스토어에 반영한다.
 /// 조각/만능조각 팝업은 이후 마일스톤(현재 조각량/필요 조각량 표시까지).
 /// </summary>
@@ -23,6 +24,12 @@ public sealed class GrowthPopup : UIView {
     [SerializeField] private BadgeView statBadge;
     [Tooltip("별 승급 버튼 배지: 승급 가능(조각+다이아 충분)하면 표시(선택). BadgeView, Source=Manual.")]
     [SerializeField] private BadgeView starBadge;
+    [Tooltip("한계돌파 페이지 버튼(선택).")]
+    [SerializeField] private Button limitBreakPageButton;
+    [Tooltip("한계돌파 페이지 패널(LimitBreakPanel). 비우면 한계돌파 페이지를 쓰지 않는다.")]
+    [SerializeField] private LimitBreakPanel limitBreakPanel;
+    [Tooltip("한계돌파 버튼 배지: 한계돌파 가능(미돌파 + 레벨 + 별레벨 + 한계돌파권)하면 표시(선택). BadgeView, Source=Manual.")]
+    [SerializeField] private BadgeView limitBreakBadge;
 
     [Header("Stat Page")]
     [SerializeField] private TMP_Text statPointsText;
@@ -111,8 +118,11 @@ public sealed class GrowthPopup : UIView {
 
     private readonly List<GrowthStatRow> _rows = new();
 
-    // 현재 보고 있는 페이지(0=스탯, 1=별). 캐릭터를 바꿔 재초기화해도 보던 페이지를 유지하기 위해 보존한다.
+    // 현재 보고 있는 페이지(0=스탯, 1=별, 2=한계돌파). 캐릭터를 바꿔 재초기화해도 보던 페이지를 유지하기 위해 보존한다.
     private int _currentPage;
+    private const int StatPage = 0;
+    private const int StarPage = 1;
+    private const int LimitBreakPage = 2;
 
     public void Initialize(MainHudContext ctx, int charDataId) {
         _ctx = ctx;
@@ -121,8 +131,11 @@ public sealed class GrowthPopup : UIView {
 
         // 리스너/행 구성은 최초 1회만. 재사용(재오픈) 시에는 표시 상태만 갱신한다.
         if (!_wired) {
-            if (statPageButton != null) statPageButton.onClick.AddListener(() => { _ctx.Sound.PlaySfx(SfxKey.ButtonClick); ShowPage(0); });
-            if (starPageButton != null) starPageButton.onClick.AddListener(() => { _ctx.Sound.PlaySfx(SfxKey.ButtonClick); ShowPage(1); });
+            if (statPageButton != null) statPageButton.onClick.AddListener(() => { _ctx.Sound.PlaySfx(SfxKey.ButtonClick); ShowPage(StatPage); });
+            if (starPageButton != null) starPageButton.onClick.AddListener(() => { _ctx.Sound.PlaySfx(SfxKey.ButtonClick); ShowPage(StarPage); });
+            if (limitBreakPageButton != null) limitBreakPageButton.onClick.AddListener(() => { _ctx.Sound.PlaySfx(SfxKey.ButtonClick); ShowPage(LimitBreakPage); });
+            // 한계돌파하면 다른 페이지(배지/스탯)도 다시 그린다. 돌파 자체의 표시는 패널이 맡는다.
+            if (limitBreakPanel != null) limitBreakPanel.LimitBroken += Refresh;
             if (upgradeButton != null) upgradeButton.onClick.AddListener(() => { _ctx.Sound.PlaySfx(SfxKey.ButtonClick); UpgradeStarAsync().Forget(); });
             if (shardButton != null) shardButton.onClick.AddListener(() => { _ctx.Sound.PlaySfx(SfxKey.ButtonClick); OpenShardAsync().Forget(); });
             if (closeButton != null) closeButton.onClick.AddListener(() => { _ctx.Sound.PlaySfx(SfxKey.ButtonClick); CloseAsync().Forget(); });
@@ -135,6 +148,8 @@ public sealed class GrowthPopup : UIView {
             // 다이아 보유량이 밖에서 바뀌어도(상점 구매/우편 수령 등) 필요 다이아 색과 승급/초기화 버튼이
             // 즉시 따라오게 한다. 이 팝업 위에 상점을 띄워 다이아를 사 온 경우가 여기에 해당한다.
             _ctx.Store.Diamond.Subscribe(_ => OnDiamondChanged()).AddTo(this);
+            // 한계돌파권도 밖에서 바뀔 수 있다. 한계돌파 페이지 버튼 배지가 바로 따라오게 한다.
+            _ctx.Store.LimitBreakTicket.Subscribe(_ => OnDiamondChanged()).AddTo(this);
             _wired = true;
         }
 
@@ -143,6 +158,7 @@ public sealed class GrowthPopup : UIView {
         CurrencyIcon.Apply(resetCostIcon, _ctx.Currencies, CurrencyType.Diamond);
 
         ApplySelectedIllustration();
+        if (limitBreakPanel != null) limitBreakPanel.Initialize(_ctx, _charId);
         ShowPage(_currentPage);   // 캐릭터를 바꿔도 보던 페이지 유지(최초 오픈 시에는 기본 0=스탯).
         Refresh();
     }
@@ -216,12 +232,17 @@ public sealed class GrowthPopup : UIView {
     }
 
     private void ShowPage(int index) {
+        // 한계돌파 패널을 할당하지 않았으면 그 페이지는 없다(보던 페이지가 남아 있어도 스탯으로 돌아간다).
+        if (index == LimitBreakPage && limitBreakPanel == null) index = StatPage;
+
         _currentPage = index;
-        if (statPanel != null) statPanel.SetActive(index == 0);
-        if (starPanel != null) starPanel.SetActive(index == 1);
+        if (statPanel != null) statPanel.SetActive(index == StatPage);
+        if (starPanel != null) starPanel.SetActive(index == StarPage);
+        if (limitBreakPanel != null) limitBreakPanel.gameObject.SetActive(index == LimitBreakPage);
         // 현재 페이지 버튼을 비활성(선택 표시). 별도 하이라이트가 있으면 인스펙터에서 추가 가능.
-        if (statPageButton != null) statPageButton.interactable = index != 0;
-        if (starPageButton != null) starPageButton.interactable = index != 1;
+        if (statPageButton != null) statPageButton.interactable = index != StatPage;
+        if (starPageButton != null) starPageButton.interactable = index != StarPage;
+        if (limitBreakPageButton != null) limitBreakPageButton.interactable = index != LimitBreakPage;
     }
 
     // 보유 다이아만 바뀐 경우. 표시 값은 전부 스토어에서 다시 읽으므로 그대로 Refresh 를 태운다
@@ -316,9 +337,13 @@ public sealed class GrowthPopup : UIView {
         bool canStarUp = !maxed && p.Shards >= required && ownedDia >= diaRequired;
         if (upgradeButton != null) upgradeButton.interactable = canStarUp;
 
-        // 페이지 버튼 배지: 스탯 투자 가능 / 별 승급 가능(스프라이트는 SO 공용).
+        // 페이지 버튼 배지: 스탯 투자 가능 / 별 승급 가능 / 한계돌파 가능(스프라이트는 SO 공용).
         SetBadge(statBadge, canInvest);
         SetBadge(starBadge, canStarUp);
+        SetBadge(limitBreakBadge, LimitBreakRules.CanLimitBreak(p, _ctx.Store.LimitBreakTicket.Value));
+
+        // 한계돌파 페이지도 레벨/별레벨이 바뀌면(승급 직후 등) 조건 현황이 달라진다.
+        if (limitBreakPanel != null) limitBreakPanel.Refresh();
     }
 
     private static void SetBadge(BadgeView badge, bool on) {

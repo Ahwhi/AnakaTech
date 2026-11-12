@@ -61,16 +61,16 @@ public sealed class IapService : IIapService, IDisposable {
     // 먼저 온 결과가 나중 조회의 대기를 끝내 버려 어느 쪽도 제대로 끝나지 않는다.
     private readonly SemaphoreSlim _fetchGate = new(1, 1);
 
-    public async UniTask<bool> InitializeAsync(IReadOnlyList<string> productIds, CancellationToken ct = default) {
+    public async UniTask<bool> InitializeAsync(IReadOnlyList<IapProduct> products, CancellationToken ct = default) {
         if (!IsSupported) return false;
-        if (productIds == null || productIds.Count == 0) return false;
+        if (products == null || products.Count == 0) return false;
 
         // 이미 연결돼 있으면 연결은 건너뛰고 빠진 상품만 채운다. 접속 중에 상품이 늘어난 경우
         // (한정 판매가 열린 뒤 메인으로 다시 들어온 경우 등) 여기서 그대로 메워진다.
-        if (IsReady) return await EnsureProductsAsync(productIds, ct);
+        if (IsReady) return await EnsureProductsAsync(products, ct);
         if (_connecting) {
             await _connected.Task;
-            return IsReady && await EnsureProductsAsync(productIds, ct);
+            return IsReady && await EnsureProductsAsync(products, ct);
         }
 
         _connecting = true;
@@ -92,7 +92,7 @@ public sealed class IapService : IIapService, IDisposable {
 
             await _store.Connect().AsUniTask().Timeout(ConnectTimeout);
 
-            bool ok = await FetchMissingAsync(productIds, ct);
+            bool ok = await FetchMissingAsync(products, ct);
 
             IsReady = ok;
             _connected.TrySetResult(ok);
@@ -110,9 +110,9 @@ public sealed class IapService : IIapService, IDisposable {
         }
     }
 
-    public async UniTask<bool> EnsureProductsAsync(IReadOnlyList<string> productIds, CancellationToken ct = default) {
+    public async UniTask<bool> EnsureProductsAsync(IReadOnlyList<IapProduct> products, CancellationToken ct = default) {
         if (!IsSupported) return false;
-        if (productIds == null || productIds.Count == 0) return false;
+        if (products == null || products.Count == 0) return false;
 
         // 연결이 진행 중이면 끝나기를 기다린다. 그 연결이 필요한 상품을 이미 등록했을 수도 있으므로
         // 판단은 그 뒤에 한다(같은 상품을 두 번 조회하지 않는다).
@@ -120,7 +120,7 @@ public sealed class IapService : IIapService, IDisposable {
         if (!IsReady) return false;
 
         try {
-            return await FetchMissingAsync(productIds, ct);
+            return await FetchMissingAsync(products, ct);
         } catch (OperationCanceledException) {
             return false;
         } catch (Exception e) {
@@ -133,14 +133,15 @@ public sealed class IapService : IIapService, IDisposable {
     /// 아직 등록되지 않은 상품만 스토어에 조회해 둔다. 등록에 성공한 것만 기록하므로,
     /// 스토어에 없는 상품(콘솔 등록 누락 등)은 다음에 다시 시도된다.
     /// </summary>
-    private async UniTask<bool> FetchMissingAsync(IReadOnlyList<string> productIds, CancellationToken ct) {
+    private async UniTask<bool> FetchMissingAsync(IReadOnlyList<IapProduct> products, CancellationToken ct) {
         await _fetchGate.WaitAsync(ct);
         try {
-            // 현금 상품은 전부 소모성이다(30일 패키지도 30일이 끝나면 다시 산다).
-            var definitions = new List<ProductDefinition>(productIds.Count);
-            foreach (string id in productIds)
-                if (!string.IsNullOrEmpty(id) && !_fetchedProductIds.Contains(id))
-                    definitions.Add(new ProductDefinition(id, ProductType.Consumable));
+            // 현금 상품은 대부분 소모성이다(30일 패키지도 30일이 끝나면 다시 산다).
+            // 평생 패스처럼 계정에 영구히 남는 상품만 서버 카탈로그가 비소모성으로 표시해 내려 준다.
+            var definitions = new List<ProductDefinition>(products.Count);
+            foreach (var p in products)
+                if (!string.IsNullOrEmpty(p.Id) && !_fetchedProductIds.Contains(p.Id))
+                    definitions.Add(new ProductDefinition(p.Id, p.NonConsumable ? ProductType.NonConsumable : ProductType.Consumable));
 
             if (definitions.Count == 0) return true;   // 이미 다 등록돼 있다
 
@@ -206,6 +207,29 @@ public sealed class IapService : IIapService, IDisposable {
             // 확정에 실패해도 지급은 이미 끝났다. 그 결제는 다음 실행에서 다시 올라오지만,
             // 서버가 같은 거래 id 를 멱등키로 막으므로 두 번 지급되지 않는다.
             Debug.LogWarning($"[IAP] 결제 확정 실패({purchase.ProductId}): {e.Message}");
+        }
+    }
+
+    public async UniTask<bool> RestoreAsync(CancellationToken ct = default) {
+        if (!IsSupported) return false;
+        if (_connecting) await _connected.Task;
+        if (!IsReady || _store == null) return false;
+
+        var done = new UniTaskCompletionSource<bool>();
+        try {
+            // 복원된 거래 중 아직 확정하지 않은 것은 OnPurchasePending 으로 다시 와 평소 복구 흐름을 탄다.
+            _store.RestoreTransactions((ok, error) => {
+                if (!ok) Debug.LogWarning($"[IAP] 구매 복원 실패: {error}");
+                done.TrySetResult(ok);
+            });
+            bool restored = await done.Task.AttachExternalCancellation(ct).Timeout(ConnectTimeout);
+
+            // 안드로이드는 복원 대신 보유 거래를 다시 읽는 것이 같은 효과다. 두 스토어 모두 한 번 더 물어 둔다.
+            if (restored) _store.FetchPurchases();
+            return restored;
+        } catch (TimeoutException) {
+            Debug.LogWarning("[IAP] 구매 복원 응답이 오지 않았습니다.");
+            return false;
         }
     }
 

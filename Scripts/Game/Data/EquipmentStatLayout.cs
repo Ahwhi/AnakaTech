@@ -86,6 +86,15 @@ public static class EquipmentStatLayout {
     /// </summary>
     public static int OptionCount(Grade grade) => Mathf.Clamp((int)grade, 0, MaxOptionSlots);
 
+    /// <summary>부위 표시명.</summary>
+    public static string SlotName(EquipmentSlot slot) => slot switch {
+        EquipmentSlot.Weapon => "무기",
+        EquipmentSlot.Armor => "방어구",
+        EquipmentSlot.Shoes => "신발",
+        EquipmentSlot.Accessory => "악세서리",
+        _ => "장비"
+    };
+
     /// <summary>스탯 표시명(주스탯). StatFormat/GrowthRules 와 같은 라벨을 쓴다.</summary>
     public static string MainLabel(EquipmentSlot slot) => GrowthRules.StatName(Main(slot).Stat);
 

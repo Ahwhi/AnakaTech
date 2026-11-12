@@ -114,7 +114,9 @@ public sealed class PvpBattleSceneManager : MonoBehaviour {
             }
         }
 
-        _director.Begin(PvpBattleSession.OpponentDeck);
+        // 쟁탈전이면 매칭 응답에 실려 온 양 팀 룬을 넘긴다(다른 컨텐츠는 null = 보정 없음).
+        _director.Begin(PvpBattleSession.OpponentDeck, PvpBattleRules.TuningOf(PvpBattleSession.Origin),
+                        PvpBattleSession.MyRunes, PvpBattleSession.OpponentRunes);
         _hud.RefreshForNewBattle();
     }
 

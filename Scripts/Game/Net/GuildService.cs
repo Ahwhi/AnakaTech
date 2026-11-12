@@ -220,6 +220,7 @@ public sealed class GuildService : IGuildService {
             NextEntryCost = res.nextEntryCost,
             MyDamageToday = res.myDamageToday,
             ResetUnix = res.resetUnix,
+            OccupantNickname = res.occupantNickname ?? "",
         };
         foreach (var c in res.contributions) {
             dto.Contributions.Add(new GuildRaidContributionDto {
@@ -244,8 +245,13 @@ public sealed class GuildService : IGuildService {
             IsSuccess = res.isSuccess, FailReason = res.failReason,
             BossLevel = res.bossLevel, BossHp = res.bossHp, BossMaxHp = res.bossMaxHp,
             NewDiamond = res.newDiamond,
+            OccupantNickname = res.occupantNickname ?? "",
         };
     }
+
+    // 단방향 보고라 기다릴 응답이 없다(의뢰 도전 종료 보고와 같은 방식).
+    public void ReportRaidFinished() =>
+        _net.Send(new C_BattleFinished { content = BattleFinishContent.GuildRaid }.Write());
 
     public async UniTask<GuildRaidDamageDto> ReportRaidDamageAsync(long damage, CancellationToken ct = default) {
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -259,6 +265,7 @@ public sealed class GuildService : IGuildService {
             IsSuccess = res.isSuccess, FailReason = res.failReason,
             BossLevel = res.bossLevel, BossHp = res.bossHp, BossMaxHp = res.bossMaxHp,
             BossDefeated = res.bossDefeated,
+            DefeatedCount = res.defeatedCount,
         };
         foreach (var g in res.grantedRewards)
             dto.Granted.Add(RewardItem.FromGrant(g.kind, g.value, g.qty, g.currencyKey));
@@ -367,54 +374,7 @@ public sealed class GuildService : IGuildService {
 
         var wait = _net.WaitPacketAsync<S_UserDeck>(cts.Token);
         _net.Send(new C_UserDeck { accountId = accountId }.Write());
-        var res = await wait;
-
-        var dto = new UserDeckDto {
-            AccountId = res.accountId, Nickname = res.nickname,
-            RepresentativeCharId = res.representativeCharId, ProfileFrameId = res.profileFrameId,
-            RepresentativeCostumeId = res.representativeCostumeId,
-        };
-        foreach (var m in res.members) {
-            dto.Members.Add(new UserDeckMemberDto {
-                CharDataId = m.charDataId, Level = m.level, StarLevel = m.starLevel,
-                InvAttack = m.invAttack, InvDefense = m.invDefense, InvHealth = m.invHealth,
-                InvAttackSpeed = m.invAttackSpeed, InvMoveSpeed = m.invMoveSpeed, InvSkillAccel = m.invSkillAccel,
-                CostumeId = m.costumeId,
-            });
-        }
-
-        // 장비는 내 인벤토리와 같은 형태로 옮긴다(장착 캐릭터는 EquippedCharDataId 로 구분한다).
-        foreach (var e in res.equips) {
-            var inst = new EquipmentInstanceDto {
-                EquipDataId = e.equipDataId, StarLevel = e.starLevel, Level = e.level,
-                MainPoints = e.mainPoints, EquippedCharDataId = e.charDataId,
-            };
-            inst.OptionPoints[0] = e.opt1Points;
-            inst.OptionPoints[1] = e.opt2Points;
-            inst.OptionPoints[2] = e.opt3Points;
-            inst.OptionPoints[3] = e.opt4Points;
-            dto.Equips.Add(inst);
-        }
-
-        // 각인은 슬롯 번호가 곧 배열 인덱스다. 서버는 빈 슬롯을 보내지 않으므로 배열을 먼저 만들고 채운다.
-        foreach (var s in res.engravingSlots) {
-            if (!EngravingRules.IsValidSlot(s.slotIndex)) continue;
-            if (!dto.EngravingSlots.TryGetValue(s.charDataId, out var slots)) {
-                slots = new int[EngravingRules.SlotCount];
-                dto.EngravingSlots[s.charDataId] = slots;
-            }
-            slots[s.slotIndex] = s.engravingId;
-        }
-
-        foreach (var l in res.engravingLevels) dto.EngravingLevels[l.engravingId] = l.level;
-        foreach (var n in res.hqNodes) dto.HqNodeLevels[n.nodeId] = n.level;
-        foreach (var v in res.investments) dto.InvestmentLevels[v.slotIndex] = v.level;
-        foreach (var t in res.trainings)
-            dto.Trainings[t.charDataId] = new TrainingResultDto {
-                CharDataId = t.charDataId, Effect = t.effect, ValueTenth = t.valueTenth,
-            };
-
-        return dto;
+        return UserDeckDto.From(await wait);
     }
 
     private static GuildActionResultDto ToResult(S_GuildActionResult res) => new() {

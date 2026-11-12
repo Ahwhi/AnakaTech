@@ -10,12 +10,15 @@ using static Enums;
 
 /// <summary>
 /// 장비 가챠 연출 팝업. 캐릭터 가챠(GachaPopup)와 동일하게 뽑은 장비 카드를 한 장씩 위에서 화면 가운데로
-/// 떨어뜨려 쌓는다. 연출이 끝나면 "탭하여 닫기" 프롬프트가 깜빡이고, 화면 아무 곳이나 탭하면 닫힌다(별도 닫기 버튼 없음).
+/// 떨어뜨려 쌓는다. 연출이 끝나면 "탭하여 닫기" 프롬프트가 깜빡이고, 화면 아무 곳이나 탭하면 닫힌다.
+/// SKIP 버튼은 연출 도중에도 바로 닫는다. 결과는 이미 지급된 상태라 연출을 끝까지 볼 이유가 없다.
 /// 뽑기 진행(1회/10회, 재화)은 GachaMenuPopup 이 담당하며, 이 팝업은 결과 연출만 한다.
 /// </summary>
 public sealed class EquipGachaPopup : UIView {
     [SerializeField] private RectTransform cardRoot;
     [SerializeField] private EquipGachaCardView cardPrefab;
+    [Tooltip("누르면 연출을 멈추고 바로 닫는다. 선택.")]
+    [SerializeField] private Button skipButton;
 
     [Header("End (연출 종료 후)")]
     [Tooltip("연출이 끝나면 깜빡이며 나타나는 '탭하여 닫기' 그룹(배경 + 텍스트를 담는 루트). " +
@@ -37,6 +40,7 @@ public sealed class EquipGachaPopup : UIView {
 
     private readonly List<GameObject> _cards = new();
     private CancellationToken _ct;
+    private CancellationTokenSource _playCts;   // 연출 1회분. 닫히면 남은 드롭을 멈춘다.
     private MainHudContext _hud;
     private bool _endUiReady;
     private Tween _blinkTween;
@@ -44,6 +48,13 @@ public sealed class EquipGachaPopup : UIView {
     protected override void Awake() {
         base.Awake();
         _ct = this.GetCancellationTokenOnDestroy();
+        if (skipButton != null) skipButton.onClick.AddListener(Skip);
+    }
+
+    // 남은 드롭(효과음/VFX 포함)을 즉시 멈추고 닫는다. 닫힘 페이드 중에 카드가 계속 떨어지지 않게 먼저 멈춘다.
+    private void Skip() {
+        StopPlay();
+        CloseAsync().Forget();
     }
 
     // 연출 도중에는 닫히지 않는다. 배경 탭(UIView.tapToCloseArea)도 뒤로가기도 같은 기준을 따른다.
@@ -52,11 +63,20 @@ public sealed class EquipGachaPopup : UIView {
     /// <summary>뽑은 장비 목록으로 연출을 시작한다. GachaMenuPopup 이 구매 결과를 받아 호출한다.</summary>
     public void Play(List<EquipRollDto> rolls, MainHudContext hud) {
         _hud = hud;
+        StopPlay();
+        _playCts = CancellationTokenSource.CreateLinkedTokenSource(_ct);
         ShowAsync().Forget();
-        AnimateAsync(rolls).Forget();
+        AnimateAsync(rolls, _playCts.Token).Forget();
     }
 
-    private async UniTaskVoid AnimateAsync(List<EquipRollDto> rolls) {
+    private void StopPlay() {
+        if (_playCts == null) return;
+        _playCts.Cancel();
+        _playCts.Dispose();
+        _playCts = null;
+    }
+
+    private async UniTaskVoid AnimateAsync(List<EquipRollDto> rolls, CancellationToken ct) {
         HideEndUI();
 
         if (cardPrefab == null || cardRoot == null || rolls == null) { ShowEndUI(); return; }
@@ -121,17 +141,18 @@ public sealed class EquipGachaPopup : UIView {
             var rt = rts[i];
             PlayCardVfx(landingScreens[i], grades[i]);   // 낙하 시작 순간, 착지할 자리에 등급별 VFX.
             PlayCardSfx(grades[i]);                      // 같은 순간 등급별 공개음(미배정 등급은 무음).
-            var seq = DOTween.Sequence().SetUpdate(true);
+            // 카드에 묶어 두어 SKIP 으로 카드가 먼저 파괴돼도 트윈이 남지 않게 한다.
+            var seq = DOTween.Sequence().SetUpdate(true).SetLink(rt.gameObject);
             seq.Append(rt.DOAnchorPos(targets[i], dropDuration).SetEase(Ease.OutBack));
             seq.Join(rt.DOScale(1f, dropDuration).SetEase(Ease.OutBack));
 
-            bool cancelled = await UniTask.Delay(TimeSpan.FromSeconds(staggerSeconds), cancellationToken: _ct)
+            bool cancelled = await UniTask.Delay(TimeSpan.FromSeconds(staggerSeconds), cancellationToken: ct)
                 .SuppressCancellationThrow();
             if (cancelled) return;
         }
 
         // 6) 마지막 카드 드롭이 끝나도록 잠시 대기(그리드를 너무 일찍 켜 드롭을 끊지 않도록).
-        bool endCancelled = await UniTask.Delay(TimeSpan.FromSeconds(dropDuration), cancellationToken: _ct)
+        bool endCancelled = await UniTask.Delay(TimeSpan.FromSeconds(dropDuration), cancellationToken: ct)
             .SuppressCancellationThrow();
         if (endCancelled) return;
 
@@ -202,6 +223,7 @@ public sealed class EquipGachaPopup : UIView {
     }
 
     protected override void OnClosed() {
+        StopPlay();
         KillBlink();
         ClearCards();
     }

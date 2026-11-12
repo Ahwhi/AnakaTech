@@ -2,11 +2,17 @@ using UnityEngine;
 
 /// <summary>
 /// 소모품 아이템의 사용 방식(서버 ItemKind 와 값이 일치해야 한다).
-/// 대상 캐릭터가 필요한지 여부를 UI 가 이 값으로 판단한다.
+/// 대상 캐릭터가 필요한지 여부를 UI 가 이 값으로 판단한다. SO 가 값을 직렬화하므로 끝에만 추가할 것.
 /// </summary>
 public enum ItemKind {
     /// <summary>대상 캐릭터에게 경험치를 준다(현재 레벨의 필요 경험치에 비례).</summary>
-    ExpCoupon
+    ExpCoupon = 0,
+    /// <summary>대상 캐릭터의 누적 경험치를 전부 뽑아 경험치 캡슐로 바꾼다(1레벨, 투자 스탯 0 으로 초기화).</summary>
+    ExpExtract = 1,
+    /// <summary>추출한 경험치. 보유 개수가 곧 경험치 양이다.</summary>
+    ExpCapsule = 2,
+    /// <summary>성장 초기화. 승급 조각/다이아, 한계돌파권, 누적 경험치(캡슐)를 돌려받고 1성 1레벨로 되돌린다.</summary>
+    GrowthReset = 3
 }
 
 /// <summary>
@@ -18,6 +24,14 @@ public static class ItemKeys {
     public const int ExpCoupon20 = 1002;
     public const int ExpCoupon30 = 1003;
     public const int ExpCoupon50 = 1004;
+    public const int ExpCoupon100 = 1005;
+    public const int ExpExtractTicket = 2001;
+    public const int ExpCapsule = 2002;
+    public const int ExpCapsuleLarge = 2003;
+
+    /// <summary>경험치 캡슐(대) 1개의 경험치. 서버 ItemCatalog.LargeCapsuleExp 와 일치해야 한다(표시용 미러).</summary>
+    public const int LargeCapsuleExp = 100000;
+    public const int GrowthResetTicket = 3001;
 }
 
 /// <summary>
@@ -55,6 +69,23 @@ public sealed class ItemData : ScriptableObject {
     /// <summary>사용할 때 대상 캐릭터를 골라야 하는지(서버 ItemCatalog.RequiresTarget 과 같은 규칙).</summary>
     public bool RequiresTarget => kind switch {
         ItemKind.ExpCoupon => true,
+        ItemKind.ExpExtract => true,
+        ItemKind.ExpCapsule => true,
+        ItemKind.GrowthReset => true,
         _ => false
     };
+
+    /// <summary>한 번에 여러 개를 쓸 수 있는지(서버 ItemCatalog.AllowsMultiUse 와 같은 규칙). 되돌릴 수 없는 아이템은 하나씩만 쓴다.</summary>
+    public bool AllowsMultiUse => kind switch {
+        ItemKind.ExpExtract => false,
+        ItemKind.GrowthReset => false,
+        _ => true
+    };
+
+    /// <summary>보유 개수가 곧 수량(경험치 양 등)인 아이템인지. 이런 아이템은 1개 단위가 아니라 보유량 전체를 한 번에 쓴다.</summary>
+    public bool CountIsAmount => kind == ItemKind.ExpCapsule;
+
+    /// <summary>쓰기 전에 결과(서버 미리보기)를 보여 주고 확인을 받아야 하는지. 되돌릴 수 없거나 한 번에 많이 쓰이는 아이템이다.</summary>
+    public bool RequiresConfirm =>
+        kind == ItemKind.ExpExtract || kind == ItemKind.ExpCapsule || kind == ItemKind.GrowthReset;
 }

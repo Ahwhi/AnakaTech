@@ -16,6 +16,8 @@ public sealed class GradeText : MonoBehaviour {
     [SerializeField] private bool applyColor = true;
     [Tooltip("색 소스(SO). 비우면 앱이 등록한 기본 카탈로그를 사용.")]
     [SerializeField] private GradeColorCatalog catalog;
+    [Tooltip("한계돌파 표시(+) 글자 크기. 등급 글자 대비 비율(1 = 같은 크기).")]
+    [SerializeField, Range(0.3f, 1f)] private float limitBreakSuffixScale = 0.7f;
 
     // 앱 시작 시(LifetimeScope) 1회 등록되는 기본 카탈로그. 개별 프리팹에 SO 를 매번 할당하지 않아도 되게 한다.
     private static GradeColorCatalog _default;
@@ -37,11 +39,21 @@ public sealed class GradeText : MonoBehaviour {
 
     private TMP_Text Label => label != null ? label : (label = GetComponent<TMP_Text>());
 
-    /// <summary>등급 문자열을 표시하고, applyColor 시 등급 색을 적용한다.</summary>
-    public void SetGrade(Grade grade) {
+    /// <summary>한계돌파한 캐릭터의 등급 뒤에 붙는 표시(예: SSR+).</summary>
+    public const string LimitBreakSuffix = "+";
+
+    /// <summary>
+    /// 등급 문자열을 표시하고, applyColor 시 등급 색을 적용한다.
+    /// limitBroken 이면 등급 뒤에 LimitBreakSuffix 를 붙인다(색은 같은 등급색). 캐릭터의 한계돌파 상태를 아는
+    /// 화면만 넘기고, 장비/코스튬/가챠처럼 상관없는 곳은 생략하면 기존과 똑같이 나온다.
+    /// </summary>
+    public void SetGrade(Grade grade, bool limitBroken = false) {
         var t = Label;
         if (t == null) return;
-        t.text = grade.ToString();
+        // + 만 작게 그린다(TMP 리치 텍스트 size 태그. TMP 는 Rich Text 가 기본으로 켜져 있다).
+        t.text = limitBroken
+            ? $"{grade}<size={Mathf.RoundToInt(limitBreakSuffixScale * 100f)}%>{LimitBreakSuffix}</size>"
+            : grade.ToString();
         if (!applyColor) return;
 
         var cat = catalog != null ? catalog : _default;

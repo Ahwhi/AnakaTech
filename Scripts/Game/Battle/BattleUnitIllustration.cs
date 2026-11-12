@@ -31,8 +31,10 @@ public sealed class BattleUnitIllustration : MonoBehaviour {
     [Tooltip("focus 점이 창 안에서 놓일 위치(정규화). (0.5,0.5)=중앙, y를 올리면 얼굴이 위로.")]
     [SerializeField] private Vector2 focusAnchor = new Vector2(0.5f, 0.5f);
 
-    // 마스크 격리 시 유닛 1개가 점유하는 정렬순서 폭(Shadow/Illust/Frame 3칸 + 여유).
-    private const int MaskOrderBand = 10;
+    // 마스크 격리 시 유닛 1개가 점유하는 정렬순서 폭(Shadow/Illust/Frame 3칸 + 꾸밈/팀 표시 등 여유).
+    // 아웃핏 프리팹은 꾸밈 스프라이트가 늘어날 수 있어 넉넉히 둔다. 넘치면 다음 유닛 대역을 침범하므로 경고한다.
+    // (가장 큰 슬롯 x 이 값이 정렬순서 상한 32767 을 넘지 않아야 한다.)
+    private const int MaskOrderBand = 20;
 
     // 피격 깜빡임 대상(Illust/Frame/Shadow)과 각자의 원래 알파값 캐시.
     private readonly SpriteRenderer[] _blinkTargets = new SpriteRenderer[3];
@@ -87,9 +89,14 @@ public sealed class BattleUnitIllustration : MonoBehaviour {
     /// 연결되지 않았지만 마스크에 반응하는 자식 렌더러(예: 미연결 프레임)도 같은 대역으로 끌어와,
     /// 인접 유닛의 마스크에 잡혀 새어 나오는 것(스프라이트 겹침)을 원천 차단한다.
     /// </summary>
-    public void IsolateMask(int slot) {
+    /// <param name="scope">
+    /// 격리할 범위(보통 유닛 루트). 비우면 이 컴포넌트 아래만 본다. 유닛 루트를 넘기면 일러스트 밖에 둔
+    /// 꾸밈/팀 표시 렌더러와 마스크까지 같은 대역으로 묶인다.
+    /// </param>
+    public void IsolateMask(int slot, Transform scope = null) {
         int baseOrder = slot * MaskOrderBand;
         int layer = illustRenderer != null ? illustRenderer.sortingLayerID : 0;
+        var root = scope != null ? scope : transform;
 
         // 뒤 -> 앞 순서(그림자 -> 일러스트 -> 프레임)를 유지하며 대역의 앞쪽으로 순차 배치.
         int next = baseOrder;
@@ -99,7 +106,7 @@ public sealed class BattleUnitIllustration : MonoBehaviour {
 
         // 위에서 처리하지 못한(프리팹 미연결) 마스크 반응 렌더러도 같은 대역 안으로 격리한다.
         // 이것이 없으면 미연결 렌더러가 프리팹 기본 정렬순서에 남아 다른 유닛의 마스크에 걸린다.
-        var all = GetComponentsInChildren<SpriteRenderer>(true);
+        var all = root.GetComponentsInChildren<SpriteRenderer>(true);
         for (int i = 0; i < all.Length; i++) {
             var r = all[i];
             if (r == null || r == shadowRenderer || r == illustRenderer || r == frameRenderer) continue;
@@ -109,13 +116,24 @@ public sealed class BattleUnitIllustration : MonoBehaviour {
         }
 
         int topOrder = Mathf.Max(baseOrder, next - 1);   // 이 유닛이 실제로 점유한 마지막 정렬순서
-        if (spriteMask != null) {
-            spriteMask.isCustomRangeActive = true;
-            spriteMask.frontSortingLayerID = layer;
-            spriteMask.backSortingLayerID  = layer;
-            spriteMask.frontSortingOrder   = topOrder;
-            spriteMask.backSortingOrder    = baseOrder;
-        }
+        if (topOrder >= baseOrder + MaskOrderBand)
+            Debug.LogWarning($"[BattleUnitIllustration] {root.name}: 마스크 반응 렌더러가 {topOrder - baseOrder + 1}개라 " +
+                             $"대역({MaskOrderBand})을 넘었습니다. 옆 유닛 일러스트와 섞일 수 있습니다.", this);
+
+        // 주 마스크뿐 아니라 프리팹 안의 모든 마스크(꾸밈/팀 표시용 마스크 등)를 이 유닛 대역으로 좁힌다.
+        // 범위를 좁히지 않은 마스크는 같은 정렬 레이어의 모든 유닛 일러스트를 잡아 그 모양대로 비춰 낸다.
+        var masks = root.GetComponentsInChildren<SpriteMask>(true);
+        for (int i = 0; i < masks.Length; i++) Confine(masks[i], layer, baseOrder, topOrder);
+        if (spriteMask != null) Confine(spriteMask, layer, baseOrder, topOrder);
+    }
+
+    private static void Confine(SpriteMask mask, int layer, int back, int front) {
+        if (mask == null) return;
+        mask.isCustomRangeActive = true;
+        mask.frontSortingLayerID = layer;
+        mask.backSortingLayerID  = layer;
+        mask.frontSortingOrder   = front;
+        mask.backSortingOrder    = back;
     }
 
     // 렌더러가 있으면 지정 정렬순서를 부여하고 다음 순서를 반환한다. 없으면 순서를 소비하지 않는다.

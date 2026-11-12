@@ -58,13 +58,13 @@ public sealed class CharacterDetailPopup : UIView {
         }
 
         var progress = ctx.Store.GetProgress(data.Id) ?? new CharacterProgress { CharDataId = data.Id };
-        var runtime = new CharacterRuntime(data, progress, ctx.Settings, ctx.Store.TotalBonusFor(data.Id, ctx.EquipDb));
+        var runtime = ctx.Store.RuntimeFor(data, progress, ctx.Settings, ctx.EquipDb);
 
         if (nameText != null) nameText.text = data.DisplayName;
         if (titleText != null) titleText.text = data.Title;
-        if (gradeText != null) gradeText.SetGrade(data.Grade);
+        if (gradeText != null) gradeText.SetGrade(data.Grade, progress.LimitBroken);
         if (levelText != null) levelText.text = progress.Level.ToString();
-        if (combatPowerText != null) combatPowerText.text = Mathf.RoundToInt(runtime.CombatPower).ToString("N0");
+        if (combatPowerText != null) combatPowerText.text = runtime.CombatPower.ToString("N0");
         if (weaponTypeText != null) weaponTypeText.text = GameEnumRules.WeaponDisplayName(data.WeaponType);
         if (weaponTypeImage != null) {
             var icon = weaponIconTable != null ? weaponIconTable.Get(data.WeaponType) : null;

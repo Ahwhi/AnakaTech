@@ -4,8 +4,13 @@ using VContainer.Unity;
 using static Enums;
 
 /// <summary>
-/// 게임 플레이 중(부트 완료 후) 서버 연결이 끊기면 안내 팝업을 띄우고 타이틀 화면으로 돌려보내는 전역 가드.
+/// 게임 플레이 중(부트 완료 후) 서버 연결이 끊기면 먼저 화면 그대로 조용히 다시 붙이고(ISessionRecovery),
+/// 그게 안 될 때만 안내 팝업을 띄우고 타이틀 화면으로 돌려보내는 전역 가드.
 /// 루트 컨테이너의 엔트리포인트(IStartable)로 등록되어 앱 내내 INetworkService.Disconnected 를 감시한다.
+///
+/// 대표적인 경우가 앱을 잠시 내려 두었다 돌아온 것이다. 그 사이 서버가 무응답 세션을 정리하므로 돌아오는 순간
+/// 끊김이 감지되는데, 이것을 오류로 보여 주지 않고 재연결한다. 업데이트/점검/토큰 만료/약관 개정처럼
+/// 화면이 필요한 경우는 복구가 실패로 돌려주고 기존처럼 타이틀이 처리한다.
 ///
 /// 끊김 감지는 두 경로로 들어온다: (1) 소켓 단절(서버 종료/정상 끊김) (2) 하트비트 타임아웃(NetworkManager 의 핑-퐁 워치독).
 /// 어느 쪽이든 Disconnected 이벤트로 수렴하므로 여기서는 한 곳만 본다.
@@ -22,16 +27,19 @@ public sealed class ConnectionGuard : IStartable, IDisposable {
     private readonly ISceneService _scene;
     private readonly ILogoutService _logout;
     private readonly UIPopupCatalog _popups;
+    private readonly ISessionRecovery _recovery;
 
-    private bool _handling;   // 중복 처리 가드
+    private bool _handling;   // 중복 처리 가드(복구 중 재시도가 일으키는 끊김도 여기서 걸러진다)
 
-    public ConnectionGuard(INetworkService net, IBootStatus boot, IUIService ui, ISceneService scene, ILogoutService logout, UIPopupCatalog popups) {
+    public ConnectionGuard(INetworkService net, IBootStatus boot, IUIService ui, ISceneService scene, ILogoutService logout, UIPopupCatalog popups,
+                           ISessionRecovery recovery) {
         _net = net;
         _boot = boot;
         _ui = ui;
         _scene = scene;
         _logout = logout;
         _popups = popups;
+        _recovery = recovery;
     }
 
     void IStartable.Start() => _net.Disconnected += OnDisconnected;
@@ -48,6 +56,14 @@ public sealed class ConnectionGuard : IStartable, IDisposable {
 
     private async UniTaskVoid HandleAsync() {
         try {
+            // 재연결 중에는 입력을 막는다. 끊긴 연결로 요청을 보내면 응답 없이 시간 초과만 나기 때문이다.
+            // 떠 있던 팝업은 그대로 둔다. 붙으면 하던 화면에서 그대로 이어 간다.
+            bool recovered;
+            using (_ui.ShowLoading("서버에 다시 연결하는 중")) {
+                recovered = await _recovery.TryRecoverAsync();
+            }
+            if (recovered) return;
+
             // 끊김 시 떠 있던 이벤트/출석/공지 팝업들을 먼저 정리한다(팝업 레이어는 씬 전환에도 살아남기 때문).
             // 전투 씬 복귀용 팝업 예약도 함께 버린다(재접속 후 메인 진입에서 엉뚱하게 열리지 않도록).
             MainPopupReturn.Clear();

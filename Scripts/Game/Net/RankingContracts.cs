@@ -9,7 +9,9 @@ public enum RankingCategory {
     UserCombatPower = 0,   // 유저 랭킹(덱 전투력)
     GuildCombatPower = 1,  // 길드 랭킹(길드 전투력)
     Achievement = 2,       // 업적 랭킹(업적 총점)
-    ArenaScore = 3         // 쟁탈전 랭킹(시즌 점수). 월말에 점수가 초기화되면 순위표도 함께 비워진다.
+    ArenaScore = 3,        // 쟁탈전 랭킹(시즌 점수). 월말에 점수가 초기화되면 순위표도 함께 비워진다.
+    RepresentativePower = 4, // 대표 소녀 랭킹(계정당 대표 소녀 1명의 전투력)
+    DoomScore = 5          // 멸망전 랭킹(역대 최고 점수. 같은 점수면 먼저 달성한 쪽이 위)
 }
 
 /// <summary>
@@ -33,6 +35,8 @@ public sealed class RankingEntryDto {
     public int RepresentativeCharId;
     /// <summary>대표 캐릭터가 장착한 코스튬(0=기본 일러스트). 남의 코스튬은 서버만 알고 있어 함께 내려온다.</summary>
     public int RepresentativeCostumeId;
+    /// <summary>보조 수치. 길드 랭킹 = 길드원 수. 그 외 0.</summary>
+    public int SubValue;
 }
 
 /// <summary>순위표 1개(상위 목록 + 내 순위).</summary>
@@ -43,6 +47,11 @@ public sealed class RankingBoardDto {
     /// <summary>내(또는 내 길드) 순위. 0 이면 순위권 밖이다.</summary>
     public int MyRank;
     public long MyScore;
+    /// <summary>
+    /// 내(또는 내 길드) 줄. 순위권 밖이어도 지금 값으로 채워지며 Rank/Score 는 MyRank/MyScore 와 같다.
+    /// 대상이 없으면(길드 랭킹인데 무소속) null.
+    /// </summary>
+    public RankingEntryDto Mine;
     public List<RankingEntryDto> Entries = new();
 
     public bool HasMyRank => MyRank > 0;

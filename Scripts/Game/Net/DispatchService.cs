@@ -73,7 +73,7 @@ public sealed class DispatchService : IDispatchService, IDisposable {
                 SlotIndex = s.slotIndex, ConditionId = s.conditionId,
                 StartUnix = s.startUnix, EndUnix = s.endUnix,
             };
-            ParseCsv(s.membersCsv, slot.Members);
+            IdCsv.Parse(s.membersCsv, slot.Members);
             dto.Slots.Add(slot);
         }
         foreach (var c in res.conditions)
@@ -101,7 +101,7 @@ public sealed class DispatchService : IDispatchService, IDisposable {
 
         var wait = _net.WaitPacketAsync<S_DispatchActionResult>(cts.Token);
         _net.Send(new C_DispatchAction {
-            action = (int)action, slotIndex = slotIndex, membersCsv = ToCsv(members)
+            action = (int)action, slotIndex = slotIndex, membersCsv = IdCsv.Format(members)
         }.Write());
         var res = await wait;
 
@@ -116,7 +116,7 @@ public sealed class DispatchService : IDispatchService, IDisposable {
             RefreshCharges = res.refreshCharges,
             NewGold = res.newGold,
         };
-        ParseCsv(res.membersCsv, dto.Members);
+        IdCsv.Parse(res.membersCsv, dto.Members);
         foreach (var g in res.grantedRewards)
             dto.Granted.Add(RewardItem.FromGrant(g.kind, g.value, g.qty, g.currencyKey));
         return dto;
@@ -171,26 +171,6 @@ public sealed class DispatchService : IDispatchService, IDisposable {
             // 자기 루프가 만든 토큰만 정리한다(그 사이에 새 루프가 시작됐으면 그쪽 것을 건드리지 않는다).
             if (_watchCts == cts) _watchCts = null;
             cts.Dispose();
-        }
-    }
-
-    // 편성은 CSV 한 줄로 오간다(패킷에 리스트를 중첩하지 않기 위한 규약. 덱 프리셋과 같은 방식).
-    private static string ToCsv(IReadOnlyList<int> ids) {
-        if (ids == null || ids.Count == 0) return "";
-        var sb = new System.Text.StringBuilder();
-        for (int i = 0; i < ids.Count; i++) {
-            if (ids[i] == 0) continue;
-            if (sb.Length > 0) sb.Append(',');
-            sb.Append(ids[i]);
-        }
-        return sb.ToString();
-    }
-
-    private static void ParseCsv(string csv, List<int> into) {
-        into.Clear();
-        if (string.IsNullOrEmpty(csv)) return;
-        foreach (var part in csv.Split(',')) {
-            if (int.TryParse(part.Trim(), out int v) && v != 0) into.Add(v);
         }
     }
 

@@ -24,8 +24,14 @@ public sealed class CommissionPausePopup : UIView {
         if (exitButton != null) exitButton.onClick.AddListener(() => Resolve(Result.Exit));
     }
 
-    // base.ShowAsync()(UniTask 반환)를 의도적으로 숨겨 선택 결과(Result)를 await 로 돌려준다(하이딩, override 아님).
-    public new async UniTask<Result> ShowAsync() {
+    // 선택 결과(Result)를 await 로 돌려주는 열기. base.ShowAsync()(UniTask 반환)와 매개변수가 달라 숨김이 아니라 오버로드다.
+    // popup.ShowAsync() 처럼 인자 없이 불러도 C# 은 파생 클래스에 맞는 메서드가 있으면 그것을 고르므로 이 메서드가 불린다.
+    /// <param name="allowRetry">
+    /// 끄면 재도전 버튼을 숨긴다. 입장 횟수/보고가 걸린 컨텐츠(멸망전, 무한 타워, 전선, 영웅전)는 도중 재시작을 허용하지 않는다.
+    /// 팝업은 재사용되므로 열 때마다 다시 정한다.
+    /// </param>
+    public async UniTask<Result> ShowAsync(bool allowRetry = true) {
+        if (retryButton != null) retryButton.gameObject.SetActive(allowRetry);
         _result = new UniTaskCompletionSource<Result>();
         await base.ShowAsync();
         return await _result.Task;

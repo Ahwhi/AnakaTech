@@ -19,6 +19,8 @@ public class ShopItemCard : MonoBehaviour {
     [SerializeField] private GameObject soldOutOverlay;
     [Tooltip("판매기간 아님/선행단계 미구매 등 잠금 시 노출할 오버레이. 선택. 없으면 soldOutOverlay 를 대체 사용.")]
     [SerializeField] private GameObject lockedOverlay;
+    [Tooltip("선택. 잠금 사유 문구(lockedOverlay 자식 권장). 길드 레벨 상품은 '길드 레벨 n이상', 그 외 잠금은 '잠금'.")]
+    [SerializeField] private TMP_Text lockedText;
 
     [Header("Limit (한정 상품 전용, 선택)")]
     [Tooltip("한정 상품일 때만 노출할 잔여수량 루트(자식에 limitCountText 배치).")]
@@ -56,6 +58,7 @@ public class ShopItemCard : MonoBehaviour {
         if (soldOutOverlay != null) soldOutOverlay.SetActive(offer.SoldOut);
         if (lockedOverlay != null) lockedOverlay.SetActive(offer.Locked);
         else if (soldOutOverlay != null && offer.Locked) soldOutOverlay.SetActive(true);
+        if (lockedText != null) lockedText.text = offer.Locked ? ShopPurchaseHelper.LockedLabel(offer) : "";
 
         // 한정 상품(구매 제한 있음)만 잔여 구매 안내를 표시한다. 문구 규칙은 ShopLimitRules 가 정한다
         // (예: "일간 1/2", "월간 0/1", 구독형 진행 중이면 "만료 후 구매가능").

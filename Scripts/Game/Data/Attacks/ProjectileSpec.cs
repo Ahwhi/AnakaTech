@@ -26,6 +26,13 @@ public struct ProjectileSpec {
     /// </summary>
     public bool ArriveEvenIfTargetLost;
 
+    /// <summary>
+    /// 비행 중 대상이 죽거나 사라지면 발사체 현재 위치에서 가장 가까운 생존한 적으로 대상을 바꿔 계속 날아갈지(기본 false).
+    /// 켜면 날린 발사체가 허공에 버려지지 않는다. 바꿀 적이 하나도 없으면 기본 동작(마지막 위치로 가서 효과 없이 소멸)을 따른다.
+    /// OnHit 의 ProjectileHit.Target 은 바뀐 대상이다. ArriveEvenIfTargetLost 보다 우선한다(바꿀 대상이 있으면 그쪽으로 간다).
+    /// </summary>
+    public bool RetargetOnTargetLost;
+
     /// <summary>도달 시 적용할 효과. 데미지/연쇄/광역/디버프 등을 발사 주체가 정의한다.
     /// 대상이 비행 중 사망하면 호출되지 않는다(임팩트 VFX/사운드는 그대로 재생).
     /// 단 ArriveEvenIfTargetLost 를 켜면 대상이 죽어도 도달 지점에서 실행된다.</summary>

@@ -43,6 +43,9 @@ public sealed class GuildRaidPanel : MonoBehaviour {
     [SerializeField] private GameObject costFreeGroup;
     [Tooltip("다이아가 부족할 때 비용 문구에 적용할 색.")]
     [SerializeField] private Color insufficientColor = new Color(0.90f, 0.20f, 0.20f, 1f);
+    [Tooltip("입장 버튼 묶음(ButtonPanel > Panel)의 LayoutAutoRebuild. 무료/비용/도전 중 표시를 켜고 끄는 것은 " +
+             "문자열 변화가 아니라 자동 감지에 안 걸리므로 직접 알린다(전투 복귀 직후 현황이 늦게 도착할 때 정렬이 어긋났다).")]
+    [SerializeField] private LayoutAutoRebuild enterLayoutRebuild;
 
     [Header("Contribution")]
     [Tooltip("오늘 기여도 목록이 생성될 부모.")]
@@ -55,6 +58,12 @@ public sealed class GuildRaidPanel : MonoBehaviour {
 
     [Tooltip("보상 정보 팝업을 여는 버튼. 보스 레벨별로 자정에 받는 보상을 보여 준다.")]
     [SerializeField] private Button rewardInfoButton;
+
+    [Header("Occupied (V1.13)")]
+    [Tooltip("선택. 다른 길드원이 도전 중일 때 켜는 묶음. 한 번에 한 명만 도전할 수 있다.")]
+    [SerializeField] private GameObject occupiedGroup;
+    [Tooltip("선택. 도전 중인 길드원 안내 문구(예: 'OO님이 도전 중').")]
+    [SerializeField] private TMP_Text occupiedText;
 
     private MainHudContext _ctx;
     private GuildPopup _owner;
@@ -154,10 +163,17 @@ public sealed class GuildRaidPanel : MonoBehaviour {
         // (서버도 같은 규칙으로 막지만, 누를 수 없는 버튼을 보여 주지 않는 편이 낫다).
         bool paid = _state.NextEntryCost > 0;
         bool affordable = !paid || _ctx.Store.Diamond.Value >= _state.NextEntryCost;
-        bool canEnter = _state.CanEnter && affordable && !_busy;
+        // 다른 길드원이 도전 중이면 끝날 때까지 들어갈 수 없다(주기 조회로 끝나는 즉시 풀린다).
+        bool occupied = _state.IsOccupied;
+        bool canEnter = _state.CanEnter && affordable && !occupied && !_busy;
         if (enterButton != null) enterButton.interactable = canEnter;
         if (enterButtonText != null)
-            enterButtonText.text = !_state.CanEnter ? "오늘 완료" : paid ? "추가 참여" : "참여";
+            enterButtonText.text = !_state.CanEnter ? "오늘 완료" : occupied ? "도전 중" : paid ? "추가 참여" : "참여";
+        if (occupiedGroup != null) occupiedGroup.SetActive(occupied);
+        if (occupiedText != null) {
+            occupiedText.gameObject.SetActive(occupied);
+            if (occupied) occupiedText.text = $"{_state.OccupantNickname}님이 도전 중";
+        }
 
         // 비용 표시는 유료로 들어갈 때만 낸다. 무료로 참여할 수 있는데 가격이 붙어 있으면 돈을 내는 것처럼 보인다.
         // 무료 표시는 그 반대 자리에 들어가며, 오늘 참여를 다 썼으면 둘 다 끈다.
@@ -175,6 +191,7 @@ public sealed class GuildRaidPanel : MonoBehaviour {
             CurrencyIcon.Apply(costIcon, _ctx.Currencies, CurrencyType.Diamond);
             costIcon.gameObject.SetActive(showCost);
         }
+        if (enterLayoutRebuild != null) enterLayoutRebuild.RebuildDeferred();
 
         // 무료 참여가 남았는지를 배지의 단일 소스(BadgeCenter)에 넘긴다.
         // 참여 버튼 배지 / 컨텐츠 탭 / 메인 길드 버튼이 모두 이 값 하나를 보므로 서로 어긋나지 않는다.
@@ -198,24 +215,30 @@ public sealed class GuildRaidPanel : MonoBehaviour {
         if (emptyContributionLabel != null) emptyContributionLabel.SetActive(_state.Contributions.Count == 0);
     }
 
-    // 보상 정보: 보스 레벨 1단계부터 최고 단계까지 자정에 받는 보상을 한 줄씩 보여 주고, 지금 도전 중인 레벨을 표시한다.
-    // 표를 만드는 것은 레이드 규칙(GuildRaidRules)이고 그리는 것은 공용 팝업이라, 이 자리는 둘을 이어 주기만 한다.
+    // 보상 정보: 지금 도전 중인 레벨부터 몇 단계 앞까지 자정에 받는 보상을 한 줄씩 보여 준다.
+    // 어느 구간을 보여 줄지 정하는 것은 레이드 규칙(GuildRaidRules)이고 그리는 것은 공용 팝업이라,
+    // 이 자리는 둘을 이어 주기만 한다.
     private async UniTaskVoid OpenRewardInfoAsync() {
         _ctx.Sound.PlaySfx(SfxKey.ButtonClick);
 
         var reference = _ctx.Popups.RewardInfoPopup;
         if (reference == null || !reference.RuntimeKeyIsValid()) { _ctx.Ui.ShowToast("준비 중입니다."); return; }
 
-        // 아직 현황을 못 받았으면 현재 레벨 표시만 빠진다(표 자체는 상태와 무관하게 만들 수 있다).
+        // 아직 현황을 못 받았으면 현재 레벨 표시만 빠지고, 표는 1레벨부터 시작한다.
         int currentLevel = _state != null ? _state.BossLevel : 0;
-        var rows = new List<RewardInfoPopup.Row>(GuildRaidRules.MaxBossLevel);
-        for (int lv = 1; lv <= GuildRaidRules.MaxBossLevel; lv++)
+        int firstLevel = GuildRaidRules.RewardPreviewFirstLevel(currentLevel);
+        int lastLevel = GuildRaidRules.RewardPreviewLastLevel(currentLevel);
+
+        var rows = new List<RewardInfoPopup.Row>(lastLevel - firstLevel + 1);
+        for (int lv = firstLevel; lv <= lastLevel; lv++)
             rows.Add(new RewardInfoPopup.Row($"Lv.{lv}", GuildRaidRules.DailyRewards(lv), lv == currentLevel));
 
         try {
             var popup = await _ctx.Ui.ShowPopupAsync<RewardInfoPopup>(reference, _ct);
             popup.Show(_ctx, "레이드 보상",
-                       "매일 자정에 그날 도달한 보스 레벨의 보상을 길드원 전원이 우편으로 받습니다.", rows);
+                       "매일 자정에 그날 도달한 보스 레벨의 보상을 길드원 전원이 우편으로 받습니다.\n" +
+                       $"보스 레벨은 {GuildRaidRules.MaxBossLevel}까지 오르며, 보상도 레벨에 비례해 늘어납니다.\n" +
+                       $"{GuildRaidRules.RewardGrowthCapLevel}레벨 이후로는 길드 포인트만 늘어납니다.", rows);
         } catch (OperationCanceledException) {
         } catch (Exception e) {
             Debug.LogException(e);
@@ -226,6 +249,7 @@ public sealed class GuildRaidPanel : MonoBehaviour {
     private async UniTaskVoid EnterAsync() {
         if (_busy || _state == null || !_state.CanEnter) return;
         _ctx.Sound.PlaySfx(SfxKey.ButtonClick);
+        if (_state.IsOccupied) { _ctx.Ui.ShowToast(GuildRaidRules.OccupiedMessage(_state.OccupantNickname)); return; }
 
         if (_state.NextEntryCost > 0) {
             bool ok = await _owner.ConfirmAsync("레이드 추가 참여",
@@ -236,7 +260,14 @@ public sealed class GuildRaidPanel : MonoBehaviour {
         _busy = true;
         try {
             var res = await _ctx.Guild.EnterRaidAsync(_ct);
-            if (!res.IsSuccess) { _ctx.Ui.ShowToast(RaidFailMessage(res.FailReason)); return; }
+            if (!res.IsSuccess) {
+                _ctx.Ui.ShowToast(res.FailReason == GuildRaidFail.Occupied
+                    ? GuildRaidRules.OccupiedMessage(res.OccupantNickname)
+                    : RaidFailMessage(res.FailReason));
+                // 확인 팝업을 띄운 사이에 다른 길드원이 먼저 들어간 경우 등, 화면이 서버 상태와 어긋났으므로 다시 받는다.
+                ReloadAsync().Forget();
+                return;
+            }
 
             if (res.NewDiamond > 0) _ctx.Store.Diamond.Value = res.NewDiamond;
 
@@ -265,8 +296,8 @@ public sealed class GuildRaidPanel : MonoBehaviour {
 
     // 레이드 전용 실패 사유는 길드 공통 코드 뒤 대역을 쓴다.
     private static string RaidFailMessage(int failReason) => failReason switch {
-        30 => "오늘 참여 횟수를 모두 사용했습니다.",
-        31 => "최고 레벨 보스까지 토벌했습니다.",
+        GuildRaidFail.NoEntriesLeft => "오늘 참여 횟수를 모두 사용했습니다.",
+        GuildRaidFail.MaxLevel => "최고 레벨 보스까지 토벌했습니다.",
         _ => GuildRules.FailMessage(failReason)
     };
 }

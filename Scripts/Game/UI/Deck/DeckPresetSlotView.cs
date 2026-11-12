@@ -68,7 +68,7 @@ public sealed class DeckPresetSlotView : MonoBehaviour {
     // 대표를 첫 칸에 오도록 정렬해 보여준다(전투 캐릭터 패널과 같은 규칙이라 눈에 익다).
     private void BindMembers(MainHudContext ctx, DeckPresetDto preset) {
         var ordered = OrderedMembers(preset);
-        float totalPower = 0f;
+        double totalPower = 0d;   // 21억을 넘는 합계도 깨지지 않게 double 로 더한다
 
         if (memberIllustrations != null) {
             for (int i = 0; i < memberIllustrations.Length; i++) {
@@ -90,13 +90,12 @@ public sealed class DeckPresetSlotView : MonoBehaviour {
             var data = ctx.CharDb.Get(ordered[i]);
             var progress = ctx.Store.GetProgress(ordered[i]);
             if (data == null || progress == null) continue;
-            totalPower += new CharacterRuntime(data, progress, ctx.Settings,
-                                               ctx.Store.TotalBonusFor(ordered[i], ctx.EquipDb)).CombatPower;
+            totalPower += ctx.Store.RuntimeFor(data, progress, ctx.Settings, ctx.EquipDb).CombatPower;
         }
 
         if (combatPowerText != null) {
             combatPowerText.gameObject.SetActive(!IsEmpty);
-            if (!IsEmpty) combatPowerText.text = Mathf.RoundToInt(totalPower).ToString("N0");
+            if (!IsEmpty) combatPowerText.text = totalPower.ToString("N0");
         }
     }
 

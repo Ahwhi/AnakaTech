@@ -12,8 +12,9 @@ using static Enums;
 /// 메인 화면의 채팅 한 줄. 가장 최근 대화 하나를 "닉네임: 내용" 으로 짧게 보여 주고, 누르면 채팅 패널을 연다.
 ///
 /// 귓속말은 이 줄에 흘리지 않는다. 메인 화면은 늘 떠 있는 자리라 사적인 대화가 계속 노출되고,
-/// 옆 사람에게 보이거나 화면을 찍었을 때 그대로 남는다. 놓치는 것도 아니다.
-/// 안 읽은 귓속말은 채팅 패널의 상대 목록이 개수로 알려 준다(ChatService.MarkWhisperRead).
+/// 옆 사람에게 보이거나 화면을 찍었을 때 그대로 남는다.
+/// 대신 안 읽은 귓속말이 있으면 이 줄의 배지(whisperBadge)를 켜서, 다른 채팅에 묻혀 온 줄 모르는 일이 없게 한다.
+/// 내용은 보여 주지 않고 "왔다"는 사실만 알린다(ChatService.UnreadWhisperCount).
 ///
 /// 길드 대화는 그대로 흐른다. 여러 사람이 함께 보는 말이라 이 자리에 있을 이유가 있으며,
 /// 어느 채널인지 헷갈리지 않도록 채널마다 색을 달리한다.
@@ -38,6 +39,8 @@ public sealed class ChatLineView : HudInjectedBehaviour {
     [SerializeField] private Color guildColor = new Color(0.45f, 0.9f, 0.55f);
     [Tooltip("이 줄을 눌렀을 때 열 채팅 패널 프리팹(ChatPopup).")]
     [SerializeField] private AssetReferenceGameObject chatPopup;
+    [Tooltip("안 읽은 귓속말이 있을 때 켜는 배지. Source=Manual 로 둔다. 비우면 표시 안 함.")]
+    [SerializeField] private BadgeView whisperBadge;
 
     private CompositeDisposable _subs;
 
@@ -57,6 +60,10 @@ public sealed class ChatLineView : HudInjectedBehaviour {
         // 걸러진 줄(귓속말)이 오면 갱신하지 않고 직전 줄을 그대로 둔다. 빈 줄로 되돌리면
         // 귓속말이 오갈 때마다 멀쩡한 대화가 사라져 오히려 눈에 띈다.
         Ctx.Chat.Latest.Where(CanShow).Subscribe(Apply).AddTo(_subs);
+
+        // 안 읽은 귓속말 배지. 채팅창에서 그 대화를 보면 서비스가 수를 줄이므로 여기서는 구독만 한다.
+        if (whisperBadge != null)
+            Ctx.Chat.UnreadWhisperCount.Subscribe(n => whisperBadge.SetOn(n > 0)).AddTo(_subs);
     }
 
     // 아직 대화가 없는 상태(null)도 통과시킨다. 안내 문구를 보여 주어야 하는 값이다.

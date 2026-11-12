@@ -38,12 +38,39 @@ public sealed class BattleDirector : BattleStage {
     /// <summary>자동 전투 모드(사냥/도전). HUD 버튼이 구독해 표시/연출을 바꾸고, 눌러서 토글한다.</summary>
     public UniRx.ReactiveProperty<AutoBattleMode> Mode { get; } = new(AutoBattleMode.Hunt);
 
+    private readonly UniRx.ReactiveProperty<bool> _boostMode = new(false);
+
     /// <summary>
     /// 기력 부스트 모드. 켜져 있으면 클리어 1회를 BoostRules.ClearMultiplier 회분으로 정산한다
     /// (기력을 그만큼 한 번에 쓰고 부스트권 1장을 소모하며 보상도 그만큼 받는다).
     /// 자원이 모자라면 루프가 스스로 꺼서(BoostRules.CanBoost) 일반 클리어로 계속 돈다.
+    ///
+    /// 읽기 전용으로 내보낸다. 값을 바꾸는 창구는 SetBoostMode 하나뿐이며, 그래야 유저의 선택이
+    /// 한 곳에서 저장된다(HUD 버튼도 이 창구를 쓴다).
     /// </summary>
-    public UniRx.ReactiveProperty<bool> BoostMode { get; } = new(false);
+    public UniRx.IReadOnlyReactiveProperty<bool> BoostMode => _boostMode;
+
+    /// <summary>
+    /// 기력 부스트 모드를 바꾼다(유일한 창구). 선택은 계정 로컬 세이브에 남아, 씬을 다녀오거나
+    /// 재접속해도 그대로 이어진다(자원이 떨어져 저절로 꺼지거나 직접 끄면 그 상태가 저장된다).
+    /// </summary>
+    public void SetBoostMode(bool on) {
+        if (_boostMode.Value == on) return;
+        _boostMode.Value = on;
+
+        var account = UserDataManager.Account;
+        if (account == null) return;
+        account.boostModeOn = on;
+        UserDataManager.RequestSave();
+    }
+
+    // 저장된 부스트 모드를 되살린다(메인 씬 진입 1회). 자원이 모자란 상태로 켜면 루프가 곧바로 도로 내리고
+    // 안내만 뜨므로, 지금 쓸 수 있을 때만 켠다. 저장값 자체는 건드리지 않아 자원이 다시 갖춰지면 그대로 돌아온다.
+    private void RestoreBoostMode() {
+        var account = UserDataManager.Account;
+        if (account == null || !account.boostModeOn) return;
+        _boostMode.Value = BoostRules.CanBoost(Store.Stamina.Value, Store.StaminaBoostTicket.Value);
+    }
 
     /// <summary>부스트 자원이 떨어져 부스트 모드가 자동으로 꺼졌을 때 발생. 인자는 어느 자원이 바닥났는지.
     /// HUD 가 이 값으로 안내 문구를 고른다(기력이 모자란 것과 부스트권이 모자란 것은 할 일이 다르다).</summary>
@@ -78,6 +105,7 @@ public sealed class BattleDirector : BattleStage {
         if (!_started) {
             _started = true;
             InitializeSystems();
+            RestoreBoostMode();   // 스토어가 채워진 뒤에 부른다(자원을 보고 되살릴지 정한다).
             if (restingLabel != null) restingLabel.gameObject.SetActive(false);
         }
         StartLoop();
@@ -108,8 +136,8 @@ public sealed class BattleDirector : BattleStage {
     // 자원 부족으로 부스트를 더 쓸 수 없을 때 모드를 내리고 한 번만 알린다.
     // (이미 꺼져 있으면 알림을 내지 않아, 휴식 중 재시도 등에서 안내가 반복되지 않는다.)
     private void DisableBoost(BoostStopReason reason) {
-        if (!BoostMode.Value) return;
-        BoostMode.Value = false;
+        if (!_boostMode.Value) return;
+        SetBoostMode(false);
         BoostExhausted?.Invoke(reason);
     }
 

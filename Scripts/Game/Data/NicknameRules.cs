@@ -12,6 +12,10 @@ public static class NicknameRules {
     /// <summary>서버에 물어볼 만한 형식인지. 최종 판정(중복/금지어)은 서버가 한다.</summary>
     public static bool IsValidFormat(string nickname) => NameRules.IsValidFormat(nickname);
 
+    /// <summary>변경권이 없을 때 결제하는 재화와 수량. 서버 NicknameCatalog.ChangeCurrencyKey / ChangeCertificate 와 같아야 한다.</summary>
+    public const CurrencyType ChangeCurrency = CurrencyType.DispatchCertificate;
+    public const int ChangeCost = 500;
+
     /// <summary>입력칸 안내 문구.</summary>
     public const string Hint = NameRules.Hint;
 

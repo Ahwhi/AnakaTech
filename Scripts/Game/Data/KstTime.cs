@@ -81,4 +81,14 @@ public static class KstTime {
         string clock = $"{span.Hours:00}:{span.Minutes:00}:{span.Seconds:00}";
         return span.Days > 0 ? $"{span.Days}일 {clock}" : clock;
     }
+
+    /// <summary>
+    /// 흐른 시간을 시간/분으로("2시간 7분" / "3분" / "1분 미만"). 초는 보이지 않는다(매초 바뀌면 값이 흔들려 보인다).
+    /// 하루가 넘어도 일 단위로 끊지 않고 시간으로 이어 센다(방치 시간은 "26시간"이 더 바로 읽힌다).
+    /// </summary>
+    public static string Elapsed(TimeSpan span) {
+        if (span.TotalMinutes < 1) return "1분 미만";
+        int hours = (int)span.TotalHours;
+        return hours > 0 ? $"{hours}시간 {span.Minutes}분" : $"{span.Minutes}분";
+    }
 }

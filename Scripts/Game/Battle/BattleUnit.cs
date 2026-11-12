@@ -17,7 +17,7 @@ public enum Team { Player, Enemy }
 /// 따라서 캐릭터든 몬스터든 데이터에 SO 를 할당하는 것만으로 동일한 공격/스킬 파이프라인을 탄다.
 /// </summary>
 [DisallowMultipleComponent]
-public abstract class BattleUnit : MonoBehaviour, ICombatUnit, IUnitBar {
+public abstract class BattleUnit : MonoBehaviour, ICombatUnit, IUnitBar, IInvulnerableUnit {
     [Header("Unit Refs")]
     [Tooltip("스프라이트 루트. 넉백/반동/좌우 반전 대상(루트 이동과 분리).")]
     [SerializeField] protected Transform body;
@@ -46,6 +46,12 @@ public abstract class BattleUnit : MonoBehaviour, ICombatUnit, IUnitBar {
 
     /// <summary>사망 순간 통지(디렉터가 목록/부활/클리어 판정에 사용).</summary>
     public event Action<BattleUnit> Died;
+
+    /// <summary>
+    /// 공격에 직접 맞아 실제로 피해를 입은 순간 통지. 회피/무적으로 막은 피격과 지속 피해(출혈 등)의 틱은 오지 않는다.
+    /// 전장 규칙이 "맞았을 때"에 반응할 때 쓴다(예: 영웅전 피격 시 남은 시간 감소).
+    /// </summary>
+    public event Action<BattleUnit> Hit;
 
     public abstract Team Team { get; }
 
@@ -112,6 +118,15 @@ public abstract class BattleUnit : MonoBehaviour, ICombatUnit, IUnitBar {
     }
 
     /// <summary>
+    /// 스킬 게이지를 처음 상태(빈 게이지)로 되돌린다. 주기 자체는 건드리지 않는다.
+    /// 멸망전이 페이즈를 넘길 때 쓴다. 체력과 전투불능은 그대로 이어지고 게이지만 다시 차오르기 시작한다.
+    /// </summary>
+    public void ResetSkillGauge() {
+        if (_skillIntervalCache <= 0f) return;
+        _skillCooldownTimer = _skillIntervalCache;
+    }
+
+    /// <summary>
     /// 외부에서 들어온 "기준 스탯"(성장 + 장비 + 항상 적용 각인 + 본부). 유닛 상태(변신/조건부 각인)에 의한 보정을
     /// 얹기 전 값이라, 상태가 바뀔 때마다 이 값에서 다시 조립하면 보정이 중첩되지 않는다(RecomposeStats).
     /// </summary>
@@ -123,6 +138,19 @@ public abstract class BattleUnit : MonoBehaviour, ICombatUnit, IUnitBar {
 
     /// <summary>이 유닛에게 걸려 있는 상태이상.</summary>
     public UnitStatusEffects Status => _status ??= new UnitStatusEffects(this);
+
+    // 이 유닛이 "거는" 상태이상의 지속시간 배수(종류별). 컨텐츠 보정(무한 타워 층 보너스 등)이 정하며 기본은 전부 1 이다.
+    private Dictionary<StatusEffectType, float> _inflictDurationScales;
+
+    /// <summary>이 유닛이 거는 그 종류 상태이상의 지속시간 배수. 정한 적이 없으면 1.</summary>
+    public float InflictDurationScale(StatusEffectType type) =>
+        _inflictDurationScales != null && _inflictDurationScales.TryGetValue(type, out var scale) ? scale : 1f;
+
+    /// <summary>이 유닛이 거는 그 종류 상태이상의 지속시간 배수를 정한다(1 이면 보정 없음).</summary>
+    public void SetInflictDurationScale(StatusEffectType type, float scale) {
+        _inflictDurationScales ??= new Dictionary<StatusEffectType, float>();
+        _inflictDurationScales[type] = Mathf.Max(0f, scale);
+    }
 
     /// <summary>상태이상 VFX 가 붙을 자리. 몸체가 있으면 몸체(넉백/반동을 함께 타도록), 없으면 유닛 자신.</summary>
     public Transform StatusVfxAnchor => body != null ? body : transform;
@@ -145,6 +173,7 @@ public abstract class BattleUnit : MonoBehaviour, ICombatUnit, IUnitBar {
         _alive = true;
         _attackCooldown = 0f;
         _knockbackCooldown = 0f;
+        EndInvulnerability();
         ResetSkillCooldown();   // 스탯/설정이 준비된 뒤에 계산해야 하므로 마지막에 호출한다.
     }
 
@@ -189,6 +218,7 @@ public abstract class BattleUnit : MonoBehaviour, ICombatUnit, IUnitBar {
 
         // 상태이상 시간은 기절 중에도 흘러야 한다(기절이 스스로 풀리지 않으면 영구 기절이 된다).
         if (_status != null) _status.Tick(dt);
+        TickInvulnerability(dt);
 
         if (_attackCooldown > 0f) _attackCooldown -= dt;
         if (_knockbackCooldown > 0f) _knockbackCooldown -= dt;
@@ -362,6 +392,7 @@ public abstract class BattleUnit : MonoBehaviour, ICombatUnit, IUnitBar {
     public void TakeDamage(CombatStats attacker, float multiplier, ICombatUnit source,
                            IReadOnlyList<StatusEffectSpec> statuses = null) {
         if (!ApplyDamage(attacker, multiplier, source, canEvade: true, knockback: true)) return;
+        Hit?.Invoke(this);
 
         // 상태이상은 실제로 맞은 경우에만 건다(회피했거나 이미 죽어 있으면 걸 대상이 아니다).
         if (_alive) ApplyStatuses(statuses, attacker, source);
@@ -378,6 +409,13 @@ public abstract class BattleUnit : MonoBehaviour, ICombatUnit, IUnitBar {
     private bool ApplyDamage(in CombatStats attacker, float multiplier, ICombatUnit source,
                              bool canEvade, bool knockback) {
         if (!_alive) return false;
+
+        // 무적: 확률 없이 모든 피격을 회피한다. 지속 피해(canEvade=false)는 MISS 없이 조용히 무시한다
+        // (틱마다 MISS 가 뜨면 공격을 받는 것처럼 보인다).
+        if (_invulnerable) {
+            if (canEvade) ShowMiss();
+            return false;
+        }
 
         // 회피(수련 효과): 피격 자체가 없던 일이 된다. 데미지/넉백/딜량 집계 어디에도 남지 않고 MISS 만 뜬다.
         if (canEvade && TryEvade()) return false;
@@ -434,10 +472,60 @@ public abstract class BattleUnit : MonoBehaviour, ICombatUnit, IUnitBar {
         float chance = _stats.EvasionChance01;
         if (chance <= 0f || UnityEngine.Random.value >= chance) return false;
 
+        ShowMiss();
+        return true;
+    }
+
+    // 회피 표시(MISS 팝업 + 사운드). 확률 회피와 무적이 같은 연출을 쓴다.
+    private void ShowMiss() {
         var style = Team == Team.Player ? DamagePopupStyle.PlayerHit : DamagePopupStyle.Normal;
         Ctx.ShowDamageText(HitPoint, Settings.MissText, style);
         Ctx.PlaySfx(SfxKey.Miss);
-        return true;
+    }
+
+    // ── 무적 (IInvulnerableUnit) ─────────────────────
+    // 무적은 피격 관문(ApplyDamage) 하나만 막는다. 생존 판정은 건드리지 않으므로 적의 타게팅은 그대로다.
+    // 해제는 거는 쪽(스킬)이 직접 부르며, 남은 시간은 그 호출이 오지 않을 때를 위한 안전 상한이다.
+    private bool _invulnerable;
+    private float _invulnerableRemaining;
+    private GameObject _invulnerableVfx;
+    private GameObject _invulnerableVfxPrefab;
+
+    public bool IsInvulnerable => _invulnerable;
+
+    public void BeginInvulnerability(float maxSeconds, GameObject vfxOverride = null) {
+        if (!_alive || maxSeconds <= 0f) return;
+
+        _invulnerableRemaining = _invulnerable ? Mathf.Max(_invulnerableRemaining, maxSeconds) : maxSeconds;
+        _invulnerable = true;
+
+        // VFX 는 하나만 유지한다. 같은 프리팹으로 다시 걸리면 그대로 두고, 다른 프리팹이면 교체한다.
+        var prefab = vfxOverride != null ? vfxOverride : (Settings != null ? Settings.InvulnerableVfxPrefab : null);
+        if (_invulnerableVfx != null && prefab == _invulnerableVfxPrefab) return;
+        DestroyInvulnerableVfx();
+        _invulnerableVfxPrefab = prefab;
+        // 상태이상 VFX 와 같은 자리에 붙여 유닛(대시/넉백 포함)을 따라다니게 한다.
+        // worldPositionStays: false 로 프리팹이 들고 있는 위치/회전/크기를 그대로 쓴다.
+        if (prefab != null) _invulnerableVfx = Instantiate(prefab, StatusVfxAnchor, false);
+    }
+
+    public void EndInvulnerability() {
+        _invulnerable = false;
+        _invulnerableRemaining = 0f;
+        DestroyInvulnerableVfx();
+    }
+
+    // 안전 상한 소진 시 자동 해제. 기절 중에도 흘러야 하므로 Update 의 행동 판정보다 앞에서 부른다.
+    private void TickInvulnerability(float dt) {
+        if (!_invulnerable) return;
+        _invulnerableRemaining -= dt;
+        if (_invulnerableRemaining <= 0f) EndInvulnerability();
+    }
+
+    private void DestroyInvulnerableVfx() {
+        if (_invulnerableVfx != null) Destroy(_invulnerableVfx);
+        _invulnerableVfx = null;
+        _invulnerableVfxPrefab = null;
     }
 
     private void ApplyKnockback(Vector2 sourcePos) {
@@ -458,6 +546,7 @@ public abstract class BattleUnit : MonoBehaviour, ICombatUnit, IUnitBar {
         // 걸려 있던 상태이상은 죽는 순간 전부 풀린다(VFX 도 함께 사라진다).
         // 남겨 두면 부활한 유닛이 죽기 전 기절을 그대로 이어받는다.
         _status?.Clear();
+        EndInvulnerability();
         CancelDash();
         if (body != null) body.DOKill();
         Ctx.PlaySfx(SfxKey.UnitDeath);
@@ -542,6 +631,20 @@ public abstract class BattleUnit : MonoBehaviour, ICombatUnit, IUnitBar {
         float step = Settings.BaseMoveSpeed * _stats.MoveSpeedMultiplier * dt;
         if (step > advance) step = advance;
         Vector2 next = (Vector2)cur + delta * (step / dist);
+        transform.position = new Vector3(next.x, next.y, cur.z);   // z(정렬용 등)는 보존
+    }
+
+    /// <summary>
+    /// 정해진 방향으로 MoveSpeed 만큼 한 프레임 이동한다(직접 조작 이동). direction 의 크기가 곧 속도 비율이며
+    /// 1 을 넘으면 1 로 자른다(조이스틱을 덜 밀면 천천히 걷는다). 목표 지점이 없는 이동이라 멈출 곳을 계산하지 않는다.
+    /// </summary>
+    protected void MoveAlong(Vector2 direction, float dt) {
+        float amount = Mathf.Min(1f, direction.magnitude);
+        if (amount <= 0.0001f) return;
+
+        Vector3 cur = transform.position;
+        float step = Settings.BaseMoveSpeed * _stats.MoveSpeedMultiplier * dt * amount;
+        Vector2 next = (Vector2)cur + direction.normalized * step;
         transform.position = new Vector3(next.x, next.y, cur.z);   // z(정렬용 등)는 보존
     }
 

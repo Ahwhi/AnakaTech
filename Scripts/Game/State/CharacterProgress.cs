@@ -27,6 +27,9 @@ public sealed class CharacterProgress {
     // 서버가 레벨업 시 이 스탯에 포인트를 바로 넣으므로 클라는 표시만 한다.
     public int AutoStatType = GrowthRules.AutoStatNone;
 
+    // 한계돌파 여부(서버 권위, 한 번 돌파하면 되돌리지 않는다). 돌파한 캐릭터는 CharacterData.SkillFor 로 한계돌파 스킬을 쓴다.
+    public bool LimitBroken;
+
     /// <summary>
     /// 다음 레벨까지의 경험치 진행도(0~1). 표시부(슬라이더/Filled 이미지)가 공통으로 쓴다.
     /// MaxExp 를 아직 받지 못한 상태(0)에서는 0을 돌려 0 나눗셈을 막는다.

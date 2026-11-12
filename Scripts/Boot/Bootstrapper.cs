@@ -64,17 +64,37 @@ public sealed class Bootstrapper : IBootFlow, IDisposable {
             // 단계 내부 타임아웃(연결/응답 시간 초과)은 예상된 실패 시나리오다.
             // 예외 로그(빨간 에러) 없이 연결 실패로 분류한다(Failed 전이는 BootStatus 가 Debug.Log 로 남김).
             await UniTask.SwitchToMainThread();
-            Debug.LogWarning($"[BOOT] {current?.State} 단계에서 응답 시간이 초과되었습니다.");
-            _status.SetFailed(BootFailReason.CannotConnect, $"{current?.State} 응답 없음");
+            Debug.LogWarning($"[BOOT] {StepName(current)} 단계에서 응답 시간이 초과되었습니다.");
+            _status.SetFailed(BootFailReason.CannotConnect, $"{StepName(current)} 응답 없음");
         } catch (Exception e) {
             // 그 외 진짜 예상치 못한 오류만 예외 로그로 남긴다.
             await UniTask.SwitchToMainThread();
-            Debug.LogError($"[BOOT] {current?.State} 단계에서 오류가 발생했습니다.");
+            Debug.LogError($"[BOOT] {StepName(current)} 단계에서 오류가 발생했습니다.");
             Debug.LogException(e);
-            _status.SetFailed(BootFailReason.CannotConnect, $"{current?.State} 오류: {e.GetType().Name}");
+            _status.SetFailed(BootFailReason.CannotConnect, $"{StepName(current)} 오류: {Describe(e)}");
         } finally {
             _running = false;
         }
+    }
+
+    // 실패 표시에 쓰는 단계 이름. 상태(BootState)가 아니라 단계 타입 이름을 쓴다.
+    // 여러 단계가 같은 상태를 공유하므로(다운로드와 콘텐츠 로드가 모두 DownloadingAddressable) 상태로는 어느 단계인지 갈리지 않는다.
+    private static string StepName(IBootStep step) => step != null ? step.GetType().Name : "Unknown";
+
+    private const int DetailMaxLength = 160;
+
+    // 화면에 남길 오류 요약. 어드레서블 예외는 겉이 "의존 작업 실패" 같은 포장이고 실제 원인(HTTP 코드, 번들 경로 등)은
+    // 가장 안쪽 예외에 있으므로 그것의 첫 줄을 보여 준다. 심사 화면 캡처 한 장으로 원인을 가릴 수 있게 하는 것이 목적이다.
+    private static string Describe(Exception e) {
+        var inner = e;
+        while (inner.InnerException != null) inner = inner.InnerException;
+
+        string message = (inner.Message ?? string.Empty).Trim();
+        int newline = message.IndexOfAny(new[] { '\r', '\n' });
+        if (newline >= 0) message = message.Substring(0, newline);
+        if (message.Length > DetailMaxLength) message = message.Substring(0, DetailMaxLength) + "...";
+
+        return string.IsNullOrEmpty(message) ? inner.GetType().Name : $"{inner.GetType().Name}: {message}";
     }
 
     public void Dispose() {

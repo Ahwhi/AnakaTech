@@ -43,7 +43,7 @@ public sealed class MainInfoPanel : MonoBehaviour {
 
         RefreshNickname();
         if (combatPowerText != null)
-            combatPowerText.text = Mathf.RoundToInt(AccountStats.TotalDeckCombatPower(_ctx)).ToString("N0");
+            combatPowerText.text = AccountStats.TotalDeckCombatPower(_ctx).ToString("N0");
     }
 
     private void RefreshNickname() {

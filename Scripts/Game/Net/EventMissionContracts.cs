@@ -14,9 +14,9 @@ public enum EventMissionMetric {
     StaminaSpent = 2,       // 기력 소모량
     CharLevelUp = 3,        // 캐릭터 레벨 상승 횟수
     GachaTotal = 4,         // 누적 뽑기 횟수
-    RaidClear = 5,          // 레이드 의뢰 해결(도전 + 즉시해결) 횟수
-    SubjugationClear = 6,   // 토벌 의뢰 해결(도전 + 즉시해결) 횟수
-    EscortClear = 7,        // 호위 의뢰 해결(도전 + 즉시해결) 횟수
+    RaidClear = 5,          // 레이드 의뢰 끝까지 도전(승패 무관) + 즉시해결 횟수
+    SubjugationClear = 6,   // 토벌 의뢰 끝까지 도전(승패 무관) + 즉시해결 횟수
+    EscortClear = 7,        // 호위 의뢰 끝까지 도전(승패 무관) + 즉시해결 횟수
     CharacterCollected = 8, // 보유 캐릭터 종류 수(Threshold=목표 인원)
     StageCleared = 9,       // 특정 스테이지 클리어(Param=던전 인덱스)
     DiaPackPurchased = 10,  // 특정 다이아 상품 구매(Param=다이아 수량)
@@ -33,6 +33,26 @@ public enum EventMissionMetric {
     CharStarUpTotal = 18,   // 캐릭터 성급업(별레벨 승급) 누적 횟수
     /// <summary>오늘 핫타임(정해진 시간대)에 접속했는지. Param=HotTimeMissionParam 인코딩, Threshold=1.</summary>
     HotTimeAttended = 19,
+    /// <summary>이 이벤트 기간에 접속한 날 수(누적). Threshold=목표 일차라 미션 하나가 곧 "n일차 보상"이다.</summary>
+    EventAttendanceDays = 20,
+
+    // 일일 컨텐츠 참여(서버 Server.Data.EventMissionMetric 과 값이 같아야 한다).
+    // 전투형(길드 레이드/쟁탈전/멸망전)은 끝까지 치른 판만 센다.
+    InvestmentUpgrade = 21,
+    DispatchSend = 22,
+    GuildRaidFinish = 23,
+    ArenaFinish = 24,
+    DoomFinish = 25,
+    AttendanceClaim = 26,
+    /// <summary>이 이벤트에서 일일 미션을 받은 누적 횟수. Threshold=목표 횟수.</summary>
+    DailyMissionClaimed = 27,
+
+    // V1.11 컨텐츠 참여
+    TowerFinish = 28,       // 무한 타워를 끝까지 치른 횟수(성공/실패 무관)
+    ExpeditionFinish = 29,  // 원정대 도전 횟수
+
+    // V1.12 컨텐츠 참여
+    HeroesEntry = 30,       // 영웅전 도전 횟수(입장 기준)
 }
 
 /// <summary>
@@ -72,6 +92,9 @@ public static class EventMissionKeys {
     public const string PlaytimeStamina = "playtime_stamina";
     public const string SevenDayMission = "seven_day_mission";
     public const string HotTime = "hot_time";
+    public const string DailyRoulette = "daily_roulette";
+    public const string FirstSnow = "first_snow";
+    public const string Christmas = "christmas";
 }
 
 /// <summary>이벤트 보상 1건(표시/재동기화용). Kind 는 보상표시 규칙(Gold0/Diamond1/Stamina2/Currency4/UniversalShard5/ProfileFrame7).</summary>

@@ -16,18 +16,22 @@ public readonly struct AttendanceReward {
     }
 }
 
-/// <summary>출석 진행 정보(서버 권위). 그리드 표시 + 일자별 보상 목록.</summary>
+/// <summary>출석 진행 정보(서버 권위). 그리드 표시 + 일자별 보상 목록. 월간 출석과 출석형 이벤트가 함께 쓴다.</summary>
 public readonly struct AttendanceInfo {
     public readonly int ClaimedDays;
     public readonly bool CanClaimToday;
     public readonly int MaxDays;
     public readonly IReadOnlyList<AttendanceReward> Rewards;   // 일자별 보상(칸 표시용)
+    /// <summary>참여 조건을 채우지 못해 잠겼는지(출석형 이벤트 전용, 월간 출석은 항상 false).</summary>
+    public readonly bool Locked;
 
-    public AttendanceInfo(int claimedDays, bool canClaimToday, int maxDays, IReadOnlyList<AttendanceReward> rewards) {
+    public AttendanceInfo(int claimedDays, bool canClaimToday, int maxDays, IReadOnlyList<AttendanceReward> rewards,
+                          bool locked = false) {
         ClaimedDays = claimedDays;
         CanClaimToday = canClaimToday;
         MaxDays = maxDays;
         Rewards = rewards;
+        Locked = locked;
     }
 }
 

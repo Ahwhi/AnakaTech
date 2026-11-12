@@ -6,7 +6,7 @@ using UnityEngine;
 /// </summary>
 public static class StageSweepRules {
     /// <summary>1회 요청으로 쓸 수 있는 최대 장수. 서버 GameConstants.StageSweepMaxCount 와 일치.</summary>
-    public const int MaxCount = 999;
+    public const int MaxCount = 9999;
 
     /// <summary>보유 장수와 1회 상한을 함께 고려한 실제 선택 가능 최대치(최소 1).</summary>
     public static int SelectableMax(int owned) => Mathf.Clamp(owned, 1, MaxCount);

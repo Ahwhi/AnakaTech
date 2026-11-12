@@ -221,9 +221,13 @@ public sealed class GuildRaidStateDto {
     public long MyDamageToday;
     /// <summary>다음 초기화(KST 자정) 시각. 남은 시간 카운트다운에 쓴다.</summary>
     public long ResetUnix;
+    /// <summary>지금 도전 중인 다른 길드원 닉네임(V1.13). 없거나 본인이면 빈 값.</summary>
+    public string OccupantNickname = "";
     public List<GuildRaidContributionDto> Contributions = new();
 
     public bool CanEnter => NextEntryCost >= 0;
+    /// <summary>다른 길드원이 도전 중이라 지금은 들어갈 수 없는지.</summary>
+    public bool IsOccupied => !string.IsNullOrEmpty(OccupantNickname);
     /// <summary>보스 남은 체력 비율(0~1). 체력바에 그대로 쓴다.</summary>
     public float HpRatio => BossMaxHp > 0 ? Mathf.Clamp01((float)BossHp / BossMaxHp) : 0f;
 }
@@ -248,6 +252,15 @@ public sealed class GuildRaidEnterDto {
     public long BossHp;
     public long BossMaxHp;
     public int NewDiamond;
+    /// <summary>FailReason 이 GuildRaidFail.Occupied 일 때 도전 중인 길드원.</summary>
+    public string OccupantNickname = "";
+}
+
+/// <summary>레이드 전용 실패 사유(길드 공통 코드 뒤 대역). 값은 서버 GuildRepository.RaidFail 과 같다.</summary>
+public static class GuildRaidFail {
+    public const int NoEntriesLeft = 30;
+    public const int MaxLevel = 31;
+    public const int Occupied = 32;
 }
 
 /// <summary>도전 결과 보고에 대한 응답.</summary>
@@ -258,6 +271,8 @@ public sealed class GuildRaidDamageDto {
     public long BossHp;
     public long BossMaxHp;
     public bool BossDefeated;
+    /// <summary>이번 도전으로 잡은 보스 수(V1.13: 한 판에 여러 레벨을 이어 잡을 수 있다).</summary>
+    public int DefeatedCount;
     /// <summary>도전 참여 보상(즉시 지급분). 결과 팝업이 그대로 그린다.</summary>
     public List<RewardItem> Granted = new();
 }
@@ -321,9 +336,12 @@ public sealed class GuildWarStateDto {
     public GuildWarSideDto Enemy = new();
 
     public bool HasMatch => Phase != GuildWarPhase.None;
-    /// <summary>지금 상대를 때릴 수 있는지(경기 중 + 내가 살아 있고 + 공격 횟수가 남음).</summary>
-    public bool CanAttack => Phase == GuildWarPhase.Battle && !MyDead && MyAttacksLeft > 0;
-    /// <summary>승패가 정해졌는지(정산 이후).</summary>
+    /// <summary>
+    /// 지금 상대를 때릴 수 있는지(경기 중 + 승부가 아직 안 남 + 공격 횟수가 남음).
+    /// 내가 격파당했는지는 보지 않는다. 격파는 상대 길드의 점수일 뿐 행동 불능이 아니다(서버 규칙과 같다).
+    /// </summary>
+    public bool CanAttack => Phase == GuildWarPhase.Battle && !HasResult && MyAttacksLeft > 0;
+    /// <summary>승패가 정해졌는지(경기 중 한쪽 전멸, 또는 경기 종료 후).</summary>
     public bool HasResult => WinnerGuildId != 0;
     public bool IWon => HasResult && WinnerGuildId == Mine.GuildId;
 }
@@ -376,20 +394,69 @@ public sealed class UserDeckDto {
     public Dictionary<int, TrainingResultDto> Trainings = new();
 
     /// <summary>
-    /// 상대 계정의 투자 레벨(슬롯 번호 -> 레벨). 선제 스킬 게이지/스쿼드 재생은 스탯이 아니라 전투 중 동작이라
-    /// 최종 스탯에 녹지 않으므로 레벨을 그대로 받아 내 파티와 같은 규칙으로 적용한다.
+    /// 상대 계정의 투자 레벨(슬롯 번호 -> 레벨). 스탯 효과(InvestmentRules.StatBonus)와 전투 중 동작
+    /// (선제 스킬 게이지/스쿼드 재생) 모두 내 파티와 같은 규칙으로 적용하도록 레벨을 그대로 받는다.
     /// </summary>
     public Dictionary<int, int> InvestmentLevels = new();
 
     /// <summary>지정 효과의 총 증가분(1000 분율). 내 쪽 PlayerStateStore.InvestmentPermille 과 같은 계산이다.</summary>
-    public int InvestmentPermille(InvestmentEffect effect) {
-        int permille = 0;
-        foreach (var kv in InvestmentLevels) {
-            var slot = InvestmentRules.Get(kv.Key);
-            if (slot == null || slot.Effect != effect) continue;
-            permille += InvestmentRules.PermilleAt(kv.Key, kv.Value);
+    public int InvestmentPermille(InvestmentEffect effect) => InvestmentRules.PermilleOf(InvestmentLevels, effect);
+
+    /// <summary>
+    /// 서버 편성 응답(S_UserDeck)을 옮긴다. 상대 덱 조회(쟁탈전/대항전)와 원정대 파티원 조회가 같은 응답을 쓰므로
+    /// 변환도 이 한 곳에서만 한다.
+    /// </summary>
+    public static UserDeckDto From(S_UserDeck res) {
+        var dto = new UserDeckDto {
+            AccountId = res.accountId, Nickname = res.nickname ?? "",
+            RepresentativeCharId = res.representativeCharId, ProfileFrameId = res.profileFrameId,
+            RepresentativeCostumeId = res.representativeCostumeId,
+        };
+        foreach (var m in res.members) {
+            dto.Members.Add(new UserDeckMemberDto {
+                CharDataId = m.charDataId, Level = m.level, StarLevel = m.starLevel,
+                InvAttack = m.invAttack, InvDefense = m.invDefense, InvHealth = m.invHealth,
+                InvAttackSpeed = m.invAttackSpeed, InvMoveSpeed = m.invMoveSpeed, InvSkillAccel = m.invSkillAccel,
+                CostumeId = m.costumeId,
+                UnitSkinId = m.unitSkinId,
+                LimitBroken = m.limitBroken,
+                Shards = m.shards,
+            });
         }
-        return permille;
+
+        // 장비는 내 인벤토리와 같은 형태로 옮긴다(장착 캐릭터는 EquippedCharDataId 로 구분한다).
+        foreach (var e in res.equips) {
+            var inst = new EquipmentInstanceDto {
+                EquipDataId = e.equipDataId, StarLevel = e.starLevel, Level = e.level,
+                MainPoints = e.mainPoints, EquippedCharDataId = e.charDataId,
+                LimitBroken = e.limitBroken,
+            };
+            inst.OptionPoints[0] = e.opt1Points;
+            inst.OptionPoints[1] = e.opt2Points;
+            inst.OptionPoints[2] = e.opt3Points;
+            inst.OptionPoints[3] = e.opt4Points;
+            dto.Equips.Add(inst);
+        }
+
+        // 각인은 슬롯 번호가 곧 배열 인덱스다. 서버는 빈 슬롯을 보내지 않으므로 배열을 먼저 만들고 채운다.
+        foreach (var s in res.engravingSlots) {
+            if (!EngravingRules.IsValidSlot(s.slotIndex)) continue;
+            if (!dto.EngravingSlots.TryGetValue(s.charDataId, out var slots)) {
+                slots = new int[EngravingRules.SlotCount];
+                dto.EngravingSlots[s.charDataId] = slots;
+            }
+            slots[s.slotIndex] = s.engravingId;
+        }
+
+        foreach (var l in res.engravingLevels) dto.EngravingLevels[l.engravingId] = l.level;
+        foreach (var n in res.hqNodes) dto.HqNodeLevels[n.nodeId] = n.level;
+        foreach (var v in res.investments) dto.InvestmentLevels[v.slotIndex] = v.level;
+        foreach (var t in res.trainings)
+            dto.Trainings[t.charDataId] = new TrainingResultDto {
+                CharDataId = t.charDataId, Effect = t.effect, ValueTenth = t.valueTenth,
+            };
+
+        return dto;
     }
 }
 
@@ -406,6 +473,12 @@ public sealed class UserDeckMemberDto {
     public int InvSkillAccel;
     /// <summary>장착 코스튬(0=기본). 외형뿐 아니라 장착 효과(스탯)까지 정하므로 전투 재현에 반드시 쓰인다.</summary>
     public int CostumeId;
+    /// <summary>장착 아웃핏(0=기본). 상대 유닛 프리팹과 아웃핏 장착 효과(스탯)를 정한다.</summary>
+    public int UnitSkinId;
+    /// <summary>한계돌파 여부. 상대가 한계돌파 스킬을 쓰는지가 이 값으로 갈린다.</summary>
+    public bool LimitBroken;
+    /// <summary>보유 조각. 한계돌파한 상대는 조각 수만큼 스탯이 오른다(LimitBreakRules.ShardBonus).</summary>
+    public int Shards;
 }
 
 /// <summary>길드 통신 추상화. UI 는 이 계약에만 의존한다.</summary>
@@ -443,6 +516,11 @@ public interface IGuildService {
     /// <summary>레이드 입장. 서버가 참여 횟수를 먼저 소모하므로, 성공했으면 반드시 씬으로 들어가야 한다.</summary>
     UniTask<GuildRaidEnterDto> EnterRaidAsync(CancellationToken ct = default);
     UniTask<GuildRaidDamageDto> ReportRaidDamageAsync(long damage, CancellationToken ct = default);
+
+    /// <summary>
+    /// 레이드를 끝까지 치렀다는 보고(응답 없음). 제한 시간 종료/보스 처치로 끝났을 때만 부르며, 도중 나가기에는 부르지 않는다.
+    /// </summary>
+    void ReportRaidFinished();
 
     // ── 길드 대항전 ──
     UniTask<GuildWarStateDto> RequestWarStateAsync(CancellationToken ct = default);

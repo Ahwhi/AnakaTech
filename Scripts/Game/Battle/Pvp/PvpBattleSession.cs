@@ -18,6 +18,10 @@ public static class PvpBattleSession {
     public static int OpponentAccountId { get; private set; }
     public static UserDeckDto OpponentDeck { get; private set; }
 
+    /// <summary>쟁탈전 양 팀의 룬(매칭 응답 기준). 다른 컨텐츠는 null(보정 없음).</summary>
+    public static ArenaRuneLoadout MyRunes { get; private set; }
+    public static ArenaRuneLoadout OpponentRunes { get; private set; }
+
     /// <summary>대전 정보가 준비돼 있는지. 씬을 직접 열어 본 경우(에디터 테스트) false 다.</summary>
     public static bool HasEntry => Origin != OriginType.None && OpponentDeck != null && OpponentDeck.Members.Count > 0;
 
@@ -28,10 +32,13 @@ public static class PvpBattleSession {
     /// <summary>
     /// 컨텐츠를 지정해 진입한다. 전투는 어느 컨텐츠든 같으므로 여기서 갈리는 것은 결과 보고 대상뿐이다.
     /// </summary>
-    public static void Set(OriginType origin, int opponentAccountId, UserDeckDto opponentDeck) {
+    public static void Set(OriginType origin, int opponentAccountId, UserDeckDto opponentDeck,
+                           ArenaRuneLoadout myRunes = null, ArenaRuneLoadout opponentRunes = null) {
         Origin = origin;
         OpponentAccountId = opponentAccountId;
         OpponentDeck = opponentDeck;
+        MyRunes = myRunes;
+        OpponentRunes = opponentRunes;
     }
 
     /// <summary>전투 씬을 나올 때 비운다(다음 진입이 옛 값을 쓰지 않도록).</summary>
@@ -39,5 +46,7 @@ public static class PvpBattleSession {
         Origin = OriginType.None;
         OpponentAccountId = 0;
         OpponentDeck = null;
+        MyRunes = null;
+        OpponentRunes = null;
     }
 }

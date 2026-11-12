@@ -30,6 +30,10 @@ public sealed class MainLifetimeScope : LifetimeScope {
     [SerializeField] private HqNodeDatabase hqNodeDatabase;
     [Tooltip("의뢰 데이터베이스. 의뢰 목록/씬 전투 구성이 종류-단계로 조회한다.")]
     [SerializeField] private CommissionDatabase commissionDatabase;
+    [Tooltip("멸망전 페이즈 데이터베이스. 페이즈 번호로 등장 몬스터 구성을 조회한다.")]
+    [SerializeField] private DoomDatabase doomDatabase;
+    [Tooltip("전선 데이터베이스. 전선 팝업의 이름/썸네일을 조회한다(V1.12).")]
+    [SerializeField] private FrontlineDatabase frontlineDatabase;
     [Tooltip("재화 표시 정보(아이콘/이름) 카탈로그. 재화 UI(CurrencyView)가 타입으로 조회한다.")]
     [SerializeField] private CurrencyCatalog currencyCatalog;
     [Tooltip("상점 상품 이미지 카탈로그. 오퍼의 ImageKey 로 상품 스프라이트를 조회한다.")]
@@ -76,6 +80,10 @@ public sealed class MainLifetimeScope : LifetimeScope {
         builder.RegisterInstance(synergyDatabase != null ? synergyDatabase : ScriptableObject.CreateInstance<SynergyDatabase>());
         builder.RegisterInstance(hqNodeDatabase);
         builder.RegisterInstance(commissionDatabase);
+        // 미할당이어도 메인 씬이 죽지 않도록 빈 데이터베이스로 폴백한다(멸망전 입장만 막힌다).
+        builder.RegisterInstance(doomDatabase != null ? doomDatabase : ScriptableObject.CreateInstance<DoomDatabase>());
+        // 미할당이어도 메인 씬이 죽지 않도록 빈 데이터베이스로 폴백한다(전선 카드가 기본 이름으로만 보인다).
+        builder.RegisterInstance(frontlineDatabase != null ? frontlineDatabase : ScriptableObject.CreateInstance<FrontlineDatabase>());
         builder.RegisterInstance(currencyCatalog);
         builder.RegisterInstance(shopIconCatalog);
         builder.RegisterInstance(gradeShardPrefabCatalog);
@@ -109,6 +117,8 @@ public sealed class MainLifetimeScope : LifetimeScope {
         builder.Register<TrainingService>(Lifetime.Singleton).As<ITrainingService>();
         builder.Register<DispatchService>(Lifetime.Singleton).As<IDispatchService>();
         builder.Register<ArenaService>(Lifetime.Singleton).As<IArenaService>();
+        // 원정대(주간 5인 파티). 오늘 칠 수 있는지가 배지 근거라 BadgeCenter 도 이 서비스를 본다.
+        builder.Register<ExpeditionService>(Lifetime.Singleton).As<IExpeditionService>();
         builder.Register<CouponService>(Lifetime.Singleton).As<ICouponService>();
         // 투자(골드 소모처 + 계정 전체 효과). 전투 효과는 스토어에 담긴 레벨을 근거로 전투가 적용한다.
         builder.Register<InvestmentService>(Lifetime.Singleton).As<IInvestmentService>();
@@ -117,6 +127,16 @@ public sealed class MainLifetimeScope : LifetimeScope {
         // 채팅도 서버 푸시를 상시 받아야 하므로 화면과 무관하게 살아 있어야 한다(창을 닫아도 대화가 쌓인다).
         builder.Register<ChatService>(Lifetime.Singleton).As<IChatService>();
         builder.Register<RankingService>(Lifetime.Singleton).As<IRankingService>();
+        // 멸망전은 최고 점수 조회와 보상 수령만 오간다(한 판의 진행은 전부 클라가 들고 있다).
+        builder.Register<DoomService>(Lifetime.Singleton).As<IDoomService>();
+        // 무한 타워도 층/보너스 조회와 등반 보고만 오간다(릴레이 진행은 클라가 들고 있다).
+        builder.Register<TowerService>(Lifetime.Singleton).As<ITowerService>();
+        // 전선도 스쿼드/단계 조회와 입장/종료 보고만 오간다(한 판의 전투는 클라가 치른다).
+        builder.Register<FrontlineService>(Lifetime.Singleton).As<IFrontlineService>();
+        // 영웅전도 단계/도전 횟수 조회와 입장/클리어 보고만 오간다(직접 조작 전투는 클라가 치른다).
+        builder.Register<HeroesService>(Lifetime.Singleton).As<IHeroesService>();
+        // 패스는 서버 푸시(S_PassInfo)를 상시 받아 배지를 켜므로 화면과 무관하게 살아 있어야 한다.
+        builder.Register<PassService>(Lifetime.Singleton).As<IPassService>();
 
         builder.Register<OfflineRewardService>(Lifetime.Singleton).As<IOfflineRewardService>();
         builder.Register<DiamondDetailService>(Lifetime.Singleton).As<IDiamondDetailService>();

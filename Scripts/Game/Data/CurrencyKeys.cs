@@ -19,6 +19,8 @@ public static class CurrencyKeys {
     public const string TrainingTicket = "training_ticket";
     public const string ArenaCoin = "arena_coin";
     public const string DispatchCertificate = "dispatch_certificate";
+    public const string GachaMileage = "gacha_mileage";
+    public const string LimitBreakTicket = "limit_break_ticket";
 
     /// <summary>서버 재화 키 -> 클라 재화 종류. 모르는 키면 null(표시 소비측이 키 문자열을 그대로 쓴다).</summary>
     public static CurrencyType? ToType(string key) => key switch {
@@ -37,6 +39,8 @@ public static class CurrencyKeys {
         TrainingTicket => CurrencyType.TrainingTicket,
         ArenaCoin => CurrencyType.ArenaCoin,
         DispatchCertificate => CurrencyType.DispatchCertificate,
+        GachaMileage => CurrencyType.GachaMileage,
+        LimitBreakTicket => CurrencyType.LimitBreakTicket,
         _ => null
     };
 
@@ -57,6 +61,8 @@ public static class CurrencyKeys {
         CurrencyType.TrainingTicket => TrainingTicket,
         CurrencyType.ArenaCoin => ArenaCoin,
         CurrencyType.DispatchCertificate => DispatchCertificate,
+        CurrencyType.GachaMileage => GachaMileage,
+        CurrencyType.LimitBreakTicket => LimitBreakTicket,
         _ => ""
     };
 }

@@ -4,6 +4,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using TMPro;
 using UnityEngine;
+using UniRx;
 using UnityEngine.UI;
 using static Enums;
 
@@ -52,6 +53,16 @@ public sealed class FriendPopup : UIView, IHudPopup, IHudPopupTab {
     [Tooltip("선택. 차단한 유저가 없을 때 켜는 안내.")]
     [SerializeField] private GameObject emptyBlockedLabel;
 
+    [Header("Stamina Gift")]
+    [Tooltip("기력 선물 버튼(보내기/받기 겸용). 보낼 친구가 남아 있으면 일괄 전송, 다 보냈으면 기력 받기.")]
+    [SerializeField] private Button staminaButton;
+    [Tooltip("받을 기력 숫자. 받을 수 있을 때만 켠다.")]
+    [SerializeField] private TMP_Text staminaAmountText;
+    [Tooltip("버튼 문구(일괄 전송 / 기력 받기).")]
+    [SerializeField] private TMP_Text staminaLabelText;
+    [Tooltip("버튼의 알림 배지(BadgeView, Source=Manual). 보낼 친구나 받을 기력이 있으면 켠다.")]
+    [SerializeField] private BadgeView staminaBadge;
+
     [Header("Catalog")]
     [Tooltip("길드 마크 카탈로그. 슬롯에서 여는 프로필 팝업이 상대의 길드 마크를 그리는 데 쓴다.")]
     [SerializeField] private GuildMarkCatalog markCatalog;
@@ -67,6 +78,7 @@ public sealed class FriendPopup : UIView, IHudPopup, IHudPopupTab {
     private CancellationToken _ct;
     private FriendHomeDto _home;
     private bool _busy;
+    private IDisposable _staminaSub;
 
     private readonly List<FriendSlot> _slots = new();
 
@@ -83,6 +95,14 @@ public sealed class FriendPopup : UIView, IHudPopup, IHudPopupTab {
             searchButton.onClick.RemoveAllListeners();
             searchButton.onClick.AddListener(OpenSearch);
         }
+
+        if (staminaButton != null) {
+            staminaButton.onClick.RemoveAllListeners();
+            staminaButton.onClick.AddListener(() => { Click(); StaminaAsync().Forget(); });
+        }
+        // 기력 선물 상태는 서비스가 단일 소스다(목록 조회/보내기/받기 응답/친구의 선물 푸시가 모두 이 값을 갱신한다).
+        _staminaSub?.Dispose();
+        _staminaSub = _ctx.Friend.StaminaState.Subscribe(RefreshStamina);
 
         BindTabs();
         ReloadAsync().Forget();
@@ -227,6 +247,47 @@ public sealed class FriendPopup : UIView, IHudPopup, IHudPopupTab {
         }
     }
 
+    // ── 기력 선물 ────────────────────────────────────
+    // 보낼 친구가 남아 있으면 보내기가 우선이다. 다 보낸 뒤 받을 기력이 있으면 받기, 둘 다 없으면 버튼만 막는다.
+    private void RefreshStamina(FriendStaminaState state) {
+        if (staminaLabelText != null) staminaLabelText.text = FriendRules.StaminaButtonLabel(state);
+        if (staminaAmountText != null) {
+            staminaAmountText.gameObject.SetActive(state.CanClaim);
+            staminaAmountText.text = state.CanClaim ? state.Claimable.ToString("N0") : "";
+        }
+        if (staminaButton != null) staminaButton.interactable = state.HasAction && !_busy;
+        if (staminaBadge != null) staminaBadge.SetOn(state.CanSend || state.CanClaim);
+    }
+
+    private async UniTaskVoid StaminaAsync() {
+        if (_busy) { _ctx.Ui.ShowToast("처리 중입니다. 잠시 후 다시 시도해 주세요."); return; }
+        var state = _ctx.Friend.StaminaState.Value;
+        if (!state.HasAction) return;
+
+        _busy = true;
+        RefreshStamina(state);
+        try {
+            if (state.CanSend) {
+                var res = await _ctx.Friend.SendStaminaAsync(_ct);
+                if (!res.IsSuccess) { _ctx.Ui.ShowToast(FriendRules.FailMessage(res.FailReason)); return; }
+                _ctx.Ui.ShowToast($"친구 {res.Amount}명에게 기력을 보냈습니다.");
+            } else {
+                var res = await _ctx.Friend.ClaimStaminaAsync(_ct);
+                if (!res.IsSuccess) { _ctx.Ui.ShowToast(FriendRules.FailMessage(res.FailReason)); return; }
+                _ctx.Store.SetStamina(res.NewStamina);
+                _ctx.Sound.PlaySfx(SfxKey.Claim);
+                _ctx.Ui.ShowToast($"기력 {res.Amount:N0}을 받았습니다.");
+            }
+        } catch (OperationCanceledException) {
+        } catch (Exception e) {
+            Debug.LogException(e);
+            _ctx.Ui.ShowToast("요청을 처리하지 못했습니다.");
+        } finally {
+            _busy = false;
+            RefreshStamina(_ctx.Friend.StaminaState.Value);
+        }
+    }
+
     /// <summary>슬롯을 눌렀을 때 그 유저의 프로필 팝업을 연다(친구 삭제/차단은 거기서 한다).</summary>
     private void OpenUserProfile(int accountId) {
         Click();
@@ -259,5 +320,9 @@ public sealed class FriendPopup : UIView, IHudPopup, IHudPopupTab {
 
     private void Click() => _ctx?.Sound.PlaySfx(SfxKey.ButtonClick);
 
-    protected override void OnClosed() => ClearSlots();
+    protected override void OnClosed() {
+        ClearSlots();
+        _staminaSub?.Dispose();
+        _staminaSub = null;
+    }
 }

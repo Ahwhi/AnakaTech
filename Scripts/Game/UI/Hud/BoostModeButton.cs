@@ -63,7 +63,7 @@ public sealed class BoostModeButton : HudInjectedBehaviour {
         Ctx.Sound.PlaySfx(SfxKey.ButtonClick);
 
         // 끄는 것은 언제나 가능하다(자원과 무관).
-        if (Ctx.Battle.BoostMode.Value) { Ctx.Battle.BoostMode.Value = false; return; }
+        if (Ctx.Battle.BoostMode.Value) { Ctx.Battle.SetBoostMode(false); return; }
 
         // 켜는 것은 자원이 있어야 한다. 버튼이 비활성이라 보통 여기까지 오지 않지만,
         // 누르는 순간 자원이 바뀌었을 수 있으므로 이유를 알려 주고 막는다.
@@ -74,7 +74,7 @@ public sealed class BoostModeButton : HudInjectedBehaviour {
             return;
         }
 
-        Ctx.Battle.BoostMode.Value = true;
+        Ctx.Battle.SetBoostMode(true);
 
         // 부스트 모드는 클라 안에서만 바뀌는 값이라 서버가 관측할 수 없다. 예전에는 부스트로 클리어한 순간을
         // 사용으로 봤지만, 그러면 버튼을 누르고도 클리어할 때까지 퀘스트가 아무 반응이 없다.

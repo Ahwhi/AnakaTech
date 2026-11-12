@@ -118,6 +118,7 @@ public sealed class GrowthResult {
     public int FailReason;
     public CharacterProgress Updated;   // 성공 시 서버가 내려준 최신 성장치
     public int NewDiamond;              // 별레벨 승급 시 차감 후 다이아(스탯 투자에는 미사용)
+    public int NewLimitBreakTicket;     // 한계돌파 시 차감 후 한계돌파권(한계돌파 외에는 미사용)
 }
 
 /// <summary>
@@ -149,6 +150,9 @@ public interface IMainDataService {
 
     /// <summary>별레벨 1 승급(조각 소모).</summary>
     UniTask<GrowthResult> UpgradeStarAsync(int charDataId, CancellationToken ct = default);
+
+    /// <summary>한계돌파(한계돌파권 소모). 조건은 서버가 판정한다(LimitBreakRules 는 표시용 미러).</summary>
+    UniTask<GrowthResult> LimitBreakAsync(int charDataId, CancellationToken ct = default);
 
     /// <summary>편성 프리셋 전체 조회(빈 칸은 목록에 없다).</summary>
     UniTask<List<DeckPresetDto>> GetDeckPresetsAsync(CancellationToken ct = default);

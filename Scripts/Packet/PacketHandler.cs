@@ -81,6 +81,9 @@ class PacketHandler {
     public static void S_UpgradeStarResultHandler(PacketSession session, IPacket packet) {
     }
 
+    public static void S_LimitBreakResultHandler(PacketSession session, IPacket packet) {
+    }
+
     public static void S_ShopCatalogHandler(PacketSession session, IPacket packet) {
     }
 
@@ -98,6 +101,86 @@ class PacketHandler {
 
     public static void S_GachaRatesHandler(PacketSession session, IPacket packet) {
         // S_GachaRates 응답은 ShopService 의 WaitPacketAsync<S_GachaRates> 에서 처리한다.
+    }
+
+    public static void S_GachaMileagePickResultHandler(PacketSession session, IPacket packet) {
+        // 마일리지 픽업 응답은 ShopService 의 WaitPacketAsync<S_GachaMileagePickResult> 에서 처리한다.
+    }
+
+    // 멸망전 응답들은 DoomService 의 WaitPacketAsync 에서 처리한다.
+    public static void S_DoomInfoHandler(PacketSession session, IPacket packet) {
+    }
+
+    public static void S_DoomResultHandler(PacketSession session, IPacket packet) {
+    }
+
+    public static void S_DoomClaimResultHandler(PacketSession session, IPacket packet) {
+    }
+
+    public static void S_DoomEntryInfoHandler(PacketSession session, IPacket packet) {
+    }
+
+    public static void S_DoomEnterResultHandler(PacketSession session, IPacket packet) {
+    }
+
+    public static void S_DoomFinishResultHandler(PacketSession session, IPacket packet) {
+    }
+
+    // 무한 타워 응답은 전부 TowerService 가 WaitPacketAsync 로 받는다.
+    public static void S_TowerInfoHandler(PacketSession session, IPacket packet) {
+    }
+
+    public static void S_TowerEnterResultHandler(PacketSession session, IPacket packet) {
+    }
+
+    public static void S_TowerClearResultHandler(PacketSession session, IPacket packet) {
+    }
+
+    // 전선 응답은 전부 FrontlineService 가 WaitPacketAsync 로 받는다.
+    public static void S_FrontlineInfoHandler(PacketSession session, IPacket packet) {
+    }
+
+    public static void S_FrontlineSetMembersResultHandler(PacketSession session, IPacket packet) {
+    }
+
+    public static void S_FrontlineResetResultHandler(PacketSession session, IPacket packet) {
+    }
+
+    public static void S_FrontlineEnterResultHandler(PacketSession session, IPacket packet) {
+    }
+
+    public static void S_FrontlineFinishResultHandler(PacketSession session, IPacket packet) {
+    }
+
+    // 영웅전 응답은 전부 HeroesService 가 WaitPacketAsync 로 받는다.
+    public static void S_HeroesInfoHandler(PacketSession session, IPacket packet) {
+    }
+
+    public static void S_HeroesEnterResultHandler(PacketSession session, IPacket packet) {
+    }
+
+    public static void S_HeroesClearResultHandler(PacketSession session, IPacket packet) {
+    }
+
+    // 출석형 이벤트 응답은 AttendanceEventService 가 WaitPacketAsync 로 받는다.
+    public static void S_AttendanceEventInfoHandler(PacketSession session, IPacket packet) {
+    }
+
+    public static void S_ClaimAttendanceEventResultHandler(PacketSession session, IPacket packet) {
+    }
+
+    // 패스 현황(조회 응답 + 서버 푸시)은 PassService 가 PacketReceived 로, 수령 응답은 WaitPacketAsync 로 처리한다.
+    public static void S_PassInfoHandler(PacketSession session, IPacket packet) {
+    }
+
+    public static void S_PassClaimResultHandler(PacketSession session, IPacket packet) {
+    }
+
+    // 이벤트 돌림판 정보/돌리기 응답은 EventRouletteService 가 WaitPacketAsync 로 처리한다.
+    public static void S_EventRouletteInfoHandler(PacketSession session, IPacket packet) {
+    }
+
+    public static void S_EventRouletteSpinResultHandler(PacketSession session, IPacket packet) {
     }
 
     public static void S_RotationInfoHandler(PacketSession session, IPacket packet) {
@@ -143,7 +226,13 @@ class PacketHandler {
     public static void S_AwakenResultHandler(PacketSession session, IPacket packet) {
     }
 
+    public static void S_EquipLimitBreakResultHandler(PacketSession session, IPacket packet) {
+    }
+
     public static void S_LevelUpEquipResultHandler(PacketSession session, IPacket packet) {
+    }
+
+    public static void S_DisassembleEquipResultHandler(PacketSession session, IPacket packet) {
     }
 
     public static void S_ConvertUniversalShardResultHandler(PacketSession session, IPacket packet) {
@@ -213,6 +302,10 @@ class PacketHandler {
     public static void S_EquipCostumeResultHandler(PacketSession session, IPacket packet) {
     }
 
+    // 아웃핏 장착 응답은 CostumeService 의 WaitPacketAsync<T> 에서 처리한다(정적 핸들러는 무동작).
+    public static void S_EquipUnitSkinResultHandler(PacketSession session, IPacket packet) {
+    }
+
     // 쿠폰 응답은 CouponService 의 WaitPacketAsync<T> 에서 처리한다(정적 핸들러는 무동작).
     public static void S_RedeemCouponResultHandler(PacketSession session, IPacket packet) {
     }
@@ -228,6 +321,13 @@ class PacketHandler {
     }
 
     public static void S_ArenaLogHandler(PacketSession session, IPacket packet) {
+    }
+
+    // 룬 저장 / 역대 전적 응답은 ArenaService 의 WaitPacketAsync<T> 에서 처리한다(정적 핸들러는 무동작).
+    public static void S_ArenaSetRunesResultHandler(PacketSession session, IPacket packet) {
+    }
+
+    public static void S_ArenaHistoryHandler(PacketSession session, IPacket packet) {
     }
 
     // 수련 응답들은 TrainingService 의 WaitPacketAsync<T> 에서 처리한다(정적 핸들러는 무동작).
@@ -260,6 +360,9 @@ class PacketHandler {
     }
 
     public static void S_UseItemResultHandler(PacketSession session, IPacket packet) {
+    }
+
+    public static void S_ItemUsePreviewHandler(PacketSession session, IPacket packet) {
     }
 
     // 편성 프리셋 응답들은 MainDataService 의 WaitPacketAsync<T> 에서 처리한다(정적 핸들러는 무동작).
@@ -336,6 +439,13 @@ class PacketHandler {
     public static void S_FriendNotifyHandler(PacketSession session, IPacket packet) {
     }
 
+    // 친구 기력 선물 응답은 FriendService 의 WaitPacketAsync<T> 에서 처리한다(정적 핸들러는 무동작).
+    public static void S_FriendStaminaSendResultHandler(PacketSession session, IPacket packet) {
+    }
+
+    public static void S_FriendStaminaClaimResultHandler(PacketSession session, IPacket packet) {
+    }
+
     // 업적 응답은 AchievementService 의 WaitPacketAsync<T> 에서 처리한다(정적 핸들러는 무동작).
     public static void S_AchievementsHandler(PacketSession session, IPacket packet) {
     }
@@ -370,6 +480,9 @@ class PacketHandler {
     public static void S_CompleteStoryResultHandler(PacketSession session, IPacket packet) {
     }
 
+    public static void S_ClaimStoryRewardResultHandler(PacketSession session, IPacket packet) {
+    }
+
     // 메인 퀘스트 현황/완료 알림은 MainQuestService 가 PacketReceived 로 상시 수신한다(정적 핸들러는 무동작).
     public static void S_MainQuestHandler(PacketSession session, IPacket packet) {
     }
@@ -379,5 +492,18 @@ class PacketHandler {
 
     // 메인 퀘스트 수령 응답은 MainQuestService 의 WaitPacketAsync<T> 에서 처리한다(정적 핸들러는 무동작).
     public static void S_ClaimMainQuestResultHandler(PacketSession session, IPacket packet) {
+    }
+
+    // 원정대 응답들은 ExpeditionService 의 WaitPacketAsync<T> 에서 처리한다(정적 핸들러는 무동작).
+    public static void S_ExpeditionHomeHandler(PacketSession session, IPacket packet) {
+    }
+
+    public static void S_EnterExpeditionResultHandler(PacketSession session, IPacket packet) {
+    }
+
+    public static void S_ExpeditionDamageResultHandler(PacketSession session, IPacket packet) {
+    }
+
+    public static void S_ExpeditionLogHandler(PacketSession session, IPacket packet) {
     }
 }

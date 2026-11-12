@@ -14,11 +14,12 @@ public static class ShopPurchaseHelper {
     }
 
     public static async UniTask<BuyApplyResult> BuyAndApplyAsync(MainHudContext hud, string offerId, int qty, CancellationToken ct,
-                                                                bool free = false, string currency = null) {
+                                                                bool free = false, string currency = null,
+                                                                bool nonConsumable = false) {
         // 현금 상품은 스토어에서 먼저 결제하고, 그 영수증으로 서버에 지급을 요청한다.
         // 결제 수단은 호출부가 들고 있는 카탈로그 값을 그대로 받는다(여기서 다시 조회하지 않는다).
         if (!free && currency == CashCurrency && hud.Iap != null && hud.Iap.IsSupported)
-            return await BuyCashAndApplyAsync(hud, offerId, qty, ct);
+            return await BuyCashAndApplyAsync(hud, new IapProduct(offerId, nonConsumable), qty, ct);
 
         string idempotencyKey = Guid.NewGuid().ToString("N");
         var res = await hud.Shop.BuyOfferAsync(offerId, idempotencyKey, qty, free, ct: ct);
@@ -35,7 +36,8 @@ public static class ShopPurchaseHelper {
     /// 다음 실행에서 다시 전달되므로, 중간에 무슨 일이 나도 "돈은 냈는데 못 받는" 상태로 끝나지 않는다.
     /// 서버가 실패를 돌려주면 확정하지 않고 그대로 둔다(다음 접속에서 복구가 다시 시도한다).
     /// </summary>
-    private static async UniTask<BuyApplyResult> BuyCashAndApplyAsync(MainHudContext hud, string offerId, int qty, CancellationToken ct) {
+    private static async UniTask<BuyApplyResult> BuyCashAndApplyAsync(MainHudContext hud, IapProduct product, int qty, CancellationToken ct) {
+        string offerId = product.Id;
         // 결제 창을 열기 전에 우리 규칙(결제 한도/구매 제한/판매 기간)을 먼저 확인한다.
         //
         // 이 확인이 없으면 스토어가 돈을 받은 뒤에야 서버가 거절하게 되고, 유저는 돈만 내고 아무것도
@@ -46,6 +48,11 @@ public static class ShopPurchaseHelper {
         int fail;
         using (hud.Ui.ShowLoading(PurchasingMessage)) {
             fail = await hud.Shop.CanBuyOfferAsync(offerId, qty, ct);
+
+            // 스토어 상품 등록은 접속 시점의 상점 목록으로 한 번 한다. 접속 중에 판매가 시작된 상품
+            // (기간제 스텝업 등)은 그 목록에 없었으므로 결제 직전에 등록을 보장한다. 이미 등록된 상품은
+            // IapService 가 걸러 내므로 평소에는 왕복이 늘지 않는다.
+            if (fail == 0) await hud.Iap.EnsureProductsAsync(new[] { product }, ct);
         }
 
         if (fail != 0) {
@@ -141,6 +148,18 @@ public static class ShopPurchaseHelper {
         11 => "결제 준비 중입니다. 잠시 후 다시 시도해 주세요.",
         12 => "일일 결제 한도에 도달했습니다.\n자정 이후에 다시 시도해 주세요.",
         13 => "월 결제 한도에 도달했습니다.\n다음 달에 다시 시도해 주세요.",
+        // 장비 모집 전용. 구매 한도(6)와 뜻이 전혀 다르므로 값을 따로 쓴다(서버 GameDataRepository.BagFullFail).
+        14 => "가방이 가득 찼습니다.\n장비를 분해한 뒤 다시 시도해 주세요.",
+        // 길드 레벨 조건 상품(서버 GameDataRepository.GuildLevelFail). 필요 레벨은 상품 정보로 따로 안내한다.
+        15 => "길드 레벨이 부족합니다.",
         _ => "구매할 수 없습니다."
     };
+
+    /// <summary>잠긴 상품 카드에 붙는 짧은 사유. 길드 레벨 조건 상품만 레벨을 밝히고, 나머지 잠금은 공통 문구다.</summary>
+    public static string LockedLabel(ShopOfferDto offer) =>
+        offer != null && offer.RequiredGuildLevel > 0 ? $"길드 레벨 {offer.RequiredGuildLevel}이상" : "잠금";
+
+    /// <summary>길드 레벨 조건 상품이 잠겨 있을 때의 안내 문구.</summary>
+    public static string GuildLevelRequiredMessage(int requiredGuildLevel) =>
+        $"길드 레벨 {requiredGuildLevel} 이상부터 구매할 수 있습니다.";
 }

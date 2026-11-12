@@ -27,6 +27,9 @@ public class DevelopTool : MonoBehaviour {
         public const int RaidSettle = 4;
         public const int WarStatus = 5;
         public const int WarResetRound = 6;
+        public const int ExpeditionMatch = 7;
+        public const int ExpeditionStatus = 8;
+        public const int ExpeditionResetRound = 9;
     }
 
     /// <summary>서버가 마지막으로 알려 준 "지금"(unix). 0 이면 아직 조회 전.</summary>
@@ -77,6 +80,23 @@ public class DevelopTool : MonoBehaviour {
     /// <summary>이번 회차 매치 기록을 지운다. 같은 시각대에서 매칭을 다시 시험할 때 쓴다.</summary>
     public void ResetWarRound() => SendAsync(Command.WarResetRound, 0).Forget();
 
+    /// <summary>다음 원정대 매칭 시각(수 00:00 KST) 1분 전으로 이동한다.</summary>
+    public void JumpToBeforeExpeditionMatch() => JumpTo(NextExpeditionMatch().AddMinutes(-1));
+
+    /// <summary>
+    /// 다음 원정대 매칭 시각 직후로 이동한다. 스케줄러가 경계를 넘은 것을 보고 1분 안에 지난 회차 정산과 새 매칭을 돌린다.
+    /// </summary>
+    public void JumpToAfterExpeditionMatch() => JumpTo(NextExpeditionMatch().AddMinutes(1));
+
+    /// <summary>원정대 지난 회차 정산 + 이번 회차 매칭을 즉시 돌린다(이미 매칭된 회차면 매칭은 건너뛴다).</summary>
+    public void RunExpeditionMatch() => SendAsync(Command.ExpeditionMatch, 0).Forget();
+
+    /// <summary>원정대 자격자 수 / 이번 회차 상태 / 내 자격과 소속을 받아 온다.</summary>
+    public void CheckExpeditionStatus() => SendAsync(Command.ExpeditionStatus, 0).Forget();
+
+    /// <summary>원정대 이번 회차 파티를 전부 지운다. 같은 회차를 다시 매칭해 볼 때 쓴다.</summary>
+    public void ResetExpeditionRound() => SendAsync(Command.ExpeditionResetRound, 0).Forget();
+
     public void RunWarMatch() => SendAsync(Command.WarMatch, 0).Forget();
     public void RunWarSettle() => SendAsync(Command.WarSettle, 0).Forget();
     public void RunRaidSettle() => SendAsync(Command.RaidSettle, 0).Forget();
@@ -91,6 +111,8 @@ public class DevelopTool : MonoBehaviour {
     private DateTime CurrentKst() => KstTime.NowKst;
 
     private DateTime NextWarMatch() => NextWeekly(GuildWarRules.MatchDay, GuildWarRules.MatchHour);
+
+    private DateTime NextExpeditionMatch() => NextWeekly(ExpeditionRules.MatchDay, 0);
 
     private DateTime NextMidnight() => CurrentKst().Date.AddDays(1);
 

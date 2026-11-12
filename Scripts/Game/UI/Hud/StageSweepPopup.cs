@@ -3,13 +3,15 @@ using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using TMPro;
+using UniRx;
 using UnityEngine;
 using UnityEngine.UI;
 using static Enums;
 
 /// <summary>
 /// 스테이지 소탕 팝업. 보유 소탕권 범위 안에서 사용 장수를 고르고(슬라이더 / - + / 최대),
-/// 그 장수만큼 진행 중인 던전을 즉시 클리어한다. 획득 예정 보상은 RewardSlotView 로 미리 보여준다.
+/// 그 장수만큼 클리어한 최고 던전을 즉시 클리어한다. 지금 돌고 있는 던전과 무관하게 기준은 최고 진도다(서버 SweepStage 와 같은 기준).
+/// 획득 예정 보상은 RewardSlotView 로 미리 보여준다.
 ///
 /// 미리보기 수치는 서버 던전 보상 미리보기(C_DungeonRewardPreview)에서 받는다. 실제 지급도 같은 서버 공식을
 /// 쓰므로 표시와 지급이 어긋나지 않는다(클라에 보상 공식 미러를 두지 않는다).
@@ -17,8 +19,10 @@ using static Enums;
 public sealed class StageSweepPopup : UIView, IHudPopup {
     [Header("Header")]
     [SerializeField] private TMP_Text titleText;
-    [Tooltip("소탕할 던전 안내(예: '3층 반복'). 진행 중인 던전 이름이 들어간다.")]
+    [Tooltip("소탕할 던전 안내(예: '3층 반복'). 클리어한 최고 던전 이름이 들어간다.")]
     [SerializeField] private TMP_Text subtitleText;
+    [Tooltip("보상 기준 안내(예: '최대 클리어 스테이지(페리의 방 21-4) 기준'). 선택.")]
+    [SerializeField] private TMP_Text basisText;
     [Tooltip("보유 소탕권을 포함한 재화 표시(선택). 팝업에서도 잔량을 바로 보여준다.")]
     [SerializeField] private CurrencyPanel currencyPanel;
 
@@ -58,6 +62,7 @@ public sealed class StageSweepPopup : UIView, IHudPopup {
     private MainHudContext _hud;
     private CancellationToken _ct;
     private readonly List<RewardSlotView> _slots = new();
+    private readonly CompositeDisposable _subscriptions = new();
 
     private int _owned;
     private int _count = 1;
@@ -95,13 +100,43 @@ public sealed class StageSweepPopup : UIView, IHudPopup {
         CurrencyIcon.Apply(ticketIcon, ctx.Currencies, CurrencyType.StageSweepTicket);
         if (titleText != null) titleText.text = "스테이지 소탕";
 
-        _dungeonIndex = ctx.Store.CurrentDungeonIndex.Value;
-        var dungeon = ctx.DungeonDb != null ? ctx.DungeonDb.Get(_dungeonIndex) : null;
-        if (subtitleText != null)
-            subtitleText.text = $"{(dungeon != null ? dungeon.DisplayName : $"#{_dungeonIndex}")} 반복";
-
+        _dungeonIndex = ctx.Store.HighestClearedDungeonIndex.Value;
+        ApplyBasis();
         ApplyOwned();
         LoadAsync().Forget();
+
+        // 방치 전투가 팝업이 열려 있는 동안에도 새 던전을 깨면 소탕 기준이 올라간다(서버는 소탕 시점의 최고 진도로 지급한다).
+        // 안내와 미리보기를 그 값에 맞춰 둬야 보이는 보상과 받는 보상이 같다.
+        _subscriptions.Clear();
+        ctx.Store.HighestClearedDungeonIndex
+            .Where(v => v != _dungeonIndex)
+            .Subscribe(v => {
+                _dungeonIndex = v;
+                ApplyBasis();
+                LoadPreviewAsync().Forget();
+            })
+            .AddTo(_subscriptions);
+    }
+
+    protected override void OnClosed() => _subscriptions.Clear();
+
+    private void OnDestroy() => _subscriptions.Dispose();
+
+    // 아직 클리어한 던전이 없으면 소탕할 대상이 없다(서버도 같은 기준으로 거부한다).
+    private bool HasTarget => _dungeonIndex >= DungeonUnlockRule.FirstDungeonIndex;
+
+    // 소탕 기준 던전 안내. 이름은 던전 데이터, "21-4" 표기는 던전 DB 가 정한다(던전 선택 팝업의 장 번호와 같다).
+    private void ApplyBasis() {
+        var db = _hud.DungeonDb;
+        var dungeon = db != null ? db.Get(_dungeonIndex) : null;
+        string name = dungeon != null ? dungeon.DisplayName : $"#{_dungeonIndex}";
+        string groupName = dungeon != null && dungeon.Group != null ? dungeon.Group.DisplayName : name;
+        string code = db != null ? db.StageCode(_dungeonIndex) : $"#{_dungeonIndex}";
+
+        if (subtitleText != null)
+            subtitleText.text = HasTarget ? $"{name} 반복" : "";
+        if (basisText != null)
+            basisText.text = HasTarget ? $"최대 클리어 스테이지({groupName} {code}) 기준" : "아직 클리어한 스테이지가 없습니다.";
     }
 
     // 소탕권 잔량은 상점 지갑 경로로 내려오므로 열 때 한 번 최신값을 받는다(메인 스냅샷에는 없다).
@@ -115,8 +150,7 @@ public sealed class StageSweepPopup : UIView, IHudPopup {
                 _hud.Store.Diamond.Value = catalog.Diamond;
                 _hud.Store.ApplyShopCurrencies(catalog.Currencies);
             }
-            var list = await _hud.MainData.GetDungeonRewardPreviewAsync(new[] { _dungeonIndex }, _ct);
-            _preview = list != null && list.Count > 0 ? list[0] : null;
+            _preview = await FetchPreviewAsync();
         } catch (OperationCanceledException) {
             return;
         } catch (Exception e) {
@@ -128,6 +162,29 @@ public sealed class StageSweepPopup : UIView, IHudPopup {
         ApplyOwned();   // 받은 잔량으로 슬라이더 범위/버튼 상태를 다시 잡는다(미리보기도 함께 갱신).
     }
 
+    // 기준 던전이 바뀌었을 때 미리보기만 다시 받는다(잔량은 그대로라 상점 조회와 로딩 표시는 생략한다).
+    private async UniTaskVoid LoadPreviewAsync() {
+        int requested = _dungeonIndex;
+        DungeonRewardPreview preview;
+        try {
+            preview = await FetchPreviewAsync();
+        } catch (OperationCanceledException) {
+            return;
+        } catch (Exception e) {
+            Debug.LogException(e);
+            preview = null;
+        }
+        if (requested != _dungeonIndex) return;   // 응답을 기다리는 사이 또 올랐으면 나중 요청이 채운다.
+        _preview = preview;
+        ApplyOwned();
+    }
+
+    private async UniTask<DungeonRewardPreview> FetchPreviewAsync() {
+        if (!HasTarget) return null;
+        var list = await _hud.MainData.GetDungeonRewardPreviewAsync(new[] { _dungeonIndex }, _ct);
+        return list != null && list.Count > 0 ? list[0] : null;
+    }
+
     // 보유 소탕권을 스토어에서 읽어 조작 범위를 잡는다(구매/소탕 후에도 같은 경로로 갱신).
     // 상한은 보유 장수와 1회 요청 상한(StageSweepRules.MaxCount) 중 작은 쪽이다.
     // 서버가 거부할 값을 애초에 고를 수 없게 해야 "장수가 올바르지 않습니다"가 뜨지 않는다.
@@ -135,7 +192,7 @@ public sealed class StageSweepPopup : UIView, IHudPopup {
         var rp = _hud.Store.Currency(CurrencyType.StageSweepTicket);
         _owned = rp != null ? Mathf.Max(0, rp.Value) : 0;
 
-        bool usable = _owned > 0;
+        bool usable = _owned > 0 && HasTarget;
         if (quantitySlider != null) {
             quantitySlider.wholeNumbers = true;
             quantitySlider.minValue = 1;
@@ -164,7 +221,7 @@ public sealed class StageSweepPopup : UIView, IHudPopup {
             costText.color = insufficient ? insufficientColor : _costDefaultColor;
         }
         if (insufficientHint != null) insufficientHint.SetActive(insufficient);
-        if (okButton != null) okButton.interactable = !insufficient && !_busy;
+        if (okButton != null) okButton.interactable = !insufficient && !_busy && HasTarget;
 
         BuildRewards();
     }
@@ -198,7 +255,7 @@ public sealed class StageSweepPopup : UIView, IHudPopup {
                 _hud.Ui.ShowToast(res.FailReason switch {
                     2 => "소탕 장수가 올바르지 않습니다.",
                     3 => "스테이지 소탕권이 부족합니다.",
-                    4 => "아직 진행할 수 없는 던전입니다.",
+                    4 => "아직 클리어한 스테이지가 없습니다.",
                     _ => "소탕할 수 없습니다."
                 });
                 return;
@@ -218,7 +275,7 @@ public sealed class StageSweepPopup : UIView, IHudPopup {
             _hud.Ui.ShowToast("소탕에 실패했습니다.");
         } finally {
             _busy = false;
-            if (okButton != null) okButton.interactable = _owned > 0;
+            if (okButton != null) okButton.interactable = _owned > 0 && HasTarget;
         }
     }
 }

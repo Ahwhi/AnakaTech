@@ -146,6 +146,114 @@ public static class DispatchRules {
                                       PlayerStateStore store, int membersPerSlot) =>
         StateOf(condition, members, store, membersPerSlot) == ConditionState.Met;
 
+    /// <summary>
+    /// 추천 배치. 후보 소녀들 중에서 조건을 만족하는 편성(membersPerSlot 명)을 "가장 아깝지 않게" 고른다.
+    /// 만들 수 없으면 null 이다(조건에 맞는 소녀가 모자라거나 인원이 부족하다).
+    ///
+    /// 아깝지 않게 = 다른 파견에 쓸 수 있는 강한 소녀를 남겨 두는 쪽이다.
+    ///   인원 조건(무기/등급) : 조건에 맞는 소녀를 약한 순으로 필요한 만큼만 넣고, 남은 자리는 조건과 무관한
+    ///                          약한 소녀로 채운다(조건에 맞는 소녀는 다른 슬롯도 찾을 수 있으므로 아낀다).
+    ///   총합 조건(별/레벨)   : 총합이 목표를 넘기는 범위에서 총합이 가장 작아지도록 고른다.
+    /// 후보는 부르는 쪽이 정한다(파견 중이거나 다른 슬롯에 놓인 소녀는 넘기지 않는다).
+    /// </summary>
+    public static int[] Recommend(DispatchConditionDto condition, IReadOnlyList<int> candidates,
+                                  PlayerStateStore store, int membersPerSlot) {
+        if (condition == null || candidates == null || store == null || membersPerSlot <= 0) return null;
+
+        var pool = new List<int>();
+        foreach (int id in candidates)
+            if (id != 0 && store.GetProgress(id) != null && !pool.Contains(id)) pool.Add(id);
+        if (pool.Count < membersPerSlot) return null;
+
+        // 약한 순(등급 -> 별 -> 레벨 -> id). 같은 값이면 늘 같은 결과가 나오도록 id 까지 본다.
+        pool.Sort((a, b) => Strength(a, store).CompareTo(Strength(b, store)));
+
+        var picked = condition.Kind switch {
+            DispatchConditionKind.WeaponType => PickByCount(pool, id => JobOfChar(id) == condition.Param,
+                                                            condition.Threshold, membersPerSlot),
+            DispatchConditionKind.GradeCount => PickByCount(pool, id => GradeOfChar(id) == condition.Param,
+                                                            condition.Threshold, membersPerSlot),
+            DispatchConditionKind.StarTotal => PickBySum(pool, id => store.GetProgress(id).StarLevel,
+                                                         condition.Threshold, membersPerSlot),
+            DispatchConditionKind.LevelTotal => PickBySum(pool, id => store.GetProgress(id).Level,
+                                                          condition.Threshold, membersPerSlot),
+            _ => null
+        };
+        if (picked == null) return null;
+
+        // 고른 결과가 정말 조건을 만족하는지 화면 판정과 같은 규칙으로 한 번 더 확인한다(서버도 다시 확인한다).
+        var members = picked.ToArray();
+        return MeetsCondition(condition, members, store, membersPerSlot) ? members : null;
+    }
+
+    // 인원 조건: 조건에 맞는 소녀 need 명(약한 순) + 나머지는 조건과 무관한 약한 소녀, 모자라면 맞는 소녀로 채운다.
+    private static List<int> PickByCount(List<int> pool, System.Func<int, bool> matches, int need, int size) {
+        var matching = pool.FindAll(id => matches(id));
+        if (matching.Count < need) return null;
+
+        var picked = matching.GetRange(0, need);
+        foreach (int id in pool) {
+            if (picked.Count >= size) break;
+            if (!matches(id)) picked.Add(id);
+        }
+        foreach (int id in matching) {
+            if (picked.Count >= size) break;
+            if (!picked.Contains(id)) picked.Add(id);
+        }
+        return picked.Count >= size ? picked : null;
+    }
+
+    // 총합 조건: 가장 작은 size 명에서 시작해, 목표에 닿을 때까지 한 명씩 바꿔 끼운다.
+    //   1) 한 명만 바꿔서 목표에 닿을 수 있으면, 그런 맞바꿈 중 목표를 가장 적게 넘기는 것을 고른다.
+    //   2) 안 되면 가장 약한 자리를 남은 후보 중 가장 큰 값으로 바꾸고 다시 본다.
+    // 상위 size 명의 총합도 목표에 못 미치면 처음부터 불가능하다.
+    private static List<int> PickBySum(List<int> pool, System.Func<int, int> valueOf, int target, int size) {
+        var byValue = new List<int>(pool);
+        byValue.Sort((a, b) => valueOf(a).CompareTo(valueOf(b)));   // 정렬이 안정적이라 같은 값이면 약한 순이 유지된다
+
+        int best = 0;
+        for (int i = byValue.Count - size; i < byValue.Count; i++) best += valueOf(byValue[i]);
+        if (best < target) return null;
+
+        var picked = byValue.GetRange(0, size);
+        var rest = byValue.GetRange(size, byValue.Count - size);
+        int sum = 0;
+        foreach (int id in picked) sum += valueOf(id);
+
+        while (sum < target && rest.Count > 0) {
+            // picked 와 rest 모두 값 오름차순을 유지한다(rest 에서 처음 찾은 후보가 곧 가장 작은 후보다).
+            int bestP = -1, bestR = -1, bestSum = int.MaxValue;
+            for (int p = 0; p < picked.Count; p++) {
+                int need = target - (sum - valueOf(picked[p]));
+                int r = rest.FindIndex(id => valueOf(id) >= need);
+                if (r < 0) continue;
+                int after = sum - valueOf(picked[p]) + valueOf(rest[r]);
+                if (after < bestSum) { bestSum = after; bestP = p; bestR = r; }
+            }
+            if (bestP >= 0) {
+                (picked[bestP], rest[bestR]) = (rest[bestR], picked[bestP]);
+                sum = bestSum;
+                break;
+            }
+
+            int top = rest[rest.Count - 1];
+            if (valueOf(top) <= valueOf(picked[0])) return null;
+            sum += valueOf(top) - valueOf(picked[0]);
+            rest[rest.Count - 1] = picked[0];
+            picked[0] = top;
+            picked.Sort((a, b) => valueOf(a).CompareTo(valueOf(b)));
+            rest.Sort((a, b) => valueOf(a).CompareTo(valueOf(b)));
+        }
+        return sum >= target ? picked : null;
+    }
+
+    // 약한 정도(작을수록 약함). 추천이 강한 소녀를 아끼는 기준이다.
+    private static long Strength(int charId, PlayerStateStore store) {
+        var p = store.GetProgress(charId);
+        long grade = GradeOfChar(charId), star = p != null ? p.StarLevel : 0, level = p != null ? p.Level : 0;
+        return ((grade * 100 + star) * 10000 + level) * 100000 + charId;
+    }
+
     // 캐릭터 id 규약(서버 GameRoster 와 동일). id = (등급+1)*1000 + 직업*100 + 순번.
     // 규약을 아는 곳이 이미 여럿이라 여기서도 같은 식을 쓴다(데이터를 따로 들고 다니지 않기 위함).
     private static int GradeOfChar(int charId) => charId / 1000 - 1;

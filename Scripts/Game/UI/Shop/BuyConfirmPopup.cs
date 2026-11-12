@@ -166,20 +166,22 @@ public sealed class BuyConfirmPopup : UIView {
         _rewardSlots.Clear();
 
         // 가챠는 결과가 확률로 정해져 미리 보여줄 구성품이 없다(확률 보기로 안내).
-        bool hasGrants = _offer != null && _offer.Grants != null && _offer.Grants.Count > 0;
+        // 상점 카드/상세와 같은 출처(미러 우선, 없으면 서버 지급 목록)를 쓴다.
+        var grants = ShopPackageRewards.DisplayGrants(_offer);
+        bool hasGrants = grants.Count > 0;
         if (rewardGroup != null) rewardGroup.SetActive(hasGrants);
         if (!hasGrants || rewardRoot == null || rewardSlotPrefab == null) return;
 
-        for (int i = 0; i < _offer.Grants.Count; i++)
+        for (int i = 0; i < grants.Count; i++)
             _rewardSlots.Add(Instantiate(rewardSlotPrefab, rewardRoot));
     }
 
     // 선택 수량 배수를 적용해 슬롯 표시를 갱신한다(수량이 바뀌어도 슬롯을 다시 만들지 않고 값만 다시 바인딩).
     private void RefreshRewardSlots() {
-        if (_offer == null || _offer.Grants == null) return;
-        for (int i = 0; i < _rewardSlots.Count && i < _offer.Grants.Count; i++) {
+        var grants = ShopPackageRewards.DisplayGrants(_offer);
+        for (int i = 0; i < _rewardSlots.Count && i < grants.Count; i++) {
             if (_rewardSlots[i] == null) continue;
-            _rewardSlots[i].Bind(RewardVisualResolver.Resolve(_hud, _offer.Grants[i].Multiplied(_qty)));
+            _rewardSlots[i].Bind(RewardVisualResolver.Resolve(_hud, grants[i].Multiplied(_qty)));
         }
     }
 

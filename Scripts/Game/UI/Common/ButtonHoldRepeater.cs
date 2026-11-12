@@ -55,6 +55,7 @@ public sealed class ButtonHoldRepeater : MonoBehaviour, IPointerDownHandler, IPo
 
     public void OnPointerUp(PointerEventData eventData) {
         // 멀티터치에서 다른 손가락이 떨어진 것이라면 이 누름은 계속 유지한다.
+        // Interrupt 로 끊긴 뒤에는 _pointerId 가 비어 있으므로 어느 손가락의 뗌이든 아래 억제까지 내려간다.
         if (eventData != null && _pointerId != NoPointer && eventData.pointerId != _pointerId) return;
 
         StopHold();
@@ -63,6 +64,13 @@ public sealed class ButtonHoldRepeater : MonoBehaviour, IPointerDownHandler, IPo
         // 반대로 짧은 탭은 아무 것도 막지 않으므로 기본 Button 동작 그대로 정확히 1회만 발동한다.
         if (_repeated && eventData != null) eventData.eligibleForClick = false;
     }
+
+    /// <summary>
+    /// 지금 누름의 연타를 끝낸다. 버튼의 의미가 바뀌는 경계(예: 소모 재화가 골드에서 다이아로 바뀜)에서
+    /// 부르는 쪽이 멈춰 세울 때 쓴다. 손을 뗐다가 다시 눌러야 다시 동작하며,
+    /// 이미 연타로 넘어간 누름이면 뗄 때의 기본 클릭도 그대로 억제되어 한 번 더 발동하지 않는다.
+    /// </summary>
+    public void Interrupt() => StopHold();
 
     private void OnDisable() => StopHold();
 

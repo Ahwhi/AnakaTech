@@ -40,13 +40,14 @@ public sealed class EventMissionCell : MonoBehaviour {
     /// <summary>
     /// 미션 1칸을 채운다. title 을 넘기면 그 문구를 그대로 쓰고, 비우면 지표/임계치로 만든 기본 문구를 쓴다
     /// (스테이지 이름처럼 칸이 알 수 없는 데이터가 필요한 미션은 페이지가 문구를 만들어 넘긴다).
+    /// characterNoun 은 기본 문구에서 캐릭터를 부르는 말이다(이벤트마다 바꿔 부를 수 있다). 비우면 "소녀".
     /// </summary>
     public void Bind(EventMission m, Sprite rewardSprite, string rewardQty, Action<int> onClaim,
-                     string rewardName = null, string title = null) {
+                     string rewardName = null, string title = null, string characterNoun = null) {
         _missionId = m.Id;
         _onClaim = onClaim;
 
-        if (titleText != null) titleText.text = string.IsNullOrEmpty(title) ? Label(m) : title;
+        if (titleText != null) titleText.text = string.IsNullOrEmpty(title) ? Label(m, characterNoun) : title;
 
         // 임계치가 1인 미션도 "0 / 1"로 보여준다. 표시할지 말지는 프리팹이 정한다(필요 없으면 슬롯을 비워 둔다).
         int shown = Mathf.Min(m.Progress, m.Threshold);
@@ -80,17 +81,18 @@ public sealed class EventMissionCell : MonoBehaviour {
     }
 
     // 지표 + 임계치로 미션 설명 문구를 만든다(라벨은 클라에서 구성, 서버는 지표/임계치만 내려줌).
-    private string Label(EventMission m) {
+    private string Label(EventMission m, string characterNoun) {
+        string ch = string.IsNullOrEmpty(characterNoun) ? "소녀" : characterNoun;
         return (EventMissionMetric)m.Metric switch {
-            EventMissionMetric.CharGacha => $"캐릭터 뽑기 {m.Threshold:N0}회 진행",
-            EventMissionMetric.EquipGacha => $"장비 뽑기 {m.Threshold:N0}회 진행",
+            EventMissionMetric.CharGacha => $"{ch} 모집 {m.Threshold:N0}회 진행",
+            EventMissionMetric.EquipGacha => $"장비 모집 {m.Threshold:N0}회 진행",
             EventMissionMetric.StaminaSpent => $"기력 {m.Threshold:N0} 소모",
-            EventMissionMetric.CharLevelUp => $"캐릭터 레벨 상승 {m.Threshold:N0}회",
-            EventMissionMetric.CharStarUpTotal => $"캐릭터 성급업 {m.Threshold:N0}회",
-            EventMissionMetric.GachaTotal => $"누적 뽑기 {m.Threshold:N0}회",
-            EventMissionMetric.RaidClear => $"레이드 의뢰 {m.Threshold:N0}회 해결",
-            EventMissionMetric.SubjugationClear => $"토벌 의뢰 {m.Threshold:N0}회 해결",
-            EventMissionMetric.EscortClear => $"호위 의뢰 {m.Threshold:N0}회 해결",
+            EventMissionMetric.CharLevelUp => $"{ch} 레벨 상승 {m.Threshold:N0}회",
+            EventMissionMetric.CharStarUpTotal => $"{ch} 성급업 {m.Threshold:N0}회",
+            EventMissionMetric.GachaTotal => $"누적 모집 {m.Threshold:N0}회",
+            EventMissionMetric.RaidClear => $"레이드 의뢰 {m.Threshold:N0}회 도전",
+            EventMissionMetric.SubjugationClear => $"토벌 의뢰 {m.Threshold:N0}회 도전",
+            EventMissionMetric.EscortClear => $"호위 의뢰 {m.Threshold:N0}회 도전",
             EventMissionMetric.CharacterCollected => $"소녀 {m.Threshold:N0}명 수집",
             // 스테이지 이름은 던전 데이터에 있으므로 페이지가 문구를 만들어 넘긴다. 여기 문구는 그러지 못했을 때의 폴백이다.
             EventMissionMetric.StageCleared => "스테이지 클리어",
@@ -105,8 +107,20 @@ public sealed class EventMissionCell : MonoBehaviour {
                 $"{HourText(HotTimeMissionParam.StartOf(m.Param))} ~ {HourText(HotTimeMissionParam.EndOf(m.Param))} 사이에 접속",
             EventMissionMetric.CommissionStageCleared =>
                 $"{CommissionName(CommissionMissionParam.TypeOf(m.Param))} 의뢰 {CommissionMissionParam.StageOf(m.Param):N0}단계 해결",
+            // 출석형 이벤트. 임계치가 곧 일차라 "n일차"로 읽힌다(진행도는 지금까지 접속한 날 수).
+            EventMissionMetric.EventAttendanceDays => $"{m.Threshold:N0}일차 출석",
             EventMissionMetric.MissionGroupCleared => "모든 미션 완료",
             EventMissionMetric.MissionSetCleared => $"전체 미션 {m.Threshold:N0}개 완료",
+            EventMissionMetric.InvestmentUpgrade => $"투자 {m.Threshold:N0}회 하기",
+            EventMissionMetric.DispatchSend => $"파견 {m.Threshold:N0}회 보내기",
+            EventMissionMetric.GuildRaidFinish => $"길드 레이드 {m.Threshold:N0}회 하기",
+            EventMissionMetric.ArenaFinish => $"쟁탈전 {m.Threshold:N0}회 하기",
+            EventMissionMetric.DoomFinish => $"멸망전 {m.Threshold:N0}회 하기",
+            EventMissionMetric.AttendanceClaim => "출석하기",
+            EventMissionMetric.DailyMissionClaimed => $"일일 미션 {m.Threshold:N0}회 완료",
+            EventMissionMetric.TowerFinish => $"무한 타워 {m.Threshold:N0}회 도전",
+            EventMissionMetric.ExpeditionFinish => $"원정대 {m.Threshold:N0}회 도전",
+            EventMissionMetric.HeroesEntry => $"영웅전 {m.Threshold:N0}회 도전",
             _ => ""
         };
     }

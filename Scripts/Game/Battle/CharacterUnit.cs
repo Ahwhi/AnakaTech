@@ -16,15 +16,38 @@ public sealed class CharacterUnit : BattleUnit, ITransformableUnit {
     [Tooltip("마스크 일러스트 표현부(일러스트/프레임/그림자/마스크/피격 깜빡임). 캐릭터/몬스터 공용 컴포넌트.")]
     [SerializeField] private BattleUnitIllustration illust;
 
+    [Header("Team Marker (선택)")]
+    [Tooltip("아군 표시 그룹(링/깃발 등). 아군/적이 함께 서는 전투(쟁탈전/대항전)에서 아군일 때만 켜진다.")]
+    [SerializeField] private GameObject allyMarker;
+    [Tooltip("적 표시 그룹. 아군/적이 함께 서는 전투에서 적일 때만 켜진다.")]
+    [SerializeField] private GameObject enemyMarker;
+
     private Team _team = Team.Player;
+    private bool _showTeamMarker;
 
     public override Team Team => _team;
 
     /// <summary>
     /// 이 캐릭터가 설 팀. 기본은 아군이며, 유저 대 유저 전투에서 상대 파티를 적 팀으로 세울 때만 바꾼다.
-    /// 스폰 직후(Init 다음)에 한 번만 부르는 것을 전제로 한다.
+    /// 아웃핏마다 프리팹이 달라 "적 전용 프리팹"을 둘 수 없으므로, 적/아군 구분은 유닛 안의 표시 그룹이 맡는다.
     /// </summary>
-    public void SetTeam(Team team) => _team = team;
+    public void SetTeam(Team team) {
+        _team = team;
+        ApplyTeamMarker();
+    }
+
+    /// <summary>
+    /// 팀 표시 그룹을 켤지. 양 팀이 모두 캐릭터인 전투만 켠다(몬스터와 싸우는 전투는 구분할 필요가 없어 끈다).
+    /// </summary>
+    public void ShowTeamMarker(bool show) {
+        _showTeamMarker = show;
+        ApplyTeamMarker();
+    }
+
+    private void ApplyTeamMarker() {
+        if (allyMarker != null) allyMarker.SetActive(_showTeamMarker && _team == Team.Player);
+        if (enemyMarker != null) enemyMarker.SetActive(_showTeamMarker && _team != Team.Player);
+    }
 
     public CharacterData Data { get; private set; }
     /// <summary>이 유닛의 외형(기본 일러스트 또는 장착 코스튬). 스폰할 때 전장이 정해 준다.</summary>
@@ -74,10 +97,13 @@ public sealed class CharacterUnit : BattleUnit, ITransformableUnit {
         _transformed && _transformSprite != null ? _transformFocus : Appearance.UiFocus;
 
     /// <param name="appearance">표시할 외형(기본 일러스트 또는 장착 코스튬). 원본 캐릭터도 여기서 꺼내 쓴다.</param>
-    public void Init(CharacterAppearance appearance, CombatStats stats, bool isRepresentative,
+    /// <param name="limitBroken">한계돌파 여부. 쓸 스킬(기본/한계돌파)이 이 값으로 정해지며, 스킬 주기 계산(BaseInit)보다 먼저 정해져야 한다.</param>
+    public void Init(CharacterAppearance appearance, CombatStats stats, bool limitBroken, bool isRepresentative,
                      Vector3 spawnPoint, int slot, IBattleContext ctx, IBattleRuntime skillRuntime, BattleSettings settings) {
         Appearance = appearance;
         Data = appearance.Character;
+        _limitBroken = limitBroken;
+        ApplyTeamMarker();   // 프리팹에 켜진 채 저장돼 있어도 시작 상태(꺼짐 또는 팀에 맞게)로 맞춘다.
         IsRepresentative = isRepresentative;
         _skillRuntime = skillRuntime;
         _spawnPoint = spawnPoint;
@@ -87,7 +113,7 @@ public sealed class CharacterUnit : BattleUnit, ITransformableUnit {
 
         if (illust != null) {
             illust.Apply(appearance.BattleSprite, appearance.UiFocus);
-            illust.IsolateMask(slot);
+            illust.IsolateMask(slot, transform);
         }
 
         BaseInit(stats, ctx, settings);   // 스킬 쿨타임 초기화까지 포함한다.
@@ -100,6 +126,22 @@ public sealed class CharacterUnit : BattleUnit, ITransformableUnit {
         _transformAttackStatuses = null;
         _transformSprite = null;
         ResetEngravingConditions();
+    }
+
+    /// <summary>
+    /// UI 미리보기 전용 초기화. 전투에 참가하지 않고 모습(초상 + 프리팹 꾸밈)만 세운다.
+    /// 전투 로직(Update)을 끄므로 공격/이동/체력 처리가 돌지 않고, 전장 등록도 하지 않는다.
+    /// </summary>
+    public void InitPreview(CharacterAppearance appearance, int maskSlot) {
+        Appearance = appearance;
+        Data = appearance.Character;
+        enabled = false;
+        ApplyTeamMarker();
+        if (body != null) body.localPosition = Vector3.zero;
+        if (illust != null) {
+            illust.Apply(appearance.BattleSprite, appearance.UiFocus);
+            illust.IsolateMask(maskSlot, transform);
+        }
     }
 
     /// <summary>
@@ -148,7 +190,22 @@ public sealed class CharacterUnit : BattleUnit, ITransformableUnit {
         if (_engravings.HasConditionals) UpdateEngravingConditions(dt);
     }
 
+    // 직접 조작 입력. 비어 있으면(기본) 아래의 자동 전투 행동을 그대로 쓴다.
+    private IUnitMoveInput _moveInput;
+
+    /// <summary>
+    /// 직접 조작 입력을 연결한다(null 이면 자동 전투로 돌아간다). 연결되면 이동은 입력이 정하고,
+    /// 공격은 사거리 안의 가장 가까운 적에게만 자동으로 한다(적을 쫓아가거나 스폰 위치로 돌아가지 않는다).
+    /// 영웅전처럼 유저가 소녀를 움직이는 컨텐츠만 부르며, 다른 전투는 이 경로를 타지 않는다.
+    /// </summary>
+    public void SetMoveInput(IUnitMoveInput input) => _moveInput = input;
+
+    /// <summary>현재 사거리(월드 units, 몸통 표면 기준). 사거리 표시처럼 화면이 범위를 그릴 때 읽는다.</summary>
+    public float AttackRange => _stats.Range;
+
     protected override void Tick(float dt) {
+        if (_moveInput != null) { TickManual(dt); return; }
+
         var target = FindNearestEnemy();
 
         // 탐지: 탐지 범위(0 이하면 무제한) 안에 가장 가까운 적이 있으면 교전 대상으로 삼는다.
@@ -176,6 +233,22 @@ public sealed class CharacterUnit : BattleUnit, ITransformableUnit {
         if (withinLeash) ApproachUnit(target, dt);
     }
 
+    // 직접 조작: 입력 방향으로 걷고, 사거리 안에 적이 있으면 걸으면서 자동으로 공격한다.
+    // 바라보는 방향은 공격 대상이 있으면 대상 쪽, 없으면 걷는 쪽이다.
+    private void TickManual(float dt) {
+        Vector2 dir = _moveInput.Direction;
+        bool moving = dir.sqrMagnitude > 0.0001f;
+        if (moving) MoveAlong(dir, dt);
+
+        var target = FindNearestEnemy();
+        if (target != null && DistanceTo(target) <= _stats.Range) {
+            FaceTowards(target.Position);
+            if (CanAttack) PerformAttackOrSkill(target);
+            return;
+        }
+        if (moving) FaceTowards((Vector2)transform.position + dir);
+    }
+
     // 탐지된 적이 없을 때 스폰(대형) 위치로 걸어서 복귀한다(도착하면 멈춘다).
     private void ReturnToSpawn(float dt) {
         if (Vector2.Distance((Vector2)transform.position, (Vector2)_spawnPoint) <= 0.05f) return;
@@ -186,7 +259,16 @@ public sealed class CharacterUnit : BattleUnit, ITransformableUnit {
     // ── 데이터/런타임 연결(BattleUnit 공통 공격/스킬 파이프라인이 참조) ──
     // 기본공격/스킬은 전부 SO 에 위임하고, 여기서는 "어느 데이터에서 가져오는지"만 알려준다.
     protected override BasicAttack BasicAttackAsset => Data != null ? Data.BasicAttack : null;
-    protected override UnitSkill SkillAsset => Data != null ? Data.Skill : null;
+    protected override UnitSkill SkillAsset => Data != null ? Data.SkillFor(_limitBroken) : null;
+
+    // 한계돌파 여부. 쓸 스킬을 고르는 기준이며, 전투 중 돌파하면 SetLimitBroken 으로 바뀐다.
+    private bool _limitBroken;
+
+    /// <summary>
+    /// 전투 중 한계돌파 상태가 바뀌었을 때 쓸 스킬을 갈아끼운다. 스킬 주기는 이어서 부르는 ApplyStats 가
+    /// 새 스킬 기준으로 다시 계산한다(차오른 게이지 비율은 유지된다). 그래서 반드시 ApplyStats 보다 먼저 부른다.
+    /// </summary>
+    public void SetLimitBroken(bool limitBroken) => _limitBroken = limitBroken;
     protected override IBattleRuntime Runtime => _skillRuntime;
     protected override Color SkillBubbleColor => Data != null ? Data.PersonalColor : Color.white;
 
@@ -247,7 +329,7 @@ public sealed class CharacterUnit : BattleUnit, ITransformableUnit {
         for (int i = 0; i < _transformBuffs.Count; i++) {
             var b = _transformBuffs[i];
             float baseVal = baseStats.Get(b.stat);
-            float target = ScaledForTransform(b.stat, baseVal, b.bonusMultiplier);
+            float target = CombatStats.EffectiveScaled(b.stat, baseVal, b.bonusMultiplier);
             s = s.WithAdded(b.stat, target - baseVal);
         }
         return s;
@@ -315,22 +397,11 @@ public sealed class CharacterUnit : BattleUnit, ITransformableUnit {
         if (illust != null && Data != null) illust.Apply(Appearance.BattleSprite, Appearance.UiFocus);
     }
 
-    // 변신 버프의 스탯별 목표값. 공속/이속/스킬가속은 실효 배율(1+스탯/100)이 multiple 배가 되도록,
-    // 그 외 스탯은 값 자체가 multiple 배가 되도록 계산한다. 미성장(스탯 0) 캐릭터도 정확히 N배가 된다.
-    private static float ScaledForTransform(StatType stat, float baseValue, float multiple) {
-        if (IsGearingStat(stat))
-            return baseValue * multiple + 100f * (multiple - 1f);
-        return baseValue * multiple;
-    }
 
-    // "1 + 스탯/100" 형태의 배율 스탯(가속류). 실효값을 N배로 만들려면 별도 변환이 필요하다.
-    private static bool IsGearingStat(StatType stat) =>
-        stat == StatType.AttackSpeed || stat == StatType.MoveSpeed || stat == StatType.SkillAccel;
-
-    // 기본공격 시 유닛 몸체 반응: 총잡이 반동 + 대표 카메라 흔들림.
+    // 기본공격 시 유닛 몸체 반응: 반동(총잡이 + 반동을 켠 캐릭터) + 대표 카메라 흔들림.
     protected override void OnAttackReactions(BattleUnit target) {
-        // 총잡이 반동(PLANNING 1-15).
-        if (Data.Type == CharacterType.Gunner && body != null) {
+        // 반동(PLANNING 1-15). 대상 판정은 CharacterData.HasAttackRecoil 한 곳에서 한다.
+        if (Data.HasAttackRecoil && body != null) {
             body.DOKill();
             body.localPosition = Vector3.zero;
             body.DOShakePosition(0.12f, new Vector3(0.12f, 0.03f, 0f), 20, 90f, false, true);
@@ -392,6 +463,8 @@ public sealed class CharacterUnit : BattleUnit, ITransformableUnit {
         ReviveRemaining = 0f;
         _reviveRoutine = null;
 
+        // 살아 있는 채로 불리는 경로(ForceReset)도 있으므로 이전 전투의 무적을 여기서도 정리한다.
+        EndInvulnerability();
         CancelDash();
         transform.position = _spawnPoint;
         if (body != null) {
@@ -409,6 +482,19 @@ public sealed class CharacterUnit : BattleUnit, ITransformableUnit {
 
         Ctx.PlaySfx(SfxKey.Revive);
         ReviveStateChanged?.Invoke();
+    }
+
+    /// <summary>
+    /// 쓰러진 소녀를 그 자리에서 즉시 되살린다(부활 대기 없이). 스폰포인트로 돌아가고 체력이 가득 찬다.
+    /// 살아 있으면 아무 일도 하지 않는다.
+    ///
+    /// 부활이 없는 전장(ReviveDelayFor 가 음수)에서도 동작한다. 그 규칙은 "시간이 지나면 저절로 일어나는가"를
+    /// 정하는 것이지, 외부 효과가 되살리는 것까지 막는 것이 아니다(멸망전의 부활 증강 등).
+    /// </summary>
+    public void ReviveNow() {
+        if (IsAlive) return;
+        if (_reviveRoutine != null) { StopCoroutine(_reviveRoutine); _reviveRoutine = null; }
+        Revive();
     }
 
     /// <summary>디렉터가 던전(런) 재시작 시 강제로 스폰포인트에 되살릴 때 사용.</summary>

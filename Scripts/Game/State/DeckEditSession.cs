@@ -22,6 +22,14 @@ public sealed class DeckEditSession {
 
     private readonly List<int> _members = new(Capacity);
 
+    // 편성 해제로 남길 수 있는 최소 인원. 덱은 1명(전투가 비지 않게), 전선 스쿼드는 0명(비워 둘 수 있다).
+    private readonly int _minMembers;
+
+    /// <param name="minMembers">편성 해제로 남길 수 있는 최소 인원(기본 1).</param>
+    public DeckEditSession(int minMembers = 1) {
+        _minMembers = System.Math.Max(0, minMembers);
+    }
+
     /// <summary>편성원(순서 = 슬롯 순서). 빈 슬롯은 목록에 담기지 않으므로 항상 앞쪽부터 채워진다.</summary>
     public IReadOnlyList<int> Members => _members;
 
@@ -55,6 +63,23 @@ public sealed class DeckEditSession {
             if (deck.SelectedCharIds.Contains(deck.RepresentativeCharId)) _members.Add(deck.RepresentativeCharId);
             foreach (int id in deck.SelectedCharIds) {
                 if (id == deck.RepresentativeCharId || _members.Contains(id)) continue;
+                if (_members.Count >= Capacity) break;
+                _members.Add(id);
+            }
+        }
+        IsDirty = false;
+        Changed?.Invoke();
+    }
+
+    /// <summary>
+    /// 순서가 정해진 편성 목록으로 작업본을 되돌린다(대표 필드가 없는 편성: 전선 스쿼드 등).
+    /// 0/중복은 건너뛰고 정원까지만 담는다.
+    /// </summary>
+    public void Reset(IReadOnlyList<int> members) {
+        _members.Clear();
+        if (members != null) {
+            foreach (int id in members) {
+                if (id == 0 || _members.Contains(id)) continue;
                 if (_members.Count >= Capacity) break;
                 _members.Add(id);
             }
@@ -108,12 +133,12 @@ public sealed class DeckEditSession {
     }
 
     /// <summary>
-    /// 슬롯을 비운다(편성 해제). 최소 1명은 남아야 하므로 마지막 1명은 뺄 수 없다.
+    /// 슬롯을 비운다(편성 해제). 최소 인원(기본 1명)보다 줄일 수는 없다.
     /// 대표(첫 칸)를 빼면 다음 칸이 자동으로 대표가 된다.
     /// </summary>
     public bool RemoveAt(int slotIndex) {
         if (slotIndex < 0 || slotIndex >= _members.Count) return false;
-        if (_members.Count <= 1) return false;
+        if (_members.Count <= _minMembers) return false;
 
         _members.RemoveAt(slotIndex);
         MarkChanged();

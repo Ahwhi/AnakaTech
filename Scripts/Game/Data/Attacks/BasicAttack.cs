@@ -19,6 +19,18 @@ public abstract class BasicAttack : ScriptableObject {
     /// <summary>적중 시 거는 상태이상. 데미지를 넣는 자리(AttackContext.DealDamage)가 함께 넘긴다.</summary>
     public IReadOnlyList<StatusEffectSpec> StatusEffects => statusEffects;
 
+    /// <summary>
+    /// 실행 중 전용 사본(컨텐츠가 값만 바꿔 쓰는 공격)의 상태이상을 바꾼다. 에셋 원본에는 부르지 않는다.
+    /// </summary>
+    protected void ReplaceStatusEffects(StatusEffectSpec[] effects) =>
+        statusEffects = effects ?? System.Array.Empty<StatusEffectSpec>();
+
+    /// <summary>
+    /// 공격을 시작한 뒤 시전자가 제자리에 서 있어야 하는 시간(초). 예고 후 발사하는 공격처럼 시작 위치가 곧 발사 위치인
+    /// 공격이 쓴다. 입력으로 움직이는 유닛(떠도는 몬스터 등)만 이 값을 지키며, 기본 추적 전투는 원래 공격할 때 멈춰 있다.
+    /// </summary>
+    public virtual float CastLockSeconds => 0f;
+
     /// <summary>기본공격 1회 실행(데미지 적용 + 연출). ctx 로 시전자/대상/기준점/연출에 접근한다.</summary>
     public abstract void Execute(AttackContext ctx);
 }

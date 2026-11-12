@@ -5,10 +5,11 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// 길드 레이드 씬의 HUD. 의뢰 씬 HUD 와 같은 구성(상단 보스 체력 게이지 + 남은 시간)이지만
-/// 하단 캐릭터 패널은 두지 않는다(레이드는 줌과 피해 표시만 보면 되는 짧은 도전이라 조작할 것이 없다).
+/// 공유 체력 게이지 전투 씬의 HUD(길드 레이드, 원정대 공용). 의뢰 씬 HUD 와 같은 구성(상단 체력 게이지 + 남은 시간)이지만
+/// 하단 캐릭터 패널은 두지 않는다(짧은 도전이라 줌과 피해 표시만 보면 되고 조작할 것이 없다).
 ///
-/// 게이지는 매 프레임 디렉터에서 폴링해 그린다(전투 값이 프레임 단위로 움직이므로 이벤트보다 폴링이 단순하다).
+/// 값은 IBossGaugeSource 계약으로만 읽으므로 어느 디렉터가 오든 같은 프리팹을 그대로 쓴다.
+/// 게이지는 매 프레임 폴링해 그린다(전투 값이 프레임 단위로 움직이므로 이벤트보다 폴링이 단순하다).
 /// 체력 감소는 부드럽게 따라가도록 보간한다(CommissionHudPanel 과 같은 규칙).
 /// </summary>
 public sealed class GuildRaidHudController : MonoBehaviour {
@@ -50,9 +51,22 @@ public sealed class GuildRaidHudController : MonoBehaviour {
     [Tooltip("나가기 버튼. 그때까지 깎은 피해는 서버에 반영된다.")]
     [SerializeField] private Button exitButton;
 
-    private GuildRaidDirector _director;
+    [Header("Swap Announce")]
+    [Tooltip("다음 레벨 보스 등장 안내 묶음(무한 타워 합류 안내와 같은 방식). 알파로 나타났다 사라지며, 평소에는 알파 0 이다. " +
+             "Blocks Raycasts 는 꺼 둔다.")]
+    [SerializeField] private CanvasGroup swapGroup;
+    [Tooltip("새로 나온 보스 레벨(예: Lv.3).")]
+    [SerializeField] private TMP_Text swapLevelText;
+    [SerializeField] private float swapFadeIn = 0.25f;
+    [SerializeField] private float swapHold = 1.0f;
+    [SerializeField] private float swapFadeOut = 0.4f;
+
+    private IBossGaugeSource _director;
     private BattleHudContext _ctx;
     private float _displayedHpRatio = 1f;
+    // 지금 화면에 반영된 보스 레벨 표기. 무대 값과 달라지는 순간이 "다음 레벨 보스 등장"이다.
+    private string _shownLevelText;
+    private Sequence _swapTween;
 
     // 표시 중인 피해량(실제 값을 굴러서 따라간다)과 직전 실제 값(증가 감지용).
     private long _shownDamage;
@@ -67,7 +81,7 @@ public sealed class GuildRaidHudController : MonoBehaviour {
     public event Action ExitRequested;
 
     [VContainer.Inject]
-    public void Construct(GuildRaidDirector director, BattleHudContext ctx) {
+    public void Construct(IBossGaugeSource director, BattleHudContext ctx) {
         _director = director;
         _ctx = ctx;
     }
@@ -80,7 +94,7 @@ public sealed class GuildRaidHudController : MonoBehaviour {
         // 전장 공용 패널들은 메인/의뢰 씬과 같은 컴포넌트라 컨텍스트만 넘기면 그대로 동작한다.
         if (_ctx == null) {
             Debug.LogError("[GuildRaidHudController] 의존성 주입이 되지 않았습니다. " +
-                           "GuildRaidLifetimeScope 의 Configure 에 BattleHudContext 등록과 " +
+                           "씬 LifetimeScope 의 Configure 에 BattleHudContext / IBossGaugeSource 등록과 " +
                            "RegisterComponentInHierarchy<GuildRaidHudController>() 가 있는지 확인하세요.");
             return;
         }
@@ -95,8 +109,10 @@ public sealed class GuildRaidHudController : MonoBehaviour {
         if (_director == null) return;
 
         _displayedHpRatio = _director.BossHpRatio;
+        _shownLevelText = _director.BossLevelText;
+        HideSwap();
         if (bossNameText != null) bossNameText.text = _director.BossName;
-        if (bossLevelText != null) bossLevelText.text = $"Lv.{_director.BossLevel}";
+        if (bossLevelText != null) bossLevelText.text = _shownLevelText;
 
         _shownDamage = 0;
         _lastDamage = 0;
@@ -107,6 +123,17 @@ public sealed class GuildRaidHudController : MonoBehaviour {
 
     private void Update() {
         if (_director == null) return;
+
+        // 보스를 잡아 다음 레벨 보스가 나왔으면(V1.13) 레벨 표기를 바꾸고 게이지를 새 보스 체력에 바로 맞춘다
+        // (보간하면 0 에서 가득 찬 쪽으로 차오르는 모습이 회복처럼 보인다).
+        // 시작 전(RefreshForNewRaid 이전)에는 비교 기준이 없으므로 안내하지 않는다.
+        string levelText = _director.BossLevelText;
+        if (_shownLevelText != null && !string.Equals(_shownLevelText, levelText)) {
+            _shownLevelText = levelText;
+            if (bossLevelText != null) bossLevelText.text = levelText;
+            _displayedHpRatio = _director.BossHpRatio;
+            PlaySwap(levelText);
+        }
 
         // 체력은 목표 비율로 부드럽게 따라간다(한 방에 크게 깎여도 게이지가 순간이동하지 않게).
         _displayedHpRatio = Mathf.Lerp(_displayedHpRatio, _director.BossHpRatio, HpLerpSpeed * Time.deltaTime);
@@ -165,6 +192,28 @@ public sealed class GuildRaidHudController : MonoBehaviour {
         _colorTween = dealtDamageText.DOColor(_damageBaseColor, damagePunchDuration * 1.6f)
                                      .SetLink(gameObject);
     }
+
+    // 다음 레벨 보스 등장 안내. 연달아 잡으면 앞 안내를 끊고 새 레벨로 다시 띄운다(무한 타워 합류 안내와 같은 규칙).
+    // 잠깐 보였다 사라지는 표시라 일시정지와 무관하게 흘러간다.
+    private void PlaySwap(string levelText) {
+        if (swapGroup == null) return;
+        if (swapLevelText != null) swapLevelText.text = levelText;
+
+        _swapTween?.Kill();
+        swapGroup.alpha = 0f;
+        _swapTween = DOTween.Sequence()
+            .Append(swapGroup.DOFade(1f, swapFadeIn))
+            .AppendInterval(swapHold)
+            .Append(swapGroup.DOFade(0f, swapFadeOut))
+            .SetLink(gameObject);
+    }
+
+    private void HideSwap() {
+        _swapTween?.Kill();
+        if (swapGroup != null) swapGroup.alpha = 0f;
+    }
+
+    private void OnDestroy() => _swapTween?.Kill();
 
     private void Apply(float ratio) {
         if (bossHpSlider != null) {

@@ -53,7 +53,8 @@ public sealed class MainDataService : IMainDataService {
                 InvestedAttackSpeed = c.invAttackSpeed,
                 InvestedMoveSpeed = c.invMoveSpeed,
                 InvestedSkillAccel = c.invSkillAccel,
-                AutoStatType = c.autoStatType
+                AutoStatType = c.autoStatType,
+                LimitBroken = c.limitBroken
             });
         }
 
@@ -178,7 +179,7 @@ public sealed class MainDataService : IMainDataService {
                 StarLevel = res.starLevel, StatPoints = res.statPoints, Shards = res.shards,
                 InvestedAttack = res.invAttack, InvestedDefense = res.invDefense, InvestedHealth = res.invHealth,
                 InvestedAttackSpeed = res.invAttackSpeed, InvestedMoveSpeed = res.invMoveSpeed, InvestedSkillAccel = res.invSkillAccel,
-                AutoStatType = res.autoStatType
+                AutoStatType = res.autoStatType, LimitBroken = res.limitBroken
             } : null
         };
     }
@@ -227,7 +228,7 @@ public sealed class MainDataService : IMainDataService {
                 StarLevel = res.starLevel, StatPoints = res.statPoints, Shards = res.shards,
                 InvestedAttack = res.invAttack, InvestedDefense = res.invDefense, InvestedHealth = res.invHealth,
                 InvestedAttackSpeed = res.invAttackSpeed, InvestedMoveSpeed = res.invMoveSpeed, InvestedSkillAccel = res.invSkillAccel,
-                AutoStatType = res.autoStatType
+                AutoStatType = res.autoStatType, LimitBroken = res.limitBroken
             } : null
         };
     }
@@ -320,7 +321,30 @@ public sealed class MainDataService : IMainDataService {
                 StarLevel = res.starLevel, StatPoints = res.statPoints, Shards = res.shards,
                 InvestedAttack = res.invAttack, InvestedDefense = res.invDefense, InvestedHealth = res.invHealth,
                 InvestedAttackSpeed = res.invAttackSpeed, InvestedMoveSpeed = res.invMoveSpeed, InvestedSkillAccel = res.invSkillAccel,
-                AutoStatType = res.autoStatType
+                AutoStatType = res.autoStatType, LimitBroken = res.limitBroken
+            } : null
+        };
+    }
+
+    public async UniTask<GrowthResult> LimitBreakAsync(int charDataId, CancellationToken ct = default) {
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.CancelAfter(ResponseTimeout);
+
+        var wait = _net.WaitPacketAsync<S_LimitBreakResult>(cts.Token);
+        _net.Send(new C_LimitBreak { charDataId = charDataId }.Write());
+        var res = await wait;
+
+        return new GrowthResult {
+            IsSuccess = res.isSuccess,
+            FailReason = res.failReason,
+            NewLimitBreakTicket = res.newLimitBreakTicket,
+            Updated = res.isSuccess ? new CharacterProgress {
+                CharDataId = res.charDataId,
+                Level = res.level, Exp = res.exp, MaxExp = res.maxExp,
+                StarLevel = res.starLevel, StatPoints = res.statPoints, Shards = res.shards,
+                InvestedAttack = res.invAttack, InvestedDefense = res.invDefense, InvestedHealth = res.invHealth,
+                InvestedAttackSpeed = res.invAttackSpeed, InvestedMoveSpeed = res.invMoveSpeed, InvestedSkillAccel = res.invSkillAccel,
+                AutoStatType = res.autoStatType, LimitBroken = res.limitBroken
             } : null
         };
     }

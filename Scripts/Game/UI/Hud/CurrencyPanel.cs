@@ -9,7 +9,11 @@ public sealed class CurrencyPanel : MonoBehaviour {
     [Tooltip("표시할 재화 위젯. 비우면 자식에서 자동 수집(비활성 포함).")]
     [SerializeField] private CurrencyView[] views;
 
-    public void Initialize(MainHudContext ctx) {
+    /// <summary>
+    /// 재화 위젯을 일괄 초기화한다. 전투 씬(전선 등)처럼 메인 HUD 가 없는 화면도 같은 패널을 쓸 수 있도록
+    /// 전투 화면 공용부(BattleHudContext)로 받는다. 메인 HUD 에서만 되는 동작(+버튼/설명 팝업)은 위젯이 알아서 가린다.
+    /// </summary>
+    public void Initialize(BattleHudContext ctx) {
         if (views == null || views.Length == 0)
             views = GetComponentsInChildren<CurrencyView>(true);
 

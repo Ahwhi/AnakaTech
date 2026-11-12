@@ -22,10 +22,6 @@ public enum PvpBattleResult {
 /// 그대로 통과시켜 만든다. 서버가 최종 스탯을 계산해 보내면 조립 규칙이 두 곳에 생기므로 그렇게 하지 않는다.
 /// </summary>
 public sealed class PvpBattleDirector : BattleStage {
-    [Header("Enemy")]
-    [Tooltip("상대 캐릭터로 쓸 유닛 프리팹. 내 파티와 같은 프리팹을 쓰되 팀만 다르게 세운다.")]
-    [SerializeField] private CharacterUnit enemyUnitPrefab;
-
     [Header("Battle")]
     [Tooltip("전장 배경. 비우면 씬에 깔린 배경을 그대로 쓴다.")]
     [SerializeField] private Sprite backgroundSprite;
@@ -95,18 +91,13 @@ public sealed class PvpBattleDirector : BattleStage {
         }
     }
 
-    public float TimeRatio => PvpBattleRules.BattleSeconds > 0
-        ? Mathf.Clamp01(_remaining / PvpBattleRules.BattleSeconds) : 0f;
+    public float TimeRatio => _tuning.BattleSeconds > 0
+        ? Mathf.Clamp01(_remaining / _tuning.BattleSeconds) : 0f;
 
     public string TimeText => $"{Mathf.CeilToInt(Mathf.Max(0f, _remaining))}";
 
-    // 상대 파티도 내 파티와 같은 보정(장비/각인/본부)을 받아야 하므로, 그 표들을 여기서도 들고 있는다.
-    private EngravingDatabase _engravingDb;
-    private HqNodeDatabase _hqNodeDb;
-    // 상대가 끼운 코스튬의 스탯 보정을 내 파티와 같은 규칙으로 해석하기 위한 표.
-    private CostumeDatabase _costumeDb;
-    // 상대 편성의 시너지도 같은 규칙으로 살려야 하므로 시너지 표도 함께 들고 있는다.
-    private SynergyDatabase _synergyDb;
+    // 상대 파티도 내 파티와 같은 보정(장비/각인/본부/코스튬/시너지)을 받아야 하므로 공용 조립기로 세운다.
+    private RemoteCharacterBuilder _remoteBuilder;
     // 상대 편성원 id 목록(시너지 판정 기준). 상대 덱을 받을 때 1회 만들어 재사용한다.
     private readonly List<int> _opponentDeckIds = new();
 
@@ -117,14 +108,33 @@ public sealed class PvpBattleDirector : BattleStage {
                           CostumeDatabase costumeDb, SynergyDatabase synergyDb,
                           CharacterAppearanceService appearance, DungeonDatabase dungeonDb) {
         ConfigureStage(settings, charDb, equipDb, store, sound, appearance, dungeonDb);
-        _engravingDb = engravingDb;
-        _hqNodeDb = hqNodeDb;
-        _costumeDb = costumeDb;
-        _synergyDb = synergyDb;
+        _remoteBuilder = new RemoteCharacterBuilder(settings, equipDb, engravingDb, hqNodeDb, costumeDb, synergyDb);
     }
 
-    /// <summary>전투 시작. 씬 매니저가 서버 입장 처리(공격 횟수 소모)를 마친 뒤 호출한다.</summary>
-    public void Begin(UserDeckDto opponent) {
+    // 이번 판의 전투 조건(제한 시간). 컨텐츠마다 다르다(PvpBattleRules.TuningOf).
+    private PvpBattleRules.Tuning _tuning = PvpBattleRules.Default;
+
+    // 이번 판의 양 팀 룬(쟁탈전 전용, 그 밖의 컨텐츠는 null = 보정 없음).
+    private ArenaRuneLoadout _myRunes;
+    private ArenaRuneLoadout _opponentRunes;
+
+    // 내 파티의 룬 보정. 파티 생성과 전투 중 스탯 갱신이 모두 이 관문을 지난다.
+    // 양 팀이 모두 캐릭터라 아군/적 표시 그룹을 켠다(아웃핏이 같으면 색만으로는 구분되지 않는다).
+    protected override bool ShowsTeamMarkers => true;
+
+    protected override CombatStats BuildCharacterStats(CharacterData data, CharacterProgress progress) =>
+        ArenaRuneRules.Apply(base.BuildCharacterStats(data, progress), _myRunes);
+
+    /// <summary>
+    /// 전투 시작. 씬 매니저가 서버 입장 처리(공격 횟수 소모)를 마친 뒤 호출한다.
+    /// tuning 은 진입한 컨텐츠의 제한 시간, myRunes/opponentRunes 는 쟁탈전 양 팀의 룬이다(null 이면 보정 없음).
+    /// </summary>
+    public void Begin(UserDeckDto opponent, PvpBattleRules.Tuning tuning,
+                      ArenaRuneLoadout myRunes = null, ArenaRuneLoadout opponentRunes = null) {
+        _tuning = tuning.BattleSeconds > 0 ? tuning : PvpBattleRules.Default;
+        // 파티를 세우기(RebuildParty) 전에 정해야 내 파티에도 룬이 걸린다.
+        _myRunes = myRunes;
+        _opponentRunes = opponentRunes;
         if (opponent == null || opponent.Members.Count == 0) {
             Debug.LogError("[PvpBattleDirector] 상대 편성이 비어 있습니다.");
             Finish(PvpBattleResult.Win);   // 싸울 상대가 없으면 공격자 승리로 본다.
@@ -139,7 +149,7 @@ public sealed class PvpBattleDirector : BattleStage {
         OpponentProfileFrameId = opponent.ProfileFrameId;
         _finished = false;
         SetPaused(false);
-        _remaining = PvpBattleRules.BattleSeconds;
+        _remaining = _tuning.BattleSeconds;
 
         ClearEnemyParty();   // 목록만 비운다(실제 파괴는 아래 ClearMonsters 가 한다).
         ClearMonsters();
@@ -153,13 +163,8 @@ public sealed class PvpBattleDirector : BattleStage {
     }
 
     // 상대 파티를 적 팀으로 세운다. 내 파티와 마주 보도록 원형 배치를 좌우 반전해 배치한다.
+    // 상대도 내 파티와 같은 프리팹 규칙(기본 유닛 또는 상대가 낀 아웃핏)을 쓰고, 적 표시는 유닛의 팀 그룹이 맡는다.
     private void SpawnEnemyParty(UserDeckDto opponent) {
-        if (enemyUnitPrefab == null) {
-            Debug.LogError("[PvpBattleDirector] 상대 캐릭터 프리팹이 없습니다.");
-            Finish(PvpBattleResult.Win);
-            return;
-        }
-
         _enemyMaxHpTotal = 0f;
         int count = opponent.Members.Count;
 
@@ -172,6 +177,9 @@ public sealed class PvpBattleDirector : BattleStage {
         _opponentDeckIds.Clear();
         for (int i = 0; i < count; i++) _opponentDeckIds.Add(opponent.Members[i].CharDataId);
 
+        // 상대도 내 파티와 같이 자리를 매 판 섞는다(편성 순서대로 서면 상대 대표가 늘 같은 자리에 선다).
+        var places = ShuffledPlaces(count);
+
         for (int i = 0; i < count; i++) {
             var member = opponent.Members[i];
             var data = CharDb.Get(member.CharDataId);
@@ -179,20 +187,25 @@ public sealed class PvpBattleDirector : BattleStage {
 
             // 마스크 슬롯은 내 파티와 겹치지 않는 대역을 쓴다(스프라이트가 서로 섞이지 않게).
             int slot = EnemyMaskSlotBase + i;
-            Vector3 spawn = SidePos(i, count, mine: false);
+            Vector3 spawn = SidePos(places[i], count, mine: false);
             // 각인은 항상 적용분(스탯)과 조건부(전투 중 발동)로 나뉘므로 한 번만 만들어 양쪽에 쓴다.
-            var engravings = OpponentEngravings(member, opponent);
-            var stats = BuildOpponentStats(data, member, opponent, engravings);
+            var engravings = _remoteBuilder.Engravings(member, opponent);
+            // 상대에게는 상대가 장착한 룬을 얹는다(내 파티는 BuildCharacterStats 에서 내 룬을 받는다).
+            var stats = ArenaRuneRules.Apply(
+                _remoteBuilder.Stats(data, member, opponent, engravings, _opponentDeckIds), _opponentRunes);
 
             // 상대의 외형도 서버가 준 코스튬 id 로 해석한다. 상대가 a 코스튬을 끼고 있으면 내 화면에서도
             // 기본 일러스트가 아니라 a 코스튬 일러스트로 서 있어야 한다.
-            var appearance = Appearance != null ? Appearance.Other(data, member.CostumeId)
+            // 아웃핏도 같은 방식이다. 상대가 빨강 아웃핏을 끼고 있으면 내 화면에서도 빨강 아웃핏 유닛으로 선다.
+            var appearance = Appearance != null ? Appearance.Other(data, member.CostumeId, member.UnitSkinId)
                                                 : CharacterAppearance.Default(data);
 
-            var unit = Instantiate(enemyUnitPrefab, spawn, Quaternion.identity, transform);
+            var unit = Instantiate(UnitPrefabFor(appearance), spawn, Quaternion.identity, transform);
             // 팀은 Init 전에 정한다. 초기화 과정에서 팀에 따라 갈리는 처리가 있어도 어긋나지 않게 하기 위함이다.
             unit.SetTeam(Team.Enemy);
-            unit.Init(appearance, stats, isRepresentative: false, spawn, slot, this, this, Settings);
+            unit.ShowTeamMarker(true);
+            // 상대가 한계돌파한 캐릭터면 내 파티와 똑같이 한계돌파 스킬을 쓴다.
+            unit.Init(appearance, stats, member.LimitBroken, isRepresentative: false, spawn, slot, this, this, Settings);
             // 조건부 각인(전투 시작 N초간 등)은 유닛이 직접 켜고 끈다. 내 파티와 같은 통로로 넘긴다.
             unit.SetEngravings(engravings);
             // 상대의 투자(선제 스킬 게이지)도 내 파티와 같은 규칙으로 적용한다.
@@ -206,49 +219,6 @@ public sealed class PvpBattleDirector : BattleStage {
 
         if (_enemyParty.Count == 0) { Finish(PvpBattleResult.Win); return; }
         _started = true;
-    }
-
-    /// <summary>
-    /// 상대 캐릭터의 최종 스탯. 서버가 준 원본 상태(성장 + 장비 + 각인 + 본부 + 수련 + 코스튬 + 편성 시너지)를
-    /// 내 파티와 완전히 같은 조립 경로(CharacterBuild -> CharacterRuntime)에 태운다.
-    ///
-    /// 서버가 최종 스탯을 계산해 보내지 않는 이유는 그러면 조립 규칙이 서버/클라 두 곳에 생기기 때문이고,
-    /// 그렇다고 보정을 빼고 성장분만 쓰면 "내 덱 100% 대 약해진 상대"가 되어 대전이 성립하지 않는다.
-    /// </summary>
-    private CombatStats BuildOpponentStats(CharacterData data, UserDeckMemberDto member, UserDeckDto opponent,
-                                           EngravingLoadout engravings) {
-        var bonus = CharacterBuild.EquipmentBonus(EquippedItemsOf(opponent, member.CharDataId), member.CharDataId, EquipDb)
-                  + engravings.Always
-                  + (_hqNodeDb != null ? _hqNodeDb.TotalBonus(opponent.HqNodeLevels) : new CombatStats())
-                  + OpponentTraining(opponent, member.CharDataId)
-                  + CharacterBuild.CostumeBonus(member.CostumeId, member.CharDataId, _costumeDb)
-                  + CharacterBuild.SynergyBonus(member.CharDataId, _opponentDeckIds, _synergyDb);
-
-        return new CharacterRuntime(data, ToProgress(member), Settings, bonus).FinalStats;
-    }
-
-    // 상대의 수련 효과. 내 파티와 같은 해석 규칙(TrainingRules)을 그대로 통과시키므로
-    // 상대가 키운 사거리/2회공격/회피가 내 화면에서도 똑같이 동작한다.
-    private static CombatStats OpponentTraining(UserDeckDto opponent, int charDataId) =>
-        opponent.Trainings.TryGetValue(charDataId, out var t)
-            ? TrainingRules.BonusOf(t.Effect, t.ValueTenth)
-            : new CombatStats();
-
-    private static CharacterProgress ToProgress(UserDeckMemberDto member) => new() {
-        CharDataId = member.CharDataId,
-        Level = member.Level,
-        StarLevel = member.StarLevel,
-        InvestedAttack = member.InvAttack,
-        InvestedDefense = member.InvDefense,
-        InvestedHealth = member.InvHealth,
-        InvestedAttackSpeed = member.InvAttackSpeed,
-        InvestedMoveSpeed = member.InvMoveSpeed,
-        InvestedSkillAccel = member.InvSkillAccel,
-    };
-
-    private EngravingLoadout OpponentEngravings(UserDeckMemberDto member, UserDeckDto opponent) {
-        opponent.EngravingSlots.TryGetValue(member.CharDataId, out var slots);
-        return CharacterBuild.Engravings(slots, member.StarLevel, opponent.EngravingLevels, _engravingDb);
     }
 
     // 상대 파티의 스쿼드 재생. 주기/비율 규칙은 내 파티와 같고(BattleStage.TickSquadRegen) 대상만 다르다.
@@ -272,11 +242,6 @@ public sealed class PvpBattleDirector : BattleStage {
     // 상대의 재생 비율. 덱을 받은 시점에 한 번만 구해 둔다(매 프레임 다시 셀 이유가 없다).
     private float _opponentRegenRatio;
     private float _opponentRegenTimer;
-
-    private static IEnumerable<EquipmentInstanceDto> EquippedItemsOf(UserDeckDto opponent, int charDataId) {
-        foreach (var e in opponent.Equips)
-            if (e != null && e.EquippedCharDataId == charDataId) yield return e;
-    }
 
     protected override void Update() {
         base.Update();   // 무대 공통 처리(투자 스쿼드 재생 등)를 먼저 돌린다.

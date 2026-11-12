@@ -29,9 +29,10 @@ public static class CharacterBuild {
             if (data == null) continue;
             if (!countedSlots.Add(data.Slot)) continue;
 
-            sum += EquipmentRules.ResolveStats(data.Slot, data.Grade, e.Level, e.MainPoints, e.OptionPoints);
+            // 한계돌파 배수는 스탯과 전용무기 효과 양쪽에 붙는다(EquipmentRules 가 함께 처리한다).
+            sum += EquipmentRules.ResolveStats(e, data);
             if (data.IsOwnSignatureOf(charDataId))
-                sum += EquipmentRules.SignatureBonus(data.Grade, data.WeaponType, data.Id);
+                sum += EquipmentRules.SignatureBonus(data.Grade, data.WeaponType, data.Id, e.LimitBroken);
         }
         return sum;
     }
@@ -50,6 +51,13 @@ public static class CharacterBuild {
         if (data == null || data.CharacterId != charDataId) return new CombatStats();
         return data.BonusStats;
     }
+
+    /// <summary>
+    /// 장착 아웃핏이 주는 보정(V1.12). 코스튬과 같은 축으로 더하며, 내 파티와 대전 상대가 이 함수를 공유한다.
+    /// </summary>
+    /// <param name="unitSkinId">장착 아웃핏 id(0 = 기본 아웃핏, 보정 없음).</param>
+    public static CombatStats UnitSkinBonus(int unitSkinId, CostumeDatabase db) =>
+        unitSkinId != 0 && db != null && db.UnitSkins != null ? db.UnitSkins.BonusFor(unitSkinId) : new CombatStats();
 
     /// <summary>
     /// 편성 시너지가 주는 보정. 시너지는 "정해진 캐릭터들이 한 덱에 모두 모였을 때 편성 전원이" 효과를 받으므로,

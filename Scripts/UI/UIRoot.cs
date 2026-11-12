@@ -59,7 +59,9 @@ public class UIRoot : MonoBehaviour, IUIService {
 
     private void Awake() {
         _popup = new PopupLayerState(popupLayer);
-        _light = new PopupLayerState(lightPopupLayer);
+        // Light 레이어는 비차단이라 연속 클리어처럼 비기 전에 계속 새로 뜰 수 있다. 정렬순서가 Popup 레이어를
+        // 넘지 않도록 상한을 둔다. Popup 레이어는 입력을 막아 계속 쌓이지 않으므로 상한 없이 기존대로 둔다.
+        _light = new PopupLayerState(lightPopupLayer, _popup.BaseOrder);
         // 항상 활성인 UIRoot 가 전역 툴팁을 등록한다(툴팁 오브젝트가 비활성이어도 확실히 등록됨).
         if (tooltip != null) tooltip.RegisterAsGlobal();
     }
@@ -79,6 +81,7 @@ public class UIRoot : MonoBehaviour, IUIService {
             throw new InvalidOperationException($"{typeof(T).Name} 프리팹 참조가 비어 있습니다. UIPopupCatalog 에셋에서 해당 항목을 할당하세요.");
 
         var target = layer == UIPopupLayer.Light ? _light : _popup;
+        if (target.NeedsRenumber) RenumberLayer(target);
 
         // 부모가 꺼져 있으면 인스턴스화된 팝업도 함께 비활성이라 보이지 않는다. 인스턴스화 전에 켠다.
         // 프리팹 로드(await)는 한 프레임 이상 걸린다. 그 사이 다른 팝업이 닫혀 카운트가 0이 되면
@@ -189,6 +192,17 @@ public class UIRoot : MonoBehaviour, IUIService {
         if (go.GetComponent<GraphicRaycaster>() == null) go.AddComponent<GraphicRaycaster>();
     }
 
+    // 레이어가 비지 않은 채 계속 열려 정렬순서가 상한에 닿았을 때, 떠 있는 팝업들의 순서를 연 순서대로 처음부터 다시 매긴다.
+    // 나중에 연 팝업이 위라는 순서는 그대로이고 값만 작아진다. 로드 중인 팝업은 이미 받은 순서(상한 미만)를 그대로 쓴다.
+    private void RenumberLayer(PopupLayerState layer) {
+        layer.RestartOrder();
+        foreach (var entry in _openPopups) {
+            if (entry.Layer != layer || entry.Go == null) continue;
+            var canvas = entry.Go.GetComponent<Canvas>();
+            if (canvas != null) canvas.sortingOrder = layer.NextOrder();
+        }
+    }
+
     // 떠 있는 모든 팝업을 즉시 닫는다(연결 끊김 등). CloseInstance 가 목록을 변형하므로 스냅샷 위로 순회한다.
     //
     // 세대 값을 올리는 것이 핵심이다. 아직 로드 중인 팝업은 목록에 없어 여기서 닫히지 않는데,
@@ -208,25 +222,42 @@ public class UIRoot : MonoBehaviour, IUIService {
         private readonly int _baseOrder;   // 레이어 컨테이너 캔버스의 정렬순서(예: Light=50, Popup=100). 팝업 정렬순서의 기준점.
         private int _count;   // 현재 떠 있는(로드 중 포함) 팝업 수. 0 이 되면 레이어를 끄고 오프셋을 리셋한다.
         private int _offset;  // 마지막으로 부여한 정렬 오프셋(레이어가 빌 때까지 단조 증가).
+        // 이 레이어 팝업이 넘으면 안 되는 정렬순서(그 값 미만만 쓴다). 위 레이어의 기준값을 넣는다.
+        // 지정하지 않거나 기준값 이하로 잘못 들어오면 상한 없음(기존 동작)으로 둔다.
+        private readonly int _ceiling;
 
-        public PopupLayerState(Transform root) {
+        public PopupLayerState(Transform root, int ceiling = int.MaxValue) {
             _root = root;
             var canvas = root != null ? root.GetComponent<Canvas>() : null;
             _baseOrder = canvas != null ? canvas.sortingOrder : 0;
+            _ceiling = ceiling > _baseOrder + 1 ? ceiling : int.MaxValue;
         }
 
         public Transform Root => _root;
         public int Count => _count;
+        public int BaseOrder => _baseOrder;
+
+        /// <summary>다음에 부여할 순서가 상한에 닿는지. 닿으면 UIRoot 가 떠 있는 팝업 순서를 다시 매긴 뒤 예약한다.</summary>
+        public bool NeedsRenumber => _ceiling != int.MaxValue && _baseOrder + _offset + 1 >= _ceiling;
+
+        /// <summary>순서 다시 매기기의 시작. 이후 NextOrder 를 떠 있는 팝업 수만큼 부른다.</summary>
+        public void RestartOrder() => _offset = 0;
+
+        /// <summary>다음 정렬순서(단조 증가). 상한 안에서만 준다(가득 차면 상한 바로 아래를 준다).</summary>
+        public int NextOrder() {
+            if (_ceiling == int.MaxValue || _baseOrder + _offset + 1 < _ceiling) _offset++;
+            return _baseOrder + _offset;
+        }
 
         // 예약과 동시에 정렬순서를 부여한다. 오프셋을 단조 증가시키므로 나중에 연 팝업은 항상 더 큰 순서를 받는다.
         // '스택 깊이(동시 개수)'로 계산하던 이전 방식은, 중간 팝업(확인창 등)이 열렸다 닫히면 count 가 어긋나
         // 나중 팝업이 앞서 열린 팝업과 같은 순서를 받아(충돌) 렌더 순서가 뒤집히는 문제가 있었다. 단조 증가로 이를 없앤다.
-        // 레이어가 완전히 비면(_count==0) 오프셋을 0 으로 리셋하므로 값이 무한정 커지지 않고 다음 레이어를 넘지 않는다.
+        // 레이어가 완전히 비면(_count==0) 오프셋을 0 으로 리셋한다. 다만 비차단 레이어(Light)는 비기 전에 계속 새로 뜰 수 있어
+        // 리셋만으로는 위 레이어를 넘을 수 있다. 그래서 상한(_ceiling)이 있는 레이어는 닿기 전에 UIRoot 가 순서를 다시 매긴다.
         public int Reserve() {
             SetActive(true);
             _count++;
-            _offset++;
-            return _baseOrder + _offset;
+            return NextOrder();
         }
 
         public void Release() {
@@ -255,7 +286,7 @@ public class UIRoot : MonoBehaviour, IUIService {
     // ── 토스트 ──────────────────────────────────────────────
     public void ShowToast(string message, float duration = 2f) => toast?.Show(message, duration);
 
-    public void ShowCombatPowerGain(int before, int after, float duration = 2f) {
+    public void ShowCombatPowerGain(long before, long after, float duration = 2f) {
         // 미할당이면 아무 일도 일어나지 않아 "전투력이 안 올랐다"와 구분되지 않는다. 원인을 바로 알 수 있게 알린다
         // (시너지 토스트와 같은 이유. 조용히 지나가면 성장 계산을 의심하게 된다).
         if (combatPowerToast == null) {

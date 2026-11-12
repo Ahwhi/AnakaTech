@@ -176,16 +176,15 @@ public sealed class CompositionPanel : UIView, CompositionDragHandle.IHost {
 
         if (totalPowerText == null) return;
 
-        float total = 0f;
+        double total = 0d;   // 21억을 넘는 합계도 깨지지 않게 double 로 더하고 그대로 표시한다
         foreach (int id in _session.Members) {
             var data = _hud.CharDb.Get(id);
             var progress = _hud.Store.GetProgress(id);
             if (data == null || progress == null) continue;
             // 편집 중인 편성으로 시너지를 판정한다(활성 목록에 뜬 시너지가 합계 전투력에도 그대로 반영되도록).
-            total += new CharacterRuntime(data, progress, _hud.Settings,
-                                          _hud.Store.TotalBonusFor(id, _hud.EquipDb, _session.Members)).CombatPower;
+            total += _hud.Store.RuntimeFor(data, progress, _hud.Settings, _hud.EquipDb, _session.Members).CombatPower;
         }
-        totalPowerText.text = Mathf.RoundToInt(total).ToString("N0");
+        totalPowerText.text = total.ToString("N0");
     }
 
     // ── 시너지 ───────────────────────────────────────────

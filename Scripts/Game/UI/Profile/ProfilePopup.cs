@@ -149,7 +149,7 @@ public sealed class ProfilePopup : UIView, IHudPopup {
 
     private void RefreshStats() {
         if (combatPowerText != null)
-            combatPowerText.text = Mathf.RoundToInt(AccountStats.TotalDeckCombatPower(_hud)).ToString("N0");
+            combatPowerText.text = AccountStats.TotalDeckCombatPower(_hud).ToString("N0");
         if (collectionText != null)
             collectionText.text = Fraction(AccountStats.OwnedCharacterCount(_hud), AccountStats.TotalCharacterCount(_hud));
         if (starText != null)

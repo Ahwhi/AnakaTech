@@ -25,6 +25,8 @@ public sealed class ProfileFramePopup : UIView, IHudPopup {
     private CancellationToken _ct;
     private readonly List<ProfileFrameCard> _cards = new();
     private readonly HashSet<int> _owned = new();
+    // 기간제 테두리의 만료 시각(UTC epoch). 영구 테두리는 없다.
+    private readonly Dictionary<int, long> _expires = new();
     private bool _busy;
 
     protected override void Awake() {
@@ -46,6 +48,8 @@ public sealed class ProfileFramePopup : UIView, IHudPopup {
             // 기본 테두리는 서버가 지급/보유로 관리하지 않는 값이라 항상 보유로 넣어 준다(잠금/거부되지 않게).
             _owned.Add(ProfileFrameCatalog.DefaultId);
             foreach (var id in profile.ProfileFrameIds) _owned.Add(id);
+            _expires.Clear();
+            foreach (var kv in profile.ProfileFrameExpires) _expires[kv.Key] = kv.Value;
             _hud.Store.EquippedProfileFrameId.Value = profile.EquippedProfileFrameId;
         } catch (OperationCanceledException) {
             return;
@@ -68,6 +72,8 @@ public sealed class ProfileFramePopup : UIView, IHudPopup {
             // 이름은 카탈로그를 거쳐 얻는다(에셋에 이름이 비어 있어도 "기본 테두리" 같은 대체 문구가 나온다).
             card.Bind(e.id, _hud.ProfileFrames.DisplayName(e.id), e.icon,
                       _owned.Contains(e.id), e.id == equipped, OnCardClick);
+            // 기간제(쟁탈전 주간 순위 등)는 남은 기간을 보여 준다. 영구/미보유는 표시하지 않는다.
+            card.SetExpiry(_owned.Contains(e.id) && _expires.TryGetValue(e.id, out long exp) ? exp : 0);
             _cards.Add(card);
         }
         if (unequipButton != null) unequipButton.interactable = equipped != ProfileFrameCatalog.DefaultId;

@@ -9,7 +9,7 @@ public static class CombatMath {
     /// 공격자/방어자 스탯으로 최종 데미지를 한 번에 계산한다(체력 차감/사망 처리는 대상 유닛이 수행).
     /// 파이프라인(기획 확정):
     ///  1) 기본딜   = 공격력 x 배수
-    ///  2) 방어감산 = 유효방어(방어자 방어 x (1-관통)) x 방어계수 를 뺀다
+    ///  2) 방어감산 = 유효방어(방어자 방어 - 공격자 관통, 0 미만 없음) x 방어계수 를 뺀다(V1.12: 관통은 % 가 아니라 방어 수치를 직접 깎는다)
     ///  3) 지터     = 최소/최대데미지비율로 재조형한 [하한, 상한]에서 랜덤
     ///  4) 치명타   = 확률 판정 후 치명배수(방어자 치명타저항으로 추가 배율만 감쇄)
     ///  5) 최종딜   = 최종데미지% 곱 x 방어자 피격데미지감소
@@ -62,10 +62,12 @@ public static class CombatMath {
         return Mathf.Max(0f, expected);
     }
 
-    // 기본 공격딜에서 방어 감산까지(음수 차단). 유효방어 = 방어 x (1 - 관통), 감산 = 유효방어 x 방어계수.
+    // 기본 공격딜에서 방어 감산까지(음수 차단). 유효방어 = max(0, 방어 - 관통), 감산 = 유효방어 x 방어계수.
+    // 관통은 방어 수치를 1 단위로 깎는다(V1.12). % 방식은 성장으로 100% 를 넘기면 더 의미가 없어 바꿨다.
+    // 상대 방어보다 관통이 크면 그 상대에게는 초과분이 쓸모없지만, 더 단단한 상대에게는 그대로 효과가 있다.
     private static float Mitigated(in CombatStats attacker, in CombatStats defender, float multiplier, float defenseFactor) {
         float baseAtk = Mathf.Max(0f, attacker.Attack) * Mathf.Max(0f, multiplier);
-        float effDef = Mathf.Max(0f, defender.Defense) * (1f - attacker.ArmorPen01);
+        float effDef = Mathf.Max(0f, Mathf.Max(0f, defender.Defense) - Mathf.Max(0f, attacker.ArmorPen));
         float mitigated = baseAtk - effDef * Mathf.Max(0f, defenseFactor);
         return mitigated < 0f ? 0f : mitigated;
     }

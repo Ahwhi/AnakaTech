@@ -106,12 +106,8 @@ public sealed class OfflineRewardPopup : UIView {
     /// 실제로 비운 시간이 아니라 "보상으로 인정된 시간"을 쓴다. 20시간을 비워도 12시간까지만 지급되므로
     /// 실제 시간을 적으면 받은 보상과 문구가 어긋나 덜 받은 것처럼 읽힌다.
     /// </summary>
-    private static string FormatDuration(System.TimeSpan span) {
-        int hours = (int)span.TotalHours;
-        int minutes = span.Minutes;
-        string spent = hours > 0 ? $"{hours}시간 {minutes}분" : $"{minutes}분";
-        return $"{spent}의 오프라인 보상을 획득했습니다.";
-    }
+    private static string FormatDuration(System.TimeSpan span) =>
+        $"{KstTime.Elapsed(span)}의 오프라인 보상을 획득했습니다.";
 
     private void Clear() {
         foreach (var s in _slots) if (s != null) Destroy(s.gameObject);

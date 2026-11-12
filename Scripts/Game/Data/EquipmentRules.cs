@@ -66,6 +66,111 @@ public static class EquipmentRules {
     /// <summary>더 레벨업할 수 있는지(별레벨이 열어준 상한 미달).</summary>
     public static bool CanLevelUp(int currentStar, int currentLevel) => currentLevel < MaxLevel(currentStar);
 
+    // ── 한계돌파 ──
+    // 최대 별레벨 + 최대 레벨에 닿은 장비를 한계돌파권으로 1회 돌파한다(되돌리지 않음).
+    // 돌파한 장비는 스탯(주스탯 + 옵션)이 LimitBreakMultiplier 배가 되고, 전용무기는 전용무기 효과도 같은 배수로 오른다.
+    // 서버 EquipGrowth.LimitBreak* 와 값이 일치해야 한다(어긋나면 버튼은 켜지는데 서버가 거부한다).
+
+    public const int LimitBreakRequiredStar = MaxStarLevel;
+    public const int LimitBreakTicketCost = 1;
+
+    /// <summary>한계돌파에 필요한 레벨(최대 별레벨이 여는 최대 레벨 = 150).</summary>
+    public static int LimitBreakRequiredLevel => MaxLevel(LimitBreakRequiredStar);
+
+    /// <summary>한계돌파한 장비의 스탯/전용무기 효과 배수.</summary>
+    public const float LimitBreakMultiplier = 2f;
+
+    /// <summary>한계돌파 여부에 따른 배수(돌파 전 1, 돌파 후 LimitBreakMultiplier).</summary>
+    public static float LimitBreakScale(bool limitBroken) => limitBroken ? LimitBreakMultiplier : 1f;
+
+    public static bool IsLimitBreakStarMet(EquipmentInstanceDto inst) => inst != null && inst.StarLevel >= LimitBreakRequiredStar;
+    public static bool IsLimitBreakLevelMet(EquipmentInstanceDto inst) => inst != null && inst.Level >= LimitBreakRequiredLevel;
+    public static bool IsLimitBreakTicketMet(int ownedTickets) => ownedTickets >= LimitBreakTicketCost;
+
+    /// <summary>지금 한계돌파할 수 있는지(미돌파 + 별레벨 + 레벨 + 한계돌파권). 버튼 활성이 같은 판정을 쓴다.</summary>
+    public static bool CanLimitBreak(EquipmentInstanceDto inst, int ownedTickets) =>
+        inst != null && !inst.LimitBroken && IsLimitBreakStarMet(inst) && IsLimitBreakLevelMet(inst)
+        && IsLimitBreakTicketMet(ownedTickets);
+
+    /// <summary>서버 GameDataRepository.EquipLimitBreakFail 값 -> 안내 문구.</summary>
+    public static string LimitBreakFailMessage(int failReason) => failReason switch {
+        2 => "이미 한계돌파한 장비입니다.",
+        3 => "레벨이 부족합니다.",
+        4 => "별레벨이 부족합니다.",
+        5 => "한계돌파권이 부족합니다.",
+        _ => "한계돌파할 수 없습니다."
+    };
+
+    // 가방 / 분해
+
+    /// <summary>
+    /// 가방 한도(장착 중인 장비 포함). 실제로 한도를 강제하는 것은 서버이며(GameConstants.EquipmentBagMax)
+    /// 여기는 n/N 표시와 분해 안내를 위한 미러다. 두 값이 어긋나면 화면은 여유가 있다고 하는데 서버가
+    /// 모집을 거절하는 상태가 된다.
+    ///
+    /// 장착분을 함께 세는 이유: 한도의 근거는 장비 목록을 한 패킷에 담을 수 있느냐이고, 장착 중인 장비도
+    /// 같은 목록에 실린다. 가방(미장착)만 세면 "가방은 비었는데 왜 못 뽑지" 가 된다.
+    /// </summary>
+    public const int BagMax = 1000;
+
+    // 등급별 분해 골드(N, R, SR, SSR). 인덱스가 곧 등급이다.
+    // 서버(EquipGrowth.DisassembleGoldByGrade)와 값이 반드시 같아야 미리보기와 실제 지급이 어긋나지 않는다.
+    // XR 이 빠진 것은 의도된 것이다(최상위 등급이라 실수로 날릴 수 없게 분해 자체를 막아 두었다).
+    private static readonly int[] DisassembleGoldByGrade = { 50, 100, 1000, 100000 };
+
+    /// <summary>이 등급의 장비를 분해할 수 있는지.</summary>
+    public static bool CanDisassemble(Grade grade) =>
+        (int)grade >= 0 && (int)grade < DisassembleGoldByGrade.Length;
+
+    /// <summary>분해로 얻는 골드(분해할 수 없는 등급이면 0).</summary>
+    public static int DisassembleGold(Grade grade) =>
+        CanDisassemble(grade) ? DisassembleGoldByGrade[(int)grade] : 0;
+
+    /// <summary>일괄 분해(등급 선택)로 고를 수 있는 등급들. 표시 순서가 곧 토글 순서다.</summary>
+    public static readonly Grade[] DisassembleGrades = { Grade.N, Grade.R, Grade.SR, Grade.SSR };
+
+    /// <summary>
+    /// 등급 일괄 분해의 대상인지. 서버(DisassembleEquipmentByGrade)와 같은 조건이라야 미리보기 개수와
+    /// 실제 분해 개수가 맞는다. 장착 중이거나 각성/레벨업한 장비는 일괄 대상이 아니다
+    /// (키운 장비가 수백 개에 섞여 한 번에 사라지는 사고를 막는다. 그런 장비는 개별 분해로만 처분한다).
+    /// </summary>
+    public static bool IsBulkDisassembleTarget(EquipmentInstanceDto inst, EquipmentData data) =>
+        inst != null && data != null
+        && !inst.IsEquipped
+        && inst.StarLevel <= 1 && inst.Level <= 1
+        && CanDisassemble(data.Grade);
+
+    /// <summary>
+    /// 이 장비 하나를 분해할 수 있는지(개별 분해). 서버(ApplyDisassemble)와 같은 조건이다.
+    /// 한계돌파한 장비는 분해하지 않는다(한계돌파권을 되돌려 줄 수 없어 실수로 날리면 복구가 안 된다).
+    /// </summary>
+    public static bool CanDisassemble(EquipmentInstanceDto inst, EquipmentData data) =>
+        inst != null && data != null && !inst.IsEquipped && !inst.LimitBroken && CanDisassemble(data.Grade);
+
+    // ── 획득 시 기본 포인트 구간(서버 EquipGrowth.MainRange/OptionRange 미러, 표시 전용) ──
+    //   N  : 주 1~10
+    //   R  : 주 11~20, 1옵션 1~5
+    //   SR : 주 21~30, 1옵션 6~10,  2옵션 1~5
+    //   SSR: 주 31~40, 1옵션 11~15, 2옵션 6~10,  3옵션 1~5
+    //   XR : 주 41~50, 1옵션 16~20, 2옵션 11~15, 3옵션 6~10, 4옵션 1~5
+
+    private const int MainRollSpan = 10;
+    private const int OptionRollSpan = 5;
+
+    /// <summary>등급별 주스탯 기본 포인트 구간(양끝 포함).</summary>
+    public static (int min, int max) MainRollRange(Grade grade) {
+        int lo = Mathf.Clamp((int)grade, 0, EquipmentStatLayout.MaxOptionSlots) * MainRollSpan + 1;
+        return (lo, lo + MainRollSpan - 1);
+    }
+
+    /// <summary>등급별 n옵션(optionIndex 0-based) 기본 포인트 구간(양끝 포함). 그 등급에 없는 옵션이면 (0, 0).</summary>
+    public static (int min, int max) OptionRollRange(Grade grade, int optionIndex) {
+        int g = Mathf.Clamp((int)grade, 0, EquipmentStatLayout.MaxOptionSlots);
+        if (optionIndex < 0 || optionIndex >= EquipmentStatLayout.OptionCount(grade)) return (0, 0);
+        int lo = (g - optionIndex - 1) * OptionRollSpan + 1;
+        return (lo, lo + OptionRollSpan - 1);
+    }
+
     /// <summary>지정 레벨에서 주스탯에 누적된 성장 포인트(레벨 1 = 0).</summary>
     public static int MainGrowthPoints(int level) => Mathf.Max(0, level - 1);
 
@@ -82,22 +187,31 @@ public static class EquipmentRules {
     /// 장비 1개의 최종 스탯. 드랍 시 굴린 기본 포인트(mainPoints/optionPoints)에 레벨 성장 포인트를 더한 뒤
     /// 부위별 스탯 종류/스케일(EquipmentStatLayout)로 환산한다. 등급이 개방한 옵션 개수까지만 반영한다.
     /// optionPoints 가 null 이거나 짧아도 안전하다(없는 칸은 0으로 간주).
+    /// 한계돌파한 장비는 결과 전체에 LimitBreakMultiplier 를 곱한다.
     /// </summary>
     public static CombatStats ResolveStats(EquipmentSlot slot, Grade grade, int level,
-                                           int mainPoints, System.Collections.Generic.IReadOnlyList<int> optionPoints) {
+                                           int mainPoints, System.Collections.Generic.IReadOnlyList<int> optionPoints,
+                                           bool limitBroken = false) {
         var stats = new CombatStats();
         int lv = Mathf.Max(1, level);
+        float scale = LimitBreakScale(limitBroken);
 
         var main = EquipmentStatLayout.Main(slot);
-        stats = stats.WithAdded(main.Stat, (mainPoints + MainGrowthPoints(lv)) * main.PerPoint);
+        stats = stats.WithAdded(main.Stat, (mainPoints + MainGrowthPoints(lv)) * main.PerPoint * scale);
 
         int count = EquipmentStatLayout.OptionCount(grade);
         for (int i = 0; i < count; i++) {
             int basePoints = optionPoints != null && i < optionPoints.Count ? optionPoints[i] : 0;
             var opt = EquipmentStatLayout.Option(slot, i);
-            stats = stats.WithAdded(opt.Stat, (basePoints + OptionGrowthPoints(lv, i)) * opt.PerPoint);
+            stats = stats.WithAdded(opt.Stat, (basePoints + OptionGrowthPoints(lv, i)) * opt.PerPoint * scale);
         }
         return stats;
+    }
+
+    /// <summary>장비 인스턴스의 최종 스탯(성장 + 한계돌파 반영, 전용무기 보너스 제외).</summary>
+    public static CombatStats ResolveStats(EquipmentInstanceDto inst, EquipmentData data) {
+        if (inst == null || data == null) return new CombatStats();
+        return ResolveStats(data.Slot, data.Grade, inst.Level, inst.MainPoints, inst.OptionPoints, inst.LimitBroken);
     }
 
     /// <summary>지정 레벨에서 주스탯의 총 포인트(기본 + 성장). 상세 패널의 옵션별 표시에 쓴다.</summary>
@@ -113,28 +227,36 @@ public static class EquipmentRules {
     /// 상세 패널과 가챠 연출 카드가 같은 문구를 쓰도록 여기 한 곳에 모아둔다.
     /// </summary>
     public static string DescribeStats(EquipmentSlot slot, Grade grade, int level,
-                                       int mainPoints, System.Collections.Generic.IReadOnlyList<int> optionPoints) {
+                                       int mainPoints, System.Collections.Generic.IReadOnlyList<int> optionPoints,
+                                       bool limitBroken = false) {
         var sb = new System.Text.StringBuilder();
         int lv = Mathf.Max(1, level);
+        float scale = LimitBreakScale(limitBroken);
 
         var main = EquipmentStatLayout.Main(slot);
         sb.Append(GrowthRules.StatName(main.Stat)).Append(' ')
-          .Append(StatFormat.FormatValue(main.Stat, MainPointsAt(mainPoints, lv) * main.PerPoint));
+          .Append(StatFormat.FormatValue(main.Stat, MainPointsAt(mainPoints, lv) * main.PerPoint * scale));
 
         int count = EquipmentStatLayout.OptionCount(grade);
         for (int i = 0; i < count; i++) {
             int basePoints = optionPoints != null && i < optionPoints.Count ? optionPoints[i] : 0;
             var opt = EquipmentStatLayout.Option(slot, i);
             sb.Append('\n').Append(GrowthRules.StatName(opt.Stat)).Append(' ')
-              .Append(StatFormat.FormatValue(opt.Stat, OptionPointsAt(basePoints, lv, i) * opt.PerPoint));
+              .Append(StatFormat.FormatValue(opt.Stat, OptionPointsAt(basePoints, lv, i) * opt.PerPoint * scale));
         }
         return sb.ToString();
     }
 
-    /// <summary>장비 인스턴스의 스탯 목록 문자열(DescribeStats 편의 오버로드).</summary>
+    /// <summary>장비 인스턴스의 스탯 목록 문자열(DescribeStats 편의 오버로드). 한계돌파 배수가 반영된 값이다.</summary>
     public static string DescribeStats(EquipmentInstanceDto inst, EquipmentData data) {
         if (inst == null || data == null) return "";
-        return DescribeStats(data.Slot, data.Grade, inst.Level, inst.MainPoints, inst.OptionPoints);
+        return DescribeStats(data.Slot, data.Grade, inst.Level, inst.MainPoints, inst.OptionPoints, inst.LimitBroken);
+    }
+
+    /// <summary>한계돌파했을 때의 스탯 목록 문자열(한계돌파 패널의 돌파 후 미리보기).</summary>
+    public static string DescribeLimitBrokenStats(EquipmentInstanceDto inst, EquipmentData data) {
+        if (inst == null || data == null) return "";
+        return DescribeStats(data.Slot, data.Grade, inst.Level, inst.MainPoints, inst.OptionPoints, limitBroken: true);
     }
 
     /// <summary>
@@ -199,19 +321,25 @@ public static class EquipmentRules {
     /// <summary>
     /// 전용무기 장착 보너스. 카탈로그에 규칙이 있으면 그것을(장비별 > 무기타입별 > 등급별 > 전체 우선순위),
     /// 없으면 등급별 최종데미지 폴백(N 10 / R 15 / SR 20 / SSR 25 / XR 30)을 쓴다.
+    /// 한계돌파한 전용무기는 효과에 LimitBreakMultiplier 를 곱한다.
     /// </summary>
-    public static CombatStats SignatureBonus(Grade grade, WeaponType weaponType, int equipDataId) {
-        if (_bonusCatalog != null && _bonusCatalog.TryResolve(equipDataId, grade, weaponType, out var rule))
-            return rule.bonus;
-        return new CombatStats { FinalDamage = FallbackFinalDamage(grade) };
+    public static CombatStats SignatureBonus(Grade grade, WeaponType weaponType, int equipDataId, bool limitBroken = false) {
+        var bonus = _bonusCatalog != null && _bonusCatalog.TryResolve(equipDataId, grade, weaponType, out var rule)
+            ? rule.bonus
+            : new CombatStats { FinalDamage = FallbackFinalDamage(grade) };
+        return limitBroken ? bonus * LimitBreakMultiplier : bonus;
     }
 
-    /// <summary>전용무기 보너스 설명 문구(UI 출력용). 카탈로그 문구가 비어 있으면 스탯 델타로 자동 생성한다.</summary>
-    public static string SignatureBonusDescription(Grade grade, WeaponType weaponType, int equipDataId) {
-        if (_bonusCatalog != null && _bonusCatalog.TryResolve(equipDataId, grade, weaponType, out var rule)
+    /// <summary>
+    /// 전용무기 보너스 설명 문구(UI 출력용). 카탈로그 문구가 비어 있으면 스탯 델타로 자동 생성한다.
+    /// 한계돌파한 무기는 카탈로그 문구(돌파 전 수치로 적혀 있다)를 쓰지 않고 배수를 반영한 스탯 델타로 만든다.
+    /// </summary>
+    public static string SignatureBonusDescription(Grade grade, WeaponType weaponType, int equipDataId,
+                                                   bool limitBroken = false) {
+        if (!limitBroken && _bonusCatalog != null && _bonusCatalog.TryResolve(equipDataId, grade, weaponType, out var rule)
             && !string.IsNullOrEmpty(rule.description))
             return rule.description;
-        return StatFormat.DeltaSummary(SignatureBonus(grade, weaponType, equipDataId));
+        return StatFormat.DeltaSummary(SignatureBonus(grade, weaponType, equipDataId, limitBroken));
     }
 
     // 등급별 최종데미지 폴백: 10 + 5 x 등급(N 10 / R 15 / SR 20 / SSR 25 / XR 30).

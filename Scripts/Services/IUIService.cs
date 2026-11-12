@@ -43,7 +43,7 @@ public interface IUIService {
     void ShowToast(string message, float duration = 2f);
 
     /// <summary>총 전투력 상승 토스트(상승분 + 바뀐 값, 숫자 카운트업). before 이하면 표시하지 않는다.</summary>
-    void ShowCombatPowerGain(int before, int after, float duration = 2f);
+    void ShowCombatPowerGain(long before, long after, float duration = 2f);
 
     /// <summary>
     /// 편성 시너지 활성화 토스트(일반 안내 토스트와 별개 자리/연출). 새로 켜진 시너지에만 쓴다.

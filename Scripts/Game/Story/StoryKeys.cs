@@ -6,4 +6,7 @@
 public static class StoryKeys {
     /// <summary>인트로. 계정당 1회, 메인 씬에 처음 들어가기 전에 재생한다.</summary>
     public const string Intro = "intro";
+
+    /// <summary>장 스토리(1~21). 키 규약은 StoryRules 가 갖는다(서버 StoryCatalog 와 일치).</summary>
+    public static string Chapter(int chapter) => StoryRules.ChapterKey(chapter);
 }

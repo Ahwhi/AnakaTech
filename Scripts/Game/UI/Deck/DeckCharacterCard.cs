@@ -38,6 +38,10 @@ public sealed class DeckCharacterCard : MonoBehaviour {
     [SerializeField] private GameObject selectedFrame;
     [Tooltip("업그레이드 가능(육성/장비) 알림 배지(BadgeView, Source=Manual). 선택.")]
     [SerializeField] private BadgeView upgradeBadge;
+    [Tooltip("한계돌파한 캐릭터에만 켜지는 그룹(연출 이펙트 등). 선택. 꺼진 채로 두면 코드가 상태에 맞춰 켠다.")]
+    [SerializeField] private GameObject limitBreakGroup;
+    [Tooltip("무한 타워 층 보너스를 받는 캐릭터에만 켜지는 그룹. 선택. 무한 타워 편성 화면만 켜며, 다른 화면에서는 꺼진 채로 둔다.")]
+    [SerializeField] private GameObject towerBonusGroup;
 
     [SerializeField] private Button button;
 
@@ -67,11 +71,11 @@ public sealed class DeckCharacterCard : MonoBehaviour {
         if (illustrationView != null) illustrationView.Bind(appearance);
         if (nameText != null) nameText.text = data.DisplayName;
         if (levelText != null && progress != null) levelText.text = progress.Level.ToString();
-        if (gradeText != null) gradeText.SetGrade(data.Grade);
         if (starLevelView != null) starLevelView.SetStarLevel(progress != null ? progress.StarLevel : 0);
         // 등급색은 캐릭터가 바뀔 때만 갱신하면 되고(등급은 불변), 비율은 성장할 때마다 갱신한다.
         if (expBarStyle != null) expBarStyle.SetGrade(data.Grade);
         SetExpRatio(progress);
+        SetLimitBreak(progress);
 
         if (weaponTypeImage != null) {
             var icon = weaponIconTable != null ? weaponIconTable.Get(data.WeaponType) : null;
@@ -108,6 +112,15 @@ public sealed class DeckCharacterCard : MonoBehaviour {
         if (levelText != null && progress != null) levelText.text = progress.Level.ToString();
         if (starLevelView != null) starLevelView.SetStarLevel(progress != null ? progress.StarLevel : 0);
         SetExpRatio(progress);
+        SetLimitBreak(progress);
+    }
+
+    // 한계돌파 표시(등급 뒤 + / 한계돌파 그룹). 성장 갱신(RefreshProgress)에서도 불리므로 돌파하는 즉시 바뀐다.
+    // 그룹은 같은 값이면 건드리지 않아 그룹 안 연출이 처음부터 다시 돌지 않는다.
+    private void SetLimitBreak(CharacterProgress progress) {
+        bool on = progress != null && progress.LimitBroken;
+        if (gradeText != null && _data != null) gradeText.SetGrade(_data.Grade, on);
+        if (limitBreakGroup != null && limitBreakGroup.activeSelf != on) limitBreakGroup.SetActive(on);
     }
 
     // 경험치 비율(0~1)을 Filled 이미지의 채움량으로 반영한다. 진행도 계산은 CharacterProgress 가 소유한다.
@@ -123,6 +136,11 @@ public sealed class DeckCharacterCard : MonoBehaviour {
     /// </summary>
     public void SetGuideTarget(bool on) {
         foreach (var anchor in GetComponentsInChildren<TutorialAnchor>(true)) anchor.enabled = on;
+    }
+
+    /// <summary>무한 타워 층 보너스 대상 표시. 판정은 화면이 TowerBonus.AppliesTo 로 해서 넘긴다.</summary>
+    public void SetTowerBonus(bool on) {
+        if (towerBonusGroup != null && towerBonusGroup.activeSelf != on) towerBonusGroup.SetActive(on);
     }
 
     /// <summary>업그레이드 가능(육성/장비) 배지 표시 여부. DeckPopup 이 스토어 기준으로 계산해 넘긴다.</summary>

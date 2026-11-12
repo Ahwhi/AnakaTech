@@ -93,6 +93,7 @@ public sealed class DispatchPopup : UIView, IHudPopup, CompositionDragHandle.IHo
                     slots[i].SendRequested += OnSendRequested;
                     slots[i].RefreshRequested += OnRefreshRequested;
                     slots[i].ClaimRequested += OnClaimRequested;
+                    slots[i].RecommendRequested += OnRecommendRequested;
                 }
             }
             // 서버가 파견 상태를 바꿔 알려 오면(운영 도구/개발 명령) 열려 있는 화면도 그 자리에서 따라온다.
@@ -103,6 +104,20 @@ public sealed class DispatchPopup : UIView, IHudPopup, CompositionDragHandle.IHo
         if (currencyPanel != null) currencyPanel.Initialize(hud);
 
         LoadAsync().Forget();
+        SyncWalletAsync().Forget();
+    }
+
+    // 재화 패널의 파견 증명서는 스토어 값을 그대로 보여 주므로, 열 때 서버 잔량으로 맞춘다
+    // (투기장/길드 팝업과 같은 방식). 보상 수령은 이 값에 받은 만큼을 더하므로 기준값이 틀리면 합계도 틀린다.
+    // 표시만 늦어질 뿐 파견 진행에는 영향이 없으므로 실패해도 조용히 넘어간다.
+    private async UniTaskVoid SyncWalletAsync() {
+        try {
+            var catalog = await _hud.Shop.RequestShopAsync(_ct);
+            _hud.Store.ApplyShopCurrencies(catalog.Currencies);
+        } catch (OperationCanceledException) {
+        } catch (Exception e) {
+            Debug.LogWarning($"[Dispatch] 재화 잔량을 받지 못했습니다: {e.Message}");
+        }
     }
 
     private async UniTaskVoid LoadAsync() {
@@ -180,7 +195,8 @@ public sealed class DispatchPopup : UIView, IHudPopup, CompositionDragHandle.IHo
             view.BindRewards(_hud, state != null ? _info.RewardsFor(state.ConditionId) : null);
             view.BindState(running, finished, state?.EndUnix ?? 0,
                            canSend: met && !_busy,
-                           canRefresh: !running && _info.RefreshCharges > 0 && !_busy);
+                           canRefresh: !running && _info.RefreshCharges > 0 && !_busy,
+                           canRecommend: !running && condition != null && !_busy);
 
             for (int m = 0; m < MembersPerSlot; m++)
                 view.BindMember(m, _hud, _members[i][m], this,
@@ -291,6 +307,51 @@ public sealed class DispatchPopup : UIView, IHudPopup, CompositionDragHandle.IHo
         ActAsync(DispatchActionType.Claim, slotIndex).Forget();
     }
 
+    // 추천 배치: 이 슬롯만 다시 짠다. 후보는 "지금 이 슬롯에 쓸 수 있는 소녀"뿐이다.
+    //   파견 나간 소녀와 다른 슬롯에 올려 둔 소녀는 빠진다(한 소녀는 한 자리에만 들어간다는 규칙 그대로).
+    //   이 슬롯에 이미 올려 둔 소녀는 후보에 남는다(추천은 이 슬롯을 처음부터 다시 고르는 것이다).
+    // 편집 버퍼만 바꾸므로 드래그 편성과 같은 상태가 되고, 보내기는 지금처럼 버튼을 눌러야 한다.
+    private void OnRecommendRequested(int slotIndex) {
+        if (_busy || _info == null || _members == null || !IsEditable(slotIndex)) return;
+        _hud.Sound.PlaySfx(SfxKey.ButtonClick);
+
+        var state = SlotState(slotIndex);
+        var condition = state != null ? _info.Condition(state.ConditionId) : null;
+        var picked = DispatchRules.Recommend(condition, RecommendCandidates(slotIndex), _hud.Store, MembersPerSlot);
+        if (picked == null) {
+            _hud.Ui.ShowToast("조건을 만족하는 소녀가 부족합니다.");
+            return;
+        }
+
+        var row = _members[slotIndex];
+        Array.Clear(row, 0, row.Length);
+        for (int i = 0; i < row.Length && i < picked.Length; i++) row[i] = picked[i];
+
+        _hud.Sound.PlaySfx(SfxKey.CardPlace);
+        RefreshAll();
+    }
+
+    private List<int> RecommendCandidates(int slotIndex) {
+        var list = new List<int>();
+        if (_hud.CharDb == null) return list;
+
+        foreach (var data in _hud.CharDb.All) {
+            if (data == null || _hud.Store.GetProgress(data.Id) == null) continue;   // 미보유
+            if (IsDispatched(data.Id)) continue;                                       // 파견 나감
+            if (IsPlacedElsewhere(data.Id, slotIndex)) continue;                       // 다른 슬롯에 올려 둠
+            list.Add(data.Id);
+        }
+        return list;
+    }
+
+    private bool IsPlacedElsewhere(int charDataId, int slotIndex) {
+        for (int s = 0; s < _members.Length; s++) {
+            if (s == slotIndex) continue;
+            foreach (int id in _members[s]) if (id == charDataId) return true;
+        }
+        return false;
+    }
+
     private async UniTaskVoid ActAsync(DispatchActionType action, int slotIndex) {
         if (_busy || _info == null) return;
         _busy = true;
@@ -306,6 +367,11 @@ public sealed class DispatchPopup : UIView, IHudPopup, CompositionDragHandle.IHo
 
             ApplyResult(res);
             _hud.Sound.PlaySfx(action == DispatchActionType.Claim ? SfxKey.Claim : SfxKey.ButtonClick);
+
+            // 파견 보내기는 이벤트 일일 미션(파견 n회)의 진행 지표다. 달성되는 순간 메인 이벤트 버튼에도
+            // 불이 들어오도록 충족 상태만 가볍게 다시 받아온다(장비 강화와 같은 방식).
+            if (action == DispatchActionType.Send && _hud.Badges != null)
+                _hud.Badges.RefreshEventClaimStatesAsync(_ct).Forget();
 
             if (action == DispatchActionType.Claim) {
                 // 아이템/코스튬 등은 공용 경로가, 범용 재화(각인석/파견 증명서)는 잔액을 따로 주지 않으므로

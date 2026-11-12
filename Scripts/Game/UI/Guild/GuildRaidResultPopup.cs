@@ -23,6 +23,8 @@ public sealed class GuildRaidResultPopup : UIView {
     [SerializeField] private Slider bossHpSlider;
     [Tooltip("이번 도전으로 보스를 잡아 레벨이 올랐을 때 켜는 표시.")]
     [SerializeField] private GameObject levelUpLabel;
+    [Tooltip("선택. 이번 도전으로 잡은 보스 수(예: '보스 3회 토벌'). 잡은 보스가 없으면 꺼진다.")]
+    [SerializeField] private TMP_Text defeatedCountText;
 
     [Header("Rewards")]
     [Tooltip("참여 보상 슬롯이 생성될 부모. 보상이 없으면 비활성된다.")]
@@ -43,16 +45,21 @@ public sealed class GuildRaidResultPopup : UIView {
     /// <param name="hud">보상 아이콘/이름을 해석할 컨텍스트.</param>
     public async UniTask ShowAsync(GuildRaidResult result, long dealtDamage, GuildRaidDamageDto report,
                                    BattleHudContext hud) {
-        if (titleText != null) titleText.text = result switch {
-            GuildRaidResult.Defeated => "보스 토벌!",
-            GuildRaidResult.Wiped => "전멸",
-            _ => "시간 종료"
-        };
+        bool hasReport = report != null && report.IsSuccess;
+        // 잡은 수는 서버가 확정한 값을 쓴다(한 판에 여러 레벨을 이어 잡을 수 있다, V1.13).
+        int defeated = hasReport ? report.DefeatedCount : 0;
+
+        // 보스를 하나라도 잡았으면 끝난 이유(시간 종료/전멸)보다 토벌을 먼저 알린다.
+        if (titleText != null) titleText.text = defeated > 0 || result == GuildRaidResult.Defeated ? "보스 토벌!"
+            : result == GuildRaidResult.Wiped ? "전멸" : "시간 종료";
         if (dealtDamageText != null) dealtDamageText.text = dealtDamage.ToString("N0");
 
-        bool hasReport = report != null && report.IsSuccess;
         if (bossGroup != null) bossGroup.SetActive(hasReport);
         if (levelUpLabel != null) levelUpLabel.SetActive(hasReport && report.BossDefeated);
+        if (defeatedCountText != null) {
+            defeatedCountText.gameObject.SetActive(defeated > 0);
+            if (defeated > 0) defeatedCountText.text = $"보스 {defeated}회 토벌";
+        }
 
         if (hasReport) {
             if (bossLevelText != null) bossLevelText.text = $"Lv.{report.BossLevel}";

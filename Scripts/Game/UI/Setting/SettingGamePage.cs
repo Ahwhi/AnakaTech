@@ -14,6 +14,8 @@ public sealed class SettingGamePage : SettingPage {
     [SerializeField] private Toggle cameraShakeToggle;
     [Tooltip("화면을 터치한 자리에 뜨는 피드백 이펙트 표시 토글.")]
     [SerializeField] private Toggle touchVfxToggle;
+    [Tooltip("전투 캐릭터 패널 슬롯의 체력/스킬 게이지 표시 토글(기본 켜짐).")]
+    [SerializeField] private Toggle slotGaugeToggle;
 
     protected override void OnInitialize() {
         var data = UserDataManager.Data;
@@ -23,5 +25,6 @@ public sealed class SettingGamePage : SettingPage {
         BindToggle(damageNumberToggle, data.ShowDamageNumber, value => data.ShowDamageNumber = value);
         BindToggle(cameraShakeToggle, data.UseCameraShake, value => data.UseCameraShake = value);
         BindToggle(touchVfxToggle, data.ShowTouchVfx, value => data.ShowTouchVfx = value);
+        BindToggle(slotGaugeToggle, data.ShowSlotGauges, value => data.ShowSlotGauges = value);
     }
 }

@@ -6,10 +6,42 @@ public static class GrowthRules {
     public const int MaxStarLevel = 15;   // PLANNING 5-9 (별 5칸 x 3티어: 노랑->분홍->파랑)
 
     /// <summary>캐릭터 최대 레벨. 서버 GameConstants.MaxCharacterLevel 과 일치해야 한다(만렙 표시 판정).</summary>
-    public const int MaxCharacterLevel = 9999;
+    public const int MaxCharacterLevel = 99999;
 
     /// <summary>이 캐릭터가 만렙인지. 경험치 바를 꽉 찬 상태로 두고 더 이상 오르지 않음을 알리는 데 쓴다.</summary>
     public static bool IsMaxLevel(int level) => level >= MaxCharacterLevel;
+
+    /// <summary>
+    /// 레벨업 필요 경험치 = 이 값 x 레벨. 서버 GameConstants.BaseMaxExpPerLevel 과 일치해야 한다.
+    /// 클라는 경험치를 정하지 않고, 수량을 고르는 동안 "몇 레벨이 되는지"를 바로 보여 주는 표시에만 쓴다(실제 결과는 서버).
+    /// </summary>
+    public const int BaseMaxExpPerLevel = 10;
+
+    /// <summary>이 레벨에서 다음 레벨까지 필요한 경험치(서버 GameConstants.MaxExpForLevel 과 같은 식).</summary>
+    public static long MaxExpForLevel(int level) => (long)BaseMaxExpPerLevel * (level < 1 ? 1 : level);
+
+    /// <summary>1레벨 0 경험치부터 이 레벨/경험치까지의 누적 경험치(서버 GameConstants.CumulativeExp 와 같은 식).</summary>
+    public static long CumulativeExp(int level, long exp) {
+        long l = level < 1 ? 1 : level;
+        return (long)BaseMaxExpPerLevel * l * (l - 1) / 2 + (exp < 0 ? 0 : exp);
+    }
+
+    /// <summary>최대 레벨까지 남은 경험치.</summary>
+    public static long ExpToMaxLevel(int level, long exp) {
+        long left = CumulativeExp(MaxCharacterLevel, 0) - CumulativeExp(level, exp);
+        return left > 0 ? left : 0;
+    }
+
+    /// <summary>누적 경험치 total 에 해당하는 레벨(최대 레벨에서 멈춘다).</summary>
+    public static int LevelOfCumulative(long total) {
+        if (total <= 0) return 1;
+        // total = B * L(L-1)/2 를 L 로 푼 근사값에서 시작해 정수 경계를 맞춘다(부동소수 오차 보정).
+        int level = (int)((1 + System.Math.Sqrt(1 + 8.0 * total / BaseMaxExpPerLevel)) / 2);
+        if (level < 1) level = 1;
+        while (level > 1 && CumulativeExp(level, 0) > total) level--;
+        while (level < MaxCharacterLevel && CumulativeExp(level + 1, 0) <= total) level++;
+        return level > MaxCharacterLevel ? MaxCharacterLevel : level;
+    }
     public const int StarShardStep = 10;  // PLANNING 5-11
     public const int StarDiaPerLevel = 100;   // 별레벨 승급당 다이아 = 현재 별레벨 * 100 (서버 GameDataRepository 와 일치)
 
@@ -55,7 +87,7 @@ public static class GrowthRules {
         StatType.MaxDamageRatio =>
             "피해량 흔들림의 위쪽을 넓힙니다.\n높게 뜨는 피해의 상한이 올라가 한 방이 크게 터질 수 있습니다.",
         StatType.ArmorPen =>
-            "상대의 방어력을 무시합니다.\n50%면 상대 방어력의 절반만 적용되어 방어가 두꺼운 적에게 특히 강합니다.",
+            "상대의 방어력을 수치만큼 깎습니다.\n500이면 상대 방어력이 500 낮아진 것으로 계산되어 방어가 두꺼운 적에게 특히 강합니다.",
         StatType.FinalDamage =>
             "모든 계산이 끝난 피해에 마지막으로 곱해집니다.\n10%면 최종 피해가 1.1배가 되며, 다른 공격 스탯과 곱해져 함께 커집니다.",
         StatType.SkillAccel =>

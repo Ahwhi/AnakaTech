@@ -12,7 +12,7 @@ using UnityEngine.Serialization;
 /// 세션(ServerSession)은 internal 콜백 메서드로만 통신한다.
 /// 핑/RTT 측정은 RttMonitor, 특정 패킷 대기는 PacketWaiter 로 분리.
 /// </summary>
-public class NetworkManager : MonoBehaviour, INetworkService {
+public class NetworkManager : MonoBehaviour, INetworkService, IServerRouteTarget {
     [Header("Connection")]
     [Tooltip("서버 주소. 운영은 game.ahwhistudio.com 이다. TLS 를 켜면 인증서를 발급받은 도메인과 정확히 같아야 하며, " +
              "IP 를 넣으면 접속이 거절된다(공인 인증서는 IP 로 발급되지 않는다).")]
@@ -33,7 +33,8 @@ public class NetworkManager : MonoBehaviour, INetworkService {
 
     [Header("Server Profiles (에디터 전환용)")]
     [Tooltip("자주 오가는 서버 설정을 미리 적어 두는 목록. 인스펙터의 버튼으로 위 접속 값에 한 번에 적용한다. " +
-             "게임 실행 중에는 쓰이지 않고, 실제 접속은 언제나 위의 Host/Port/Use Tls 값을 따른다.")]
+             "게임 실행 중에는 쓰이지 않고, 실제 접속은 위의 Host/Port/Use Tls 값을 따른다. " +
+             "단 원격 경로표(ServerRouteConfig)에 이 앱 버전이 적혀 있으면 그 대상이 우선한다.")]
     [SerializeField] private ServerProfile[] serverProfiles;
 
     [Header("Heartbeat")]
@@ -41,6 +42,7 @@ public class NetworkManager : MonoBehaviour, INetworkService {
     [SerializeField] private float heartbeatTimeoutSeconds = 5f;
 
     private ServerSession _session;
+    private ServerRoute _route;      // 원격 경로표가 지정한 접속 대상. null 이면 인스펙터 값으로 접속한다.
     private float _lastPongTime;     // 마지막 Pong 수신 시각(realtimeSinceStartup)
     private bool _heartbeatActive;   // 첫 Pong 수신 후 true. 그 전(로그인 전 등 서버가 Pong 안 주는 구간)엔 워치독을 끈다.
     private UniTaskCompletionSource _connectTcs;
@@ -83,6 +85,8 @@ public class NetworkManager : MonoBehaviour, INetworkService {
         }
     }
 
+    // iOS 는 AppLifecycle 이 먼저 프로세스를 끝내면 이 콜백이 건너뛰어질 수 있다(NativeProcessExit 참고).
+    // 프로세스가 사라지면 소켓도 함께 닫히고 서버는 FIN 으로 즉시 끊김을 감지하므로 결과는 같다.
     private void OnApplicationQuit() => _session?.Disconnect();
 
     private void OnDestroy() {
@@ -116,12 +120,17 @@ public class NetworkManager : MonoBehaviour, INetworkService {
         PacketQueue.Instance.PopAll();
         _session = new ServerSession(this);
 
-        var endpoint = new ServerEndpoint(host, port, useTls, pinnedCertificateHashes);
+        var endpoint = _route != null
+            ? new ServerEndpoint(_route.host, _route.port, _route.useTls, pinnedCertificateHashes)
+            : new ServerEndpoint(host, port, useTls, pinnedCertificateHashes);
         // 연결 실패(거절/타임아웃/인증서 불일치)는 콜백으로 즉시 알려 받아, 대기가 타임아웃까지 매달리지 않게 한다.
         new Connector().Connect(endpoint, () => _session, OnConnectFailed);
 
         return _connectTcs.Task;
     }
+
+    // 이미 맺어진 연결에는 영향을 주지 않는다. 다음 ConnectAsync 부터 적용된다.
+    public void ApplyRoute(ServerRoute route) => _route = route != null && route.IsValid ? route : null;
 
     // ── 송신 ────────────────────────────────────────────────
     public void Send(ArraySegment<byte> sendBuff) => _session.Send(sendBuff);

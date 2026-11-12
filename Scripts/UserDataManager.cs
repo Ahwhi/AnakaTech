@@ -38,8 +38,7 @@ public class GameData {
     // 렌더 해상도 배율(1 = 기기 해상도). 낮출수록 가볍지만 화면이 흐려진다. 모바일에서만 의미가 있다.
     public float RenderScale = 1f;
     // 무입력이 이만큼(초) 이어지면 화면 잠금(잠수) 모드로 들어간다. 0 이면 자동 잠금을 쓰지 않는다.
-    // 화면 절전은 따로 설정하지 않는다. 평소에는 항상 막아 두고 잠금 중에만 허용하므로(잠갔다 = 지금은 안 본다),
-    // 유저가 만질 항목은 이 대기 시간 하나로 충분하다.
+    // 잠금 중에는 화면을 켠 채 절전 모드(PowerSaveMode)로 부하만 줄이므로, 유저가 만질 항목은 이 대기 시간 하나로 충분하다.
     public int AutoLockSeconds = 300;
     // UI 좌우 여백(가로 인셋). SafeArea 안쪽에서 좌우를 이만큼 더 좁혀 화면 가장자리의 UI 를 안쪽으로 당긴다.
     // 기기가 알려 주는 SafeArea 만으로는 아슬아슬한 단말이 있어, 유저가 직접 더 좁힐 수 있게 둔다.
@@ -58,6 +57,10 @@ public class GameData {
 
     // 대표 캐릭터가 적을 때렸을 때 카메라 흔들림 사용 여부.
     public bool UseCameraShake = true;
+
+    // 전투 캐릭터 패널 슬롯(BattleCharacterSlot)의 체력/스킬 게이지 표시 여부.
+    // 구버전 세이브에는 이 항목이 없으므로 기존 유저도 초기값 true(켜짐)로 시작한다.
+    public bool ShowSlotGauges = true;
 
     // UI 패널 접힘 상태(로컬). 패널마다 고유 키로 기록하므로 접을 수 있는 패널이 늘어도 이 클래스는 고칠 게 없다.
     public List<PanelFoldState> panelFolds = new List<PanelFoldState>();
@@ -127,6 +130,8 @@ public class AccountLocalData {
     public List<string> seenShopOfferIds = new List<string>();
     // 마지막으로 확인한 보유 캐릭터 id 목록. 새로 획득한 캐릭이 생기면 덱 버튼 New.
     public List<int> seenCharIds = new List<int>();
+    // 마지막으로 확인한 투자 개방 슬롯 수(0=미확인). 별레벨이 올라 이보다 많이 열리면 투자 버튼 New.
+    public int seenInvestmentSlots = 0;
 
     // 읽은 이벤트 id 목록(이벤트 미열람 Unread=NEW 배지 판단용).
     public List<long> readEventIds = new List<long>();
@@ -138,6 +143,55 @@ public class AccountLocalData {
     // 전투 카메라가 비추는 캐릭터 id. 0 은 "대표 추종"(기본값)이라 대표를 바꿔도 따로 지정할 필요가 없다.
     // 하단 전투 캐릭터 패널의 슬롯을 눌러 바꾸며, 지정한 캐릭터가 덱에서 빠지면 0(대표)으로 되돌아간다.
     public int battleFocusCharId;
+
+    // 기력 부스트 모드를 켜 둔 상태인지. 서버가 관측하지 않는 클라 조작이라 여기 남겨 두고,
+    // 메인 씬에 들어올 때 되살린다(씬을 다녀오거나 재접속했다고 유저가 고른 모드가 풀리지 않게).
+    // 자원이 떨어져 저절로 꺼지거나 유저가 직접 끄면 false 로 기록된다.
+    public bool boostModeOn;
+
+    // 무한 타워 편성 선택(TowerSession 이 읽고 쓴다). 출처는 TowerDeckSource 값이고, 커스텀 편성은 출처가
+    // 커스텀일 때만 남는다(메인 스쿼드/프리셋으로 바꾸면 비운다). 서버 판정과 무관한 화면 선택이라 로컬에 둔다.
+    public int towerDeckSource;
+    public int towerPresetSlot = -1;
+    public List<int> towerCustomMembers = new List<int>();
+
+    // 영웅전에 내보낼 소녀(HeroesSession 이 읽고 쓴다). 0 이면 고른 적이 없어 대표 소녀가 나선다.
+    // 서버 판정과 무관한 화면 선택이라 로컬에 둔다(무한 타워 편성 선택과 같은 이유).
+    public int heroesCharId;
+
+    // 귓속말 상대별로 마지막까지 읽은 줄의 순번. 서버가 재접속 때 최근 귓속말을 다시 보내 주므로,
+    // 읽음 표시를 메모리에만 두면 재접속할 때마다 다 읽은 대화가 안 읽음으로 되살아난다.
+    // 열람 상태는 이 기기의 화면 표시일 뿐이라 서버에 두지 않는다(쟁탈전 방어 기록 확인과 같은 이유).
+    public List<WhisperReadMark> whisperReadMarks = new List<WhisperReadMark>();
+
+    /// <summary>그 상대와의 귓속말을 어디까지 읽었는지(기록이 없으면 0).</summary>
+    public long WhisperReadMarkOf(int partnerAccountId) {
+        if (whisperReadMarks == null) return 0;
+        foreach (var m in whisperReadMarks) if (m.accountId == partnerAccountId) return m.messageId;
+        return 0;
+    }
+
+    /// <summary>읽은 지점을 기록한다(뒤로 물리지 않는다). 디스크 쓰기는 RequestSave 로 오토세이버에 맡긴다.</summary>
+    public void SetWhisperReadMark(int partnerAccountId, long messageId) {
+        whisperReadMarks ??= new List<WhisperReadMark>();
+        foreach (var m in whisperReadMarks) {
+            if (m.accountId != partnerAccountId) continue;
+            if (messageId > m.messageId) m.messageId = messageId;
+            return;
+        }
+        whisperReadMarks.Add(new WhisperReadMark { accountId = partnerAccountId, messageId = messageId });
+    }
+
+    /// <summary>그 상대와의 대화를 지웠을 때 읽음 기록도 함께 지운다(목록이 끝없이 늘지 않게).</summary>
+    public void RemoveWhisperReadMark(int partnerAccountId) =>
+        whisperReadMarks?.RemoveAll(m => m.accountId == partnerAccountId);
+}
+
+/// <summary>귓속말 상대 하나의 읽은 지점(상대 계정 id + 마지막으로 읽은 줄의 순번).</summary>
+[Serializable]
+public class WhisperReadMark {
+    public int accountId;
+    public long messageId;
 }
 
 public static class UserDataManager {
@@ -224,6 +278,7 @@ public static class UserDataManager {
             a.seenShopOfferIds ??= new List<string>();
             a.seenCharIds ??= new List<int>();
             a.readEventIds ??= new List<long>();
+            a.whisperReadMarks ??= new List<WhisperReadMark>();
             // 캐릭터 id 는 양수라 음수는 망가진 값이다. 대표 추종(0)으로 되돌린다.
             if (a.battleFocusCharId < 0) a.battleFocusCharId = 0;
         }

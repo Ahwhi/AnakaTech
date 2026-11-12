@@ -31,21 +31,41 @@ public sealed class MainHudContext : BattleHudContext {
     public readonly IRankingService Ranking;
     public readonly ITrainingService Training;
     public readonly IArenaService Arena;
+    /// <summary>원정대(주간 5인 파티 + 장소 5곳). 원정대 팝업과 배지, 캐릭터 전투력 보고가 함께 쓴다.</summary>
+    public readonly IExpeditionService Expedition;
     /// <summary>파견(덱과 별개인 편성 컨텐츠). 파견 화면과 완료 배지가 함께 쓴다.</summary>
     public readonly IDispatchService Dispatch;
     public readonly ICouponService Coupon;
     /// <summary>투자(골드 소모처 + 계정 전체 효과). 투자 화면과 전투 효과가 함께 쓴다.</summary>
     public readonly IInvestmentService Investment;
+    /// <summary>멸망전(페이즈 방어 + 증강). 입구 팝업과 멸망전 씬이 함께 쓴다.</summary>
+    public readonly IDoomService Doom;
+    /// <summary>무한 타워(하루 1층 릴레이 등반). 입구 팝업과 배지가 함께 쓴다.</summary>
+    public readonly ITowerService Tower;
+    /// <summary>전선(6곳 스쿼드 + 기력 소모 단계 진행, V1.12). 전선 팝업과 배치 팝업이 함께 쓴다.</summary>
+    public readonly IFrontlineService Frontline;
+    /// <summary>전선 정적 데이터(이름/썸네일).</summary>
+    public readonly FrontlineDatabase FrontlineDb;
+    /// <summary>영웅전(소녀 1명 직접 조작 + 단계 진행, V1.12). 입구 팝업과 배지가 함께 쓴다.</summary>
+    public readonly IHeroesService Heroes;
+    /// <summary>패스(기력 소모 레벨 + 무료/평생 패스 보상 두 줄). 패스 화면과 배지가 함께 쓴다.</summary>
+    public readonly IPassService Pass;
+
     /// <summary>한정 판매(플래시 세일). 메인 버튼 배지와 안내 팝업이 쓴다.</summary>
     public readonly IFlashSaleService FlashSale;
     /// <summary>채팅(전체/길드 + 시스템 알림). 메인 화면 한 줄과 채팅 패널이 함께 쓴다.</summary>
     public readonly IChatService Chat;
+    /// <summary>스토리(장 스토리 19편 + 인트로). 스토리 목록 팝업과 배지가 함께 쓴다.</summary>
+    public readonly IStoryService Story;
+
     /// <summary>다이아 유상/무상 보유 내역. 재화 상세 팝업이 쓴다.</summary>
     public readonly IDiamondDetailService DiamondDetail;
     /// <summary>메인 퀘스트(진행 중 1건 + 완료 알림). 메인 화면 안내와 완료 토스트가 함께 쓴다.</summary>
     public readonly IMainQuestService MainQuest;
     public readonly BadgeCenter Badges;
     public readonly CommissionDatabase CommissionDb;
+    /// <summary>멸망전 페이즈 데이터. 입구 팝업이 컨텐츠 유무를 확인하는 데 쓴다.</summary>
+    public readonly DoomDatabase DoomDb;
     public readonly SceneCatalog Scenes;
     public readonly ISceneService SceneService;
 
@@ -72,11 +92,15 @@ public sealed class MainHudContext : BattleHudContext {
                           IEngravingService engraving, ICostumeService costume,
                           IHeadquartersService headquarters, IGuildService guild,
                           IFriendService friend, IAchievementService achievement, IRankingService ranking,
-                          ITrainingService training, IArenaService arena, ICouponService coupon,
+                          ITrainingService training, IArenaService arena, IExpeditionService expedition,
+                          ICouponService coupon,
                           IDispatchService dispatch,
                           IInvestmentService investment,
+                          IDoomService doom, DoomDatabase doomDb, ITowerService tower,
+                          IFrontlineService frontline, FrontlineDatabase frontlineDb, IHeroesService heroes, IPassService pass,
                           IFlashSaleService flashSale, IChatService chat,
                           IDiamondDetailService diamondDetail, IMainQuestService mainQuest,
+                          IStoryService story,
                           BadgeCenter badges, IUIService ui, UIPopupCatalog popups, SceneCatalog scenes,
                           ISceneService sceneService, ILoginService login,
                           ITermsConsentFlow terms, IAccountService account, ILogoutService logout,
@@ -110,11 +134,20 @@ public sealed class MainHudContext : BattleHudContext {
         Training = training;
         Dispatch = dispatch;
         Arena = arena;
+        Expedition = expedition;
         Coupon = coupon;
         Investment = investment;
+        Doom = doom;
+        DoomDb = doomDb;
+        Tower = tower;
+        Frontline = frontline;
+        FrontlineDb = frontlineDb;
+        Heroes = heroes;
+        Pass = pass;
         FlashSale = flashSale;
         Chat = chat;
         DiamondDetail = diamondDetail;
+        Story = story;
         MainQuest = mainQuest;
         Badges = badges;
         CommissionDb = commissionDb;

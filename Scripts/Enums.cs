@@ -63,7 +63,9 @@ public class Enums {
         // 카운트다운 한 칸(쟁탈전 매칭 후 자동 시작 5,4,3,2,1). 숫자가 바뀔 때마다 한 번씩 난다.
         Countdown,
         // 몬스터 피격음. 배정하지 않으면 캐릭터 피격음(HitCharacter)으로 대체된다.
-        HitMonster         // 값이 SoundLibrary 에 직렬화되므로 항상 끝에만 추가한다.
+        HitMonster,
+        // 회복 아이템을 집었을 때(영웅전). 배정하지 않으면 무음이다.
+        HealPickup         // 값이 SoundLibrary 에 직렬화되므로 항상 끝에만 추가한다.
     }
 
     public enum BgmKey {

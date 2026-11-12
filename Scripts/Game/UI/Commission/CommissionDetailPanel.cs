@@ -39,6 +39,8 @@ public sealed class CommissionDetailPanel : MonoBehaviour {
     [Header("Common")]
     [Tooltip("보상 슬롯 프리팹(두 목록이 공유한다).")]
     [SerializeField] private RewardSlotView rewardSlotPrefab;
+    [Tooltip("투자 반영 안내(예: '투자 15% 반영'). 경험치 투자가 걸린 의뢰(레이드)에서만 보인다. 선택.")]
+    [SerializeField] private TMP_Text investmentText;
 
     [Header("Buttons")]
     [Tooltip("즉시해결. 클리어 기록과 의뢰해결권이 모두 있어야 활성화된다.")]
@@ -83,29 +85,38 @@ public sealed class CommissionDetailPanel : MonoBehaviour {
         if (stageText != null)
             stageText.text = CommissionEntryView.StageText(clearedStage, challengeStage, hasNextStage);
 
-        BindChallengeRewards(ctx, type, challengeStage, hasNextStage);
-        BindSweepRewards(ctx, type, clearedStage);
+        // 경험치 보상은 서버가 투자(레이드 의뢰 경험치)를 곱해 지급하므로 표시도 같은 값으로 맞춘다.
+        int expBonus = CommissionRewardRules.ExpBonusPermille(type, ctx.Store.InvestmentLevels);
+        if (investmentText != null) {
+            investmentText.gameObject.SetActive(expBonus > 0);
+            investmentText.text = CommissionRewardRules.ExpBonusLabel(expBonus);
+        }
+
+        BindChallengeRewards(ctx, type, challengeStage, hasNextStage, expBonus);
+        BindSweepRewards(ctx, type, clearedStage, expBonus);
         RefreshButtons(ctx, clearedStage, challengeStage, hasNextStage);
     }
 
     // 도전 보상: 도전 단계를 "처음" 깼을 때 1회 받는 것.
     // 더 도전할 단계가 없으면 보여줄 것이 없으므로 통째로 숨긴다(최대 단계 보상이 남아 오해를 주지 않도록).
-    private void BindChallengeRewards(BattleHudContext ctx, CommissionType type, int challengeStage, bool hasNextStage) {
+    private void BindChallengeRewards(BattleHudContext ctx, CommissionType type, int challengeStage, bool hasNextStage, int expBonus) {
         if (challengeRewardGroup != null) challengeRewardGroup.SetActive(hasNextStage);
         if (!hasNextStage) return;
 
         // 각인 도면도 보상 목록에 들어 있으므로 별도 안내 없이 슬롯으로 함께 그려진다.
-        BuildSlots(ctx, _challengeSlots, challengeRewardParent, CommissionRewardRules.ClearRewards(type, challengeStage));
+        BuildSlots(ctx, _challengeSlots, challengeRewardParent,
+                   CommissionRewardRules.WithExpBonus(CommissionRewardRules.ClearRewards(type, challengeStage), expBonus));
     }
 
     // 즉시해결 보상: 의뢰해결권 1장당 받는 몫. 도전 단계가 아니라 "클리어한 최고 단계"를 쓴다.
     // 클리어 기록이 없으면 반복할 대상 자체가 없으므로 숨긴다(버튼도 같은 조건으로 잠긴다).
-    private void BindSweepRewards(BattleHudContext ctx, CommissionType type, int clearedStage) {
+    private void BindSweepRewards(BattleHudContext ctx, CommissionType type, int clearedStage, int expBonus) {
         bool hasTarget = clearedStage > 0;
         if (sweepRewardGroup != null) sweepRewardGroup.SetActive(hasTarget);
         if (!hasTarget) return;
 
-        BuildSlots(ctx, _sweepSlots, sweepRewardParent, CommissionRewardRules.SweepRewards(type, clearedStage));
+        BuildSlots(ctx, _sweepSlots, sweepRewardParent,
+                   CommissionRewardRules.WithExpBonus(CommissionRewardRules.SweepRewards(type, clearedStage), expBonus));
     }
 
     // 버튼 리스너는 1회만 건다(선택이 바뀔 때마다 다시 걸면 중복 호출된다).

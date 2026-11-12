@@ -14,7 +14,7 @@ using UnityEngine;
 ///  - CritDamage            : 치명타 시 추가 데미지 %p(50 = +50%).
 ///  - MinDamageRatio        : 데미지 지터의 하한을 끌어올리는 %p(안정성). 0 = 기본 지터 하한, 100 = 하한이 기준값까지.
 ///  - MaxDamageRatio        : 데미지 지터의 상한을 끌어올리는 %p(고배율 로망). 0 = 기본 지터 상한.
-///  - ArmorPen              : 상대 방어 무시 %p(0~100 권장).
+///  - ArmorPen              : 상대 방어력을 깎는 절대 수치(V1.12 부터. 이전에는 %p). 유효방어 = max(0, 방어 - 관통).
 ///  - FinalDamage           : 최종 데미지 증가 %p(모든 계산 마지막에 곱).
 ///  - SkillAccel            : 스킬 발동 가속 %p(점근 감소식에 투입, CombatMath.SkillInterval).
 ///  - SkillCooldownReduction: 스킬 기본 쿨타임을 깎는 절대 초(별 성장 전용).
@@ -28,7 +28,7 @@ using UnityEngine;
 /// 공격 스탯에서 뺄셈하지 않으므로 서로를 무효화하지 않고, 100% 도달이 원천 불가해 장기 스탯 인플레에 안전하다.
 ///
 /// 반면 발동형 스탯 2종(DoubleAttackChance/EvasionChance)은 값이 곧 확률이라 점근 감쇄를 쓰지 않는다.
-/// 획득 경로가 수련 하나뿐이고 캐릭터당 효과가 1개라(합산되지 않는다) 상한이 카탈로그의 최대 수치로 못박혀 있다.
+/// 획득 경로가 수련(캐릭터당 1개)과 계정 투자 두 곳이고 둘 다 카탈로그 최대 수치가 정해져 있어 합산 상한이 고정된다.
 /// </summary>
 [Serializable]
 public struct CombatStats {
@@ -122,6 +122,25 @@ public struct CombatStats {
         return s;
     }
 
+    /// <summary>
+    /// 지정 스탯의 실효값을 multiple 배로 만든 새 값(변신 버프/멸망전 증강/무한 타워 보너스 공용 규칙).
+    /// 공속/이속/스킬가속은 "1 + 스탯/100" 배율이라 스탯 값을 N배 해서는 실효값이 N배가 되지 않으므로 따로 변환한다.
+    /// </summary>
+    public CombatStats WithEffectiveScale(StatType stat, float multiple) {
+        float baseValue = Get(stat);
+        return WithAdded(stat, EffectiveScaled(stat, baseValue, multiple) - baseValue);
+    }
+
+    /// <summary>실효값이 multiple 배가 되는 스탯 값. 미성장(스탯 0) 가속 스탯도 정확히 N배가 된다.</summary>
+    public static float EffectiveScaled(StatType stat, float baseValue, float multiple) {
+        if (IsGearingStat(stat)) return baseValue * multiple + 100f * (multiple - 1f);
+        return baseValue * multiple;
+    }
+
+    /// <summary>"1 + 스탯/100" 형태의 배율 스탯(가속류)인지.</summary>
+    public static bool IsGearingStat(StatType stat) =>
+        stat == StatType.AttackSpeed || stat == StatType.MoveSpeed || stat == StatType.SkillAccel;
+
     public static CombatStats operator +(CombatStats a, CombatStats b) => new() {
         Attack                 = a.Attack                 + b.Attack,
         Defense                = a.Defense                + b.Defense,
@@ -174,9 +193,6 @@ public struct CombatStats {
 
     /// <summary>최종 데미지 배수(예: FinalDamage 10 -> 1.1). 모든 데미지 계산 마지막에 곱한다.</summary>
     public float FinalDamageMultiplier => 1f + Mathf.Max(0f, FinalDamage) / 100f;
-
-    /// <summary>방어 무시 비율(0~1). 상대 방어에 (1 - 이 값)을 곱해 유효 방어를 줄인다.</summary>
-    public float ArmorPen01 => Mathf.Clamp01(ArmorPen / 100f);
 
     /// <summary>기준 대비 공격속도 배수(예: AttackSpeed 50 -> 1.5). 감쇠는 소비측(CombatMath)에서 별도 적용.</summary>
     public float AttackSpeedMultiplier => 1f + AttackSpeed / 100f;

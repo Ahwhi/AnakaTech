@@ -36,6 +36,41 @@ public sealed class TransformBuffSkill : UnitSkill {
              "변신 중 공격에 실어 보내려면 여기에 넣는다.")]
     [SerializeField] private StatusEffectSpec[] attackStatusEffects = System.Array.Empty<StatusEffectSpec>();
 
+    [Header("Combat Power")]
+    [Tooltip("전투력 환산 배율. 변신의 전투력 기여(아래 PowerProfile)에 곱한다. 1 = 그대로, 0.5 = 절반. " +
+             "전투에는 영향이 없고 표시 전투력만 바뀐다. 성장에 따른 증가 방향은 그대로 유지된다.")]
+    [Min(0f)]
+    [SerializeField] private float powerValueScale = 1f;
+
+    /// <summary>적중 시 상태이상에 더해, 변신 중 기본공격이 거는 상태이상도 함께 알린다.</summary>
+    public override IEnumerable<StatusEffectSpec> InflictedStatusEffects {
+        get {
+            foreach (var s in base.InflictedStatusEffects) yield return s;
+            foreach (var s in attackStatusEffects)
+                if (s.IsValid) yield return s;
+        }
+    }
+
+    // 전투력 환산 기준 타수(초당). 실제 공속은 캐릭터마다 다르지만 스킬은 시전자 스탯을 모르므로 1타/초로 잡는다.
+    private const float PowerReferenceAttacksPerSecond = 1f;
+
+    /// <summary>
+    /// 전투력 평가용 화력. 변신은 직접 피해가 없지만 지속시간 동안 기본공격 피해가 (공격력 배수 x 공속 배수) 배가 된다.
+    /// 1회 발동의 가치를 "지속시간 동안 늘어나는 기본공격 피해"로 환산해 신고한다(1타당 늘어난 배율 x 타수).
+    /// </summary>
+    public override SkillPowerProfile PowerProfile {
+        get {
+            float attackMul = 1f, speedMul = 1f;
+            foreach (var b in buffs) {
+                if (b.stat == StatType.Attack) attackMul *= Mathf.Max(1f, b.bonusMultiplier);
+                else if (b.stat == StatType.AttackSpeed) speedMul *= Mathf.Max(1f, b.bonusMultiplier);
+            }
+            float extraPerHit = (attackMul * speedMul - 1f) * Mathf.Max(0f, powerValueScale);
+            int hits = Mathf.Max(1, Mathf.RoundToInt(duration * PowerReferenceAttacksPerSecond));
+            return extraPerHit > 0f ? new SkillPowerProfile(extraPerHit * hits, hits, 1) : SkillPowerProfile.None;
+        }
+    }
+
     protected override void OnExecute(SkillContext ctx) {
         if (!(ctx.Caster is ITransformableUnit unit)) return;
         unit.ApplyTransform(new UnitTransformSpec {

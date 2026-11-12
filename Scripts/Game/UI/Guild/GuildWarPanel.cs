@@ -57,7 +57,7 @@ public sealed class GuildWarPanel : MonoBehaviour {
     [Header("My Status")]
     [Tooltip("남은 공격 횟수. n / n 형태.")]
     [SerializeField] private TMP_Text myAttacksText;
-    [Tooltip("내가 쓰러졌을 때 켜는 안내.")]
+    [Tooltip("내가 격파당했을 때 켜는 안내(선택). 격파당해도 남은 공격 횟수는 그대로 쓸 수 있다.")]
     [SerializeField] private GameObject myDeadLabel;
 
     [Tooltip("교전 기록 팝업을 여는 버튼. 매칭이 없으면 볼 기록도 없어 잠긴다.")]
@@ -244,7 +244,7 @@ public sealed class GuildWarPanel : MonoBehaviour {
         }
     }
 
-    // 상대 명단에만 공격 버튼이 붙는다. 지금 때릴 수 있는지는 단계/내 상태/대상 생존으로 정해진다.
+    // 상대 명단에만 공격 버튼이 붙는다. 지금 때릴 수 있는지는 단계/승부 여부/남은 횟수/대상 격파 여부로 정해진다.
     private void BuildRoster(Transform root, List<GuildWarMemberSlot> slots,
                              List<GuildWarParticipantDto> members, bool enemy) {
         if (root == null || memberSlotPrefab == null) return;

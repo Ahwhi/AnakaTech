@@ -179,6 +179,23 @@ public sealed class MainHudController : MonoBehaviour {
         long power = (long)AccountStats.TotalDeckCombatPower(_ctx);
         if (power <= 0) return;
         _ctx.Guild.ReportCombatPower(power);
+        ReportExpeditionPower();
+    }
+
+    /// <summary>
+    /// 원정대용 캐릭터 전투력 보고. 대표 캐릭터는 다음 매칭 자격의 근거이고, 이번 주에 묶인 캐릭터는
+    /// 파티원 화면과 전투 재현이 최신 능력치를 쓰게 하는 근거다. 대표를 바꿨으면 둘이 다르므로 각각 보낸다.
+    /// 덱 전투력과 같은 이유로 0(아직 모름)은 보내지 않는다(서비스가 거른다).
+    /// </summary>
+    private void ReportExpeditionPower() {
+        if (_ctx.Expedition == null) return;
+
+        int repId = _ctx.Store.Deck.RepresentativeCharId;
+        _ctx.Expedition.ReportCharacterPower(repId, (long)AccountStats.CharacterCombatPower(_ctx, repId));
+
+        int matchedId = _ctx.Expedition.MatchedCharId;
+        if (matchedId > 0 && matchedId != repId)
+            _ctx.Expedition.ReportCharacterPower(matchedId, (long)AccountStats.CharacterCombatPower(_ctx, matchedId));
     }
 
     /// <summary>전투력 보고를 묶는 시간(초). 성장 팝업에서 연타로 올릴 때 매번 보내지 않기 위한 간격이다.</summary>

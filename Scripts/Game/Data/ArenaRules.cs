@@ -40,11 +40,16 @@ public static class ArenaRules {
     }
 
     // ── 표시 ────────────────────────────────────────
-    /// <summary>"12전 8승 4패 (66.7%)" 형태의 전적 문구.</summary>
-    public static string RecordText(int wins, int losses) {
+    /// <summary>승률 색(밝은 배경용 짙은 회색).</summary>
+    public const string RateColorDark = "#464646";
+    /// <summary>승률 색(어두운 배경용 밝은 회색).</summary>
+    public const string RateColorLight = "#BEBEBE";
+
+    /// <summary>"12전 8승 4패 (66.7%)" 형태의 전적 문구. 승률은 rateColor 로 칠한다(기본 짙은 회색).</summary>
+    public static string RecordText(int wins, int losses, string rateColor = RateColorDark) {
         int total = wins + losses;
         float rate = total > 0 ? (float)wins / total * 100f : 0f;
-        return $"{total}전 {wins}승 {losses}패 <color=#464646>({rate:0.0}%)</color>";
+        return $"{total}전 {wins}승 {losses}패 <color={rateColor}>({rate:0.0}%)</color>";
     }
 
     /// <summary>"2 / 3" 형태의 남은 무료 매칭 횟수 문구.</summary>
@@ -89,11 +94,31 @@ public static class ArenaRules {
         int previous = 0;
         foreach (var (maxRank, coin) in WeeklyRankCoins) {
             string label = maxRank == previous + 1 ? $"주간 {maxRank}위" : $"주간 {previous + 1}~{maxRank}위";
-            rows.Add((label, Coins(coin)));
+            // 10위까지는 순위 테두리(다음 주간 보상까지 유효)를 함께 받는다. 구간 경계가 코인 구간과 같다.
+            int frame = WeeklyRankFrame(maxRank);
+            rows.Add((label, frame != 0
+                ? new[] { RewardItem.Currency(CurrencyKeys.ArenaCoin, coin), RewardItem.ProfileFrame(frame) }
+                : Coins(coin)));
             previous = maxRank;
         }
         rows.Add(($"주간 {previous + 1}위 이하", Coins(WeeklyCoinDefault)));
         return rows;
+    }
+
+    /// <summary>주간 순위 테두리 id(서버 ArenaCatalog.WeeklyRankFrame 미러). 0 = 없음.</summary>
+    public static int WeeklyRankFrame(int rank) => rank switch {
+        1 => 25,
+        >= 2 and <= 3 => 26,
+        >= 4 and <= 10 => 27,
+        _ => 0
+    };
+
+    // ── 역대 전적 ────────────────────────────────────
+    /// <summary>시즌 키("2026-11") -> "2026년 11월". 형식이 다르면 원문 그대로.</summary>
+    public static string SeasonName(string seasonKey) {
+        if (string.IsNullOrEmpty(seasonKey) || seasonKey.Length < 7) return seasonKey ?? "";
+        return int.TryParse(seasonKey.Substring(0, 4), out int y) && int.TryParse(seasonKey.Substring(5, 2), out int m)
+            ? $"{y}년 {m}월" : seasonKey;
     }
 
     private static IReadOnlyList<RewardItem> Coins(int amount) =>

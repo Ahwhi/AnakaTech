@@ -20,11 +20,24 @@ public readonly struct CharacterAppearance : IIllustrationSource {
     /// <summary>장착 코스튬. null 이면 기본 일러스트다.</summary>
     public readonly CostumeData Costume;
 
-    public CharacterAppearance(CharacterData character, CostumeData costume = null) {
+    /// <summary>장착 아웃핏(V1.12). null 이면 기본 전투 유닛이다. 일러스트가 아니라 전투 유닛 프리팹을 바꾼다.</summary>
+    public readonly UnitSkinCatalog.Entry UnitSkin;
+
+    public CharacterAppearance(CharacterData character, CostumeData costume = null, UnitSkinCatalog.Entry unitSkin = null) {
         Character = character;
         // 다른 캐릭터의 코스튬이 잘못 실려 오면(데이터 오류/변조) 조용히 기본 외형으로 되돌린다.
         Costume = costume != null && character != null && costume.CharacterId == character.Id ? costume : null;
+        UnitSkin = unitSkin;
     }
+
+    /// <summary>지금 장착 중인 아웃핏 id(기본 유닛이면 0).</summary>
+    public int UnitSkinId => UnitSkin != null ? UnitSkin.id : 0;
+
+    /// <summary>
+    /// 전투에 세울 유닛 프리팹. 아웃핏을 끼고 있으면 그 아웃핏의 프리팹, 아니면 null(전장이 기본 프리팹을 쓴다).
+    /// 기본 프리팹은 씬마다 전장(BattleStage)이 들고 있으므로 여기서는 정하지 않는다.
+    /// </summary>
+    public CharacterUnit UnitPrefab => UnitSkin != null ? UnitSkin.unitPrefab : null;
 
     /// <summary>코스튬을 끼고 있는지(표시 강조/장착 버튼 상태 등에 쓴다).</summary>
     public bool HasCostume => Costume != null;

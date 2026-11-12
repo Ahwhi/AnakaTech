@@ -28,6 +28,8 @@ public sealed class ChatPopup : UIView, IHudPopup {
         public Button button;
         [Tooltip("선택 표시(현재 탭). 선택.")]
         public GameObject selectedIndicator;
+        [Tooltip("안 읽음 배지(Source=Manual). 안 읽음을 세는 채널(귓속말)의 탭에만 연결한다. 선택.")]
+        public BadgeView unreadBadge;
     }
 
     [Header("Channels")]
@@ -164,6 +166,9 @@ public sealed class ChatPopup : UIView, IHudPopup {
         _subs = new CompositeDisposable();
         // 창이 떠 있는 동안 들어오는 대화를 바로 붙인다(전체를 다시 그리지 않는다).
         _hud.Chat.Received.Subscribe(OnReceived).AddTo(_subs);
+        // 귓속말 탭 배지. 메인 화면 채팅 줄과 같은 값(안 읽은 귓속말 수)을 쓴다.
+        // 귓속말 탭에서 보고 있는 상대는 바로 읽음이 되므로, 탭이 켜져 있는 것은 다른 상대의 귓속말이 남았다는 뜻이다.
+        _hud.Chat.UnreadWhisperCount.Subscribe(ApplyTabBadges).AddTo(_subs);
 
         // 프로필에서 귓속말로 열었으면 그 상대를 대상으로 잡고 귓속말 탭으로 바로 들어간다.
         bool entered = _entryWhisperId != 0;
@@ -188,6 +193,13 @@ public sealed class ChatPopup : UIView, IHudPopup {
             var channel = tab.channel;
             tab.button.onClick.AddListener(() => { _hud.Sound.PlaySfx(SfxKey.ButtonClick); SelectChannel(channel); });
         }
+    }
+
+    private void ApplyTabBadges(int unreadWhispers) {
+        if (tabs == null) return;
+        foreach (var tab in tabs)
+            if (tab.unreadBadge != null)
+                tab.unreadBadge.SetOn(tab.channel == ChatChannel.Whisper && unreadWhispers > 0);
     }
 
     private async UniTaskVoid RefreshAsync() {
@@ -230,6 +242,11 @@ public sealed class ChatPopup : UIView, IHudPopup {
     private void ApplyWhisperTarget() {
         bool whisper = _channel == ChatChannel.Whisper;
         if (whisperGroup != null) whisperGroup.SetActive(whisper);
+
+        // 귓속말 탭이 보여 주는 대화는 곧 읽은 대화다. 상대를 "새로 고를 때"만 읽음으로 치면,
+        // 다른 탭에 있는 동안 온 줄을 탭으로 돌아와 읽어도 표시가 남아 다른 상대로 옮기는 순간 빨간불이 켜진다
+        // (답장을 해야만 꺼지던 원인). 그래서 탭을 그릴 때마다 보고 있는 상대를 읽음으로 맞춘다.
+        if (whisper && _whisperTargetId != 0) _hud.Chat.MarkWhisperRead(_whisperTargetId);
 
         var partners = whisper ? WhisperPartnersWithTarget() : null;
 
@@ -289,7 +306,7 @@ public sealed class ChatPopup : UIView, IHudPopup {
         _hud.Sound.PlaySfx(SfxKey.ButtonClick);
         SelectPartner(accountId, nickname, rebuild: true);
         ApplyWhisperTarget();
-        FocusInput();
+        FocusInputOnNavigate();
     }
 
     /// <summary>
@@ -375,9 +392,17 @@ public sealed class ChatPopup : UIView, IHudPopup {
         // 보고 있는 대화에 붙는 줄은 그 자리에서 읽은 것으로 본다.
         if (message.Channel == ChatChannel.Whisper) _hud.Chat.MarkWhisperRead(_whisperTargetId);
 
+        // 따라 내릴지는 줄을 붙이기 전에 정해야 한다. 붙인 뒤에는 목록이 이미 길어져 있어
+        // 내가 어디를 보고 있었는지 알 수 없다.
+        //
+        // 내가 친 말은 언제나 따라 내린다. 방금 친 말이 보이지 않으면 보내진 것인지 알 수 없기 때문이다.
+        // 남의 말은 이미 맨 아래를 보고 있을 때만 따라간다. 지난 대화를 거슬러 읽는 중에 남이 말했다고
+        // 화면을 끌어내리면 읽던 자리를 잃는다.
+        bool follow = message.IsMine || IsAtBottom();
+
         AddRow(message);
         if (emptyGroup != null) emptyGroup.SetActive(false);
-        ScrollToBottom();
+        if (follow) ScrollToBottom();
     }
 
     private void AddRow(ChatMessageDto message) {
@@ -405,10 +430,62 @@ public sealed class ChatPopup : UIView, IHudPopup {
         }
     }
 
-    // 새 대화는 맨 아래에 붙으므로 시선을 따라 내려 준다. 레이아웃이 확정된 뒤에 옮겨야 위치가 정확하다.
+    // ── 스크롤 ───────────────────────────────────────────
+
+    // 손으로 끝까지 내려도 관성 때문에 미세한 값이 남는다. 이 정도는 맨 아래로 본다.
+    private const float BottomThreshold = 0.005f;
+
+    /// <summary>
+    /// 목록이 맨 아래에 있는지. 새 줄을 붙이기 전에 확인해 따라 내릴지 정한다.
+    /// 내용이 화면보다 짧으면 스크롤할 여지가 없으므로 맨 아래로 본다.
+    /// </summary>
+    private bool IsAtBottom() {
+        if (scrollRect == null) return true;
+
+        var viewport = scrollRect.viewport != null ? scrollRect.viewport : scrollRect.transform as RectTransform;
+        var list = scrollRect.content;
+        if (viewport == null || list == null) return true;
+
+        if (list.rect.height <= viewport.rect.height) return true;
+        return scrollRect.verticalNormalizedPosition <= BottomThreshold;
+    }
+
+    /// <summary>새 대화가 붙었을 때 맨 아래로 따라 내린다.</summary>
     private void ScrollToBottom() {
         if (scrollRect == null) return;
+        ScrollToBottomAsync().Forget();
+    }
+
+    /// <summary>
+    /// 맨 아래로 내린다. 즉시 한 번, 다음 프레임에 한 번 더 맞춘다.
+    ///
+    /// 두 번 맞추는 이유는 줄 높이가 ContentSizeFitter 로 정해지기 때문이다. 말의 길이에 따라 줄 높이가
+    /// 달라지는데, 그 높이는 TextMeshPro 가 새 텍스트를 다시 계산한 뒤에야 확정되고 다시 목록 전체 높이로
+    /// 전해진다. 그래서 줄을 붙인 그 프레임의 계산만으로는 낡은 높이가 남을 수 있고, 낡은 높이를 기준으로
+    /// 내리면 방금 붙은 줄이 화면 아래에 걸쳐 잘려 보인다. 다음 프레임에 확정된 높이로 다시 맞춘다.
+    /// </summary>
+    private async UniTaskVoid ScrollToBottomAsync() {
+        ApplyBottom();
+
+        try {
+            await UniTask.NextFrame(_ct);
+        } catch (OperationCanceledException) {
+            return;   // 창이 닫혔다.
+        }
+
+        ApplyBottom();
+    }
+
+    private void ApplyBottom() {
+        if (scrollRect == null) return;
+
+        // 목록 높이를 먼저 확정한다. 이 계산 없이 위치만 바꾸면 낡은 높이를 기준으로 내려가 어중간한 곳에 선다.
+        var list = scrollRect.content;
+        if (list != null) LayoutRebuilder.ForceRebuildLayoutImmediate(list);
         Canvas.ForceUpdateCanvases();
+
+        // 관성이 남아 있으면 내려놓은 직후 그 속도만큼 다시 밀려 올라간다.
+        scrollRect.velocity = Vector2.zero;
         scrollRect.verticalNormalizedPosition = 0f;
     }
 
@@ -438,6 +515,23 @@ public sealed class ChatPopup : UIView, IHudPopup {
     /// 같은 프레임에 다시 잡으면 그 처리에 덮여 키보드가 내려간다.
     /// </summary>
     private void FocusInput() => FocusInputAsync().Forget();
+
+    /// <summary>
+    /// 상대/탭을 옮긴 뒤의 초점. 소프트 키보드가 있는 기기에서는 잡지 않는다.
+    ///
+    /// 초점을 잡는 것은 곧 키보드를 띄우는 일이다. 그런데 상대 칩을 고르거나 답장 버튼을 누른 것은
+    /// "말하겠다"가 아니라 "그 대화를 보겠다"는 뜻이라, 화면 절반이 키보드로 덮이면 방해만 된다
+    /// (가로 화면에서는 키보드가 높이의 절반을 차지한다).
+    ///
+    /// 발언 직후(Send)의 초점은 이것과 다르다. 그때는 이미 키보드가 떠 있는 상태라 "새로 켜기"가 아니라
+    /// "유지"이며, 연달아 말하려면 그대로 있어야 한다. 그래서 그쪽은 FocusInput 을 그대로 쓴다.
+    ///
+    /// 키보드가 없는 환경(에디터/PC)에서는 초점을 잡아 두는 편이 편하므로 그대로 잡는다.
+    /// </summary>
+    private void FocusInputOnNavigate() {
+        if (SoftKeyboard.IsSupported) return;
+        FocusInput();
+    }
 
     private async UniTaskVoid FocusInputAsync() {
         try {
@@ -489,7 +583,7 @@ public sealed class ChatPopup : UIView, IHudPopup {
         if (accountId == 0) return;
         SelectPartner(accountId, nickname, rebuild: false);
         SelectChannel(ChatChannel.Whisper);
-        FocusInput();
+        FocusInputOnNavigate();
     }
 
     // 길드 미가입 안내 표시. 켜면 입력창 대신 안내가 보인다.

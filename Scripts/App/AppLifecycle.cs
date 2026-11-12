@@ -1,3 +1,4 @@
+using UniRx;
 using UnityEngine;
 
 /// <summary>
@@ -7,13 +8,28 @@ using UnityEngine;
 /// </summary>
 public sealed class AppLifecycle : MonoBehaviour {
     // DontDestroyOnLoad 는 GameLifetimeScope.Awake 에서 처리한다(컨테이너 빌드/씬 로드 순서 보장을 위해 같은 곳에서).
-    private void Awake() => ConfigureApplication();
+    private void Awake() {
+        ConfigureApplication();
+
+        // 절전 모드가 바뀌면 화면 설정을 다시 적용한다(프레임/수직동기 상한은 DisplaySettings 가 절전 여부를 보고 정한다).
+        // 현재 값은 위에서 이미 적용했으므로 바뀔 때만 받는다.
+        PowerSaveMode.Active.Skip(1).Subscribe(_ => DisplaySettings.Apply()).AddTo(this);
+    }
 
     private void OnApplicationPause(bool pause) {
         if (pause) UserDataManager.Save();
     }
 
-    private void OnApplicationQuit() => UserDataManager.Save();
+    private void OnApplicationQuit() {
+        UserDataManager.Save();
+
+        // 저장이 끝나면 엔진 정리를 기다리지 않고 프로세스를 끝낸다. iOS 엔진 버그 회피이며
+        // 이유는 NativeProcessExit 주석 참고. 다른 플랫폼에서는 이 호출이 무시된다.
+        //
+        // 이 줄 아래로는 다른 컴포넌트의 OnApplicationQuit 도, OnDisable/OnDestroy 도 실행되지 않는다.
+        // 종료 시 반드시 남겨야 하는 처리가 생기면 이 줄 위에 둘 것.
+        NativeProcessExit.Now();
+    }
 
     private static void ConfigureApplication() {
         Application.runInBackground = true;

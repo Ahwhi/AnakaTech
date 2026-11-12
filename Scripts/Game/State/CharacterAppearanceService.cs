@@ -22,17 +22,22 @@ public sealed class CharacterAppearanceService {
 
     /// <summary>내 캐릭터의 현재 외형(내가 장착한 코스튬 반영).</summary>
     public CharacterAppearance Mine(int charDataId) =>
-        Other(charDataId, _store != null ? _store.EquippedCostumeId(charDataId) : 0);
+        Other(charDataId, _store != null ? _store.EquippedCostumeId(charDataId) : 0,
+              _store != null ? _store.EquippedUnitSkinId(charDataId) : 0);
 
-    /// <summary>내 캐릭터의 현재 외형(원본을 이미 들고 있는 경우).</summary>
+    /// <summary>내 캐릭터의 현재 외형(원본을 이미 들고 있는 경우). 장착 아웃핏(전투 유닛 프리팹)도 함께 담는다.</summary>
     public CharacterAppearance Mine(CharacterData character) =>
-        Other(character, character != null && _store != null ? _store.EquippedCostumeId(character.Id) : 0);
+        Other(character,
+              character != null && _store != null ? _store.EquippedCostumeId(character.Id) : 0,
+              character != null && _store != null ? _store.EquippedUnitSkinId(character.Id) : 0);
 
-    /// <summary>다른 유저 캐릭터의 외형. costumeId 는 서버가 내려준 값이며 0 이면 기본 일러스트다.</summary>
-    public CharacterAppearance Other(int charDataId, int costumeId) =>
-        Other(_charDb != null ? _charDb.Get(charDataId) : null, costumeId);
+    /// <summary>다른 유저 캐릭터의 외형. costumeId/unitSkinId 는 서버가 내려준 값이며 0 이면 기본이다.</summary>
+    public CharacterAppearance Other(int charDataId, int costumeId, int unitSkinId = 0) =>
+        Other(_charDb != null ? _charDb.Get(charDataId) : null, costumeId, unitSkinId);
 
     /// <summary>다른 유저 캐릭터의 외형(원본을 이미 들고 있는 경우).</summary>
-    public CharacterAppearance Other(CharacterData character, int costumeId) =>
-        new(character, costumeId != 0 && _costumeDb != null ? _costumeDb.Get(costumeId) : null);
+    public CharacterAppearance Other(CharacterData character, int costumeId, int unitSkinId = 0) =>
+        new(character,
+            costumeId != 0 && _costumeDb != null ? _costumeDb.Get(costumeId) : null,
+            unitSkinId != 0 && _costumeDb != null && _costumeDb.UnitSkins != null ? _costumeDb.UnitSkins.Get(unitSkinId) : null);
 }

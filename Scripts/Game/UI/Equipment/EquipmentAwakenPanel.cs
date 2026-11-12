@@ -123,7 +123,7 @@ public sealed class EquipmentAwakenPanel : MonoBehaviour {
             materialIcon.enabled = data.Icon != null;
         }
         if (targetNameText != null) targetNameText.text = data.DisplayName;
-        if (targetGradeText != null) targetGradeText.SetGrade(data.Grade);
+        if (targetGradeText != null) targetGradeText.SetGrade(data.Grade, inst.LimitBroken);
         if (targetStarView != null) targetStarView.SetStarLevel(inst.StarLevel);
         // 레벨/옵션은 상세 패널과 같은 형식/문구를 쓴다(같은 장비를 두 화면에서 다르게 읽지 않도록).
         if (targetLevelText != null)

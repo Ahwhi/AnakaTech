@@ -40,6 +40,7 @@ public enum ChatNoticeKind {
     GachaHighGradeEquip = 3,   // 고등급 장비 모집. RefId = 장비 id
     StarMaxChar = 4,           // 캐릭터 최대 별레벨 달성. RefId = 캐릭터 id, RefValue = 별레벨
     StarMaxEquip = 5,          // 장비 최대 별레벨(각성) 달성. RefId = 장비 id, RefValue = 별레벨
+    LimitBreakChar = 6,        // 캐릭터 한계돌파. RefId = 캐릭터 id
 }
 
 /// <summary>채팅 한 줄.</summary>
@@ -143,6 +144,12 @@ public interface IChatService {
 
     /// <summary>이 상대와의 대화를 읽은 것으로 표시한다(칩의 안 읽음 표식이 꺼진다).</summary>
     void MarkWhisperRead(int accountId);
+
+    /// <summary>
+    /// 안 읽은 귓속말 줄 수(모든 상대 합). 다른 채팅에 묻혀 귓속말이 온 줄 모르는 일이 없도록
+    /// 메인 화면 채팅 줄의 배지가 구독한다. 채팅창에서 그 상대의 대화를 보면 줄어든다.
+    /// </summary>
+    IReadOnlyReactiveProperty<int> UnreadWhisperCount { get; }
 
     /// <summary>내 소셜 설정을 받아 온다(설정 화면 진입).</summary>
     UniTask<WhisperPolicy> RequestWhisperPolicyAsync(CancellationToken ct = default);

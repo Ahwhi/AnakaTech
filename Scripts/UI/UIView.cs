@@ -31,6 +31,8 @@ public abstract class UIView : MonoBehaviour {
     private bool _closing;
     // 페이드 외 추가 연출(슬라이드 등)을 담당하는 선택 컴포넌트들. 같은 오브젝트에 부착만 하면 자동 참여한다.
     private IViewTransitionElement[] _transitionElements;
+    // 지금 재생 중인 표시/숨김 연출. 열리는 도중에 닫히면(연속 갱신 팝업 등) 앞 연출을 끊고 닫힘 연출만 남긴다.
+    private Sequence _transition;
 
     protected CanvasGroup CanvasGroup => _canvasGroup != null ? _canvasGroup : (_canvasGroup = GetComponent<CanvasGroup>());
 
@@ -76,6 +78,8 @@ public abstract class UIView : MonoBehaviour {
         CanvasGroup.interactable = true;
         CanvasGroup.blocksRaycasts = true;
         await TransitionAsync(true);
+        // 열리는 도중에 닫기가 시작됐으면(연출이 끊겨 여기로 왔다) 열림 처리를 하지 않는다.
+        if (_closing || this == null) return;
         OnShown();
     }
 
@@ -91,6 +95,13 @@ public abstract class UIView : MonoBehaviour {
         CanvasGroup.interactable = false;
         CanvasGroup.blocksRaycasts = false;
         await TransitionAsync(false);
+        // 씬 정리 등으로 닫힘 연출 도중 뷰가 파괴됐으면(연출이 함께 정리돼 여기로 왔다) 남은 처리는 할 대상이 없다.
+        if (this == null) {
+            var lost = _closedTcs;
+            _closedTcs = null;
+            lost?.TrySetResult();
+            return;
+        }
         OnClosed();
 
         // 재사용(내장 패널) 시 다음 열림에서 새 대기 토큰을 만들도록 초기화한다.
@@ -121,14 +132,26 @@ public abstract class UIView : MonoBehaviour {
     protected virtual void OnClosed() { }
 
     // DOTween 비동기 브리지 의존 없이 OnComplete 로 안전하게 await. 페이드와 (있으면) 추가 연출을 함께 재생한다.
+    //
+    // 앞 연출이 아직 돌고 있으면 끊고 시작한다. 예전에는 열림 연출과 닫힘 연출이 겹쳐 돌아, 닫힘이 먼저 끝나 뷰가
+    // 해제된 뒤에 열림 연출의 완료 콜백이 와서 이미 파괴된 뷰를 다시 만지는 오류가 났다(던전 클리어 표시처럼
+    // 새 내용이 오면 이전 표시를 바로 닫는 팝업에서 반복). 끊긴 연출도 기다리는 쪽은 풀어 줘야 하므로
+    // 완료가 아니라 OnKill(완료/중단 모두 호출)로 신호를 준다.
     private UniTask TransitionAsync(bool show) {
+        if (_transition != null && _transition.IsActive()) _transition.Kill();
+
         var tcs = new UniTaskCompletionSource();
         var seq = DOTween.Sequence()
-            .SetUpdate(true);   // 타임스케일 0 에서도 동작(로딩/일시정지 중 UI)
+            .SetUpdate(true)    // 타임스케일 0 에서도 동작(로딩/일시정지 중 UI)
+            .SetLink(gameObject);   // 뷰가 파괴되면 연출도 함께 정리된다(파괴된 대상을 계속 건드리지 않게).
         seq.Join(CanvasGroup.DOFade(show ? 1f : 0f, fadeDuration));
         if (_transitionElements != null)
             foreach (var e in _transitionElements) e.AppendTransition(seq, show, fadeDuration);
-        seq.OnComplete(() => tcs.TrySetResult());
+        seq.OnKill(() => {
+            if (_transition == seq) _transition = null;
+            tcs.TrySetResult();
+        });
+        _transition = seq;
         return tcs.Task;
     }
 }

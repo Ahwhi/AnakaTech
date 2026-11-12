@@ -67,7 +67,8 @@ public static class EngravingRules {
 /// <summary>
 /// 한 캐릭터에 장착된 각인들이 만들어내는 전투 보정. 항상 적용분과 조건부 적용분을 나눠 담는다.
 ///  - Always      : 성장 스탯처럼 합산되어 전투력/상세 스탯 표시에도 반영된다.
-///  - Conditionals: 전투 중 조건이 맞을 때만 붙는다(표시에는 설명 문구로만 나온다).
+///  - Conditionals: 전투 중 조건이 맞을 때만 붙는다. 상세 스탯에는 나오지 않고,
+///                  전투력에는 가동률만큼 환산되어 반영된다(CombatPowerFormula).
 /// 전투(CharacterUnit)와 표시(전투력 계산)가 같은 소스를 쓰도록 PlayerStateStore 가 이 객체를 만든다.
 /// </summary>
 public sealed class EngravingLoadout {

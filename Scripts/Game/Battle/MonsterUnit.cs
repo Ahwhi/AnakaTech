@@ -41,7 +41,18 @@ public sealed class MonsterUnit : BattleUnit {
     public override float BodyRadius =>
         Data != null && Data.BodyRadius > 0f ? Data.BodyRadius : base.BodyRadius;
 
+    // 컨텐츠가 이동 방식을 바꿀 때의 입력(영웅전의 떠돌기 등). 비어 있으면(기본) 아래의 추적 행동 그대로다.
+    private IUnitMoveInput _moveInput;
+
+    /// <summary>
+    /// 이동을 입력에 맡긴다(null 이면 기본 추적으로 돌아간다). 연결되면 대상을 쫓지 않고 입력대로 움직이며,
+    /// 사거리 안에 대상이 들어올 때만 멈추지 않고 공격한다. 영웅전처럼 탄을 피하는 컨텐츠만 부른다.
+    /// </summary>
+    public void SetMoveInput(IUnitMoveInput input) => _moveInput = input;
+
     protected override void Tick(float dt) {
+        if (_moveInput != null) { TickByInput(dt); return; }
+
         var target = ResolveTarget();
         if (target == null) return;
 
@@ -55,6 +66,31 @@ public sealed class MonsterUnit : BattleUnit {
         }
     }
 
+    // 공격이 요구한 정지 시간(예고 중 등)이 남았는지. 입력 이동에서만 쓴다.
+    private float _castLock;
+
+    // 입력대로 움직이면서, 사거리 안의 대상에게는 걸음을 멈추지 않고 공격한다.
+    // 다만 공격이 정지 시간을 요구하면(예고 후 발사) 그동안은 제자리에 선다. 발사 위치가 예고한 위치와 같아야 하기 때문이다.
+    private void TickByInput(float dt) {
+        if (_castLock > 0f) { _castLock -= dt; return; }
+
+        Vector2 dir = _moveInput.Direction;
+        bool moving = dir.sqrMagnitude > 0.0001f;
+        if (moving) MoveAlong(dir, dt);
+
+        var target = ResolveTarget();
+        if (target != null && DistanceTo(target) <= _stats.Range) {
+            FaceTowards(target.Position);
+            if (CanAttack) {
+                PerformAttackOrSkill(target);
+                var attack = BasicAttackAsset;
+                if (attack != null) _castLock = attack.CastLockSeconds;
+            }
+            return;
+        }
+        if (moving) FaceTowards((Vector2)transform.position + dir);
+    }
+
     // 이번 프레임의 공격 대상. 데이터가 우선 타게팅을 요구하면 전장에 물어보고, 없으면 가장 가까운 적을 쓴다.
     // "누가 우선 대상인가"는 컨텐츠(전장)가 알고 몬스터는 "우선 대상을 노리는 성향인가"만 안다.
     private BattleUnit ResolveTarget() {
@@ -65,10 +101,26 @@ public sealed class MonsterUnit : BattleUnit {
         return FindNearestEnemy();   // 적 = 캐릭터
     }
 
+    // 컨텐츠가 공격 방식을 통째로 바꿀 때의 기본공격(영웅전의 논타겟 공격 등). 비어 있으면 데이터의 공격을 쓴다.
+    private BasicAttack _attackOverride;
+    private bool _skillSuppressed;
+
+    /// <summary>
+    /// 이 몬스터의 기본공격을 컨텐츠 규칙으로 바꾼다(스폰 직후 1회). 몬스터 데이터를 컨텐츠마다 복제하지 않고
+    /// 같은 몬스터를 다른 공격 방식으로 세우기 위한 자리다. suppressSkill 이면 데이터의 스킬도 쓰지 않는다
+    /// (스킬은 대상 지정형이라, 공격 방식 전체를 바꾸는 컨텐츠에서는 규칙이 섞인다).
+    /// </summary>
+    public void SetAttackOverride(BasicAttack attack, bool suppressSkill) {
+        _attackOverride = attack;
+        _skillSuppressed = suppressSkill;
+        ResetSkillCooldown();   // 스킬 유무가 바뀌었으므로 게이지 주기를 다시 잡는다.
+    }
+
     // ── 데이터/런타임 연결(BattleUnit 공통 공격/스킬 파이프라인이 참조) ──
     // 캐릭터와 동일한 구조다: 몬스터도 연출/데미지를 전부 SO 에 위임하고 여기서는 출처만 알려준다.
-    protected override BasicAttack BasicAttackAsset => Data != null ? Data.BasicAttack : null;
-    protected override UnitSkill SkillAsset => Data != null ? Data.Skill : null;
+    protected override BasicAttack BasicAttackAsset =>
+        _attackOverride != null ? _attackOverride : (Data != null ? Data.BasicAttack : null);
+    protected override UnitSkill SkillAsset => !_skillSuppressed && Data != null ? Data.Skill : null;
     protected override IBattleRuntime Runtime => _skillRuntime;
     protected override Color SkillBubbleColor => Data != null ? Data.SkillBubbleColor : Color.white;
 
@@ -79,5 +131,12 @@ public sealed class MonsterUnit : BattleUnit {
         // 마스크 일러스트를 쓰는 몬스터는 캐릭터와 동일한 피격 깜빡임을 재생한다.
         if (illust != null)
             illust.PlayHitBlink(Settings.HitBlinkAlphaFactor, Settings.HitBlinkDuration, Settings.HitBlinkLoops);
+    }
+
+    // 몬스터는 죽으면 곧바로 파괴된다(BattleStage.OnUnitDied). 막타가 건 깜빡임 트윈은 파괴보다 오래 이어지므로
+    // 여기서 정리하지 않으면 파괴된 렌더러를 건드리다 DOTween 안전 모드의 예외 처리로 끝난다(몬스터 1마리당 최대 3회).
+    protected override void Die() {
+        base.Die();
+        if (illust != null) illust.StopBlink();
     }
 }

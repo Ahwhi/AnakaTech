@@ -27,7 +27,7 @@ public sealed class ItemSlotView : MonoBehaviour {
             if (data != null && data.Icon != null) icon.sprite = data.Icon;
         }
         if (nameText != null) nameText.text = data != null ? data.DisplayName : "";
-        if (countText != null) countText.text = $"x{count}";
+        if (countText != null) countText.text = $"x{count:N0}";
         if (badgeText != null) {
             string badge = data != null ? data.BadgeText : "";
             badgeText.gameObject.SetActive(!string.IsNullOrEmpty(badge));

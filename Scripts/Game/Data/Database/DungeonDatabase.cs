@@ -38,6 +38,20 @@ public sealed class DungeonDatabase : ScriptableObject {
         return d != null ? d.Group : null;
     }
 
+    /// <summary>
+    /// 던전의 "장-단계" 표기(예: 21-4). 장은 그룹 표시 순서(던전 선택 드롭다운의 번호와 같다),
+    /// 단계는 그룹 안에서의 순서다. 그룹 미할당 던전은 인덱스로 대신한다(#12).
+    /// </summary>
+    public string StageCode(int dungeonIndex) {
+        var d = Get(dungeonIndex);
+        var g = d != null ? d.Group : null;
+        if (g == null) return $"#{dungeonIndex}";
+
+        int chapter = _groups.IndexOf(g) + 1;
+        int stage = _byGroup[g].IndexOf(d) + 1;
+        return $"{chapter}-{stage}";
+    }
+
     private void EnsureIndex() {
         if (_byIndex != null) return;
         _byIndex = new Dictionary<int, DungeonData>(dungeons.Count);

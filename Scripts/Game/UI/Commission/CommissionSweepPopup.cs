@@ -39,6 +39,8 @@ public sealed class CommissionSweepPopup : UIView {
     [Header("Reward Preview")]
     [SerializeField] private Transform rewardParent;
     [SerializeField] private RewardSlotView rewardSlotPrefab;
+    [Tooltip("투자 반영 안내(예: '투자 15% 반영'). 경험치 투자가 걸린 의뢰(레이드)에서만 보인다. 선택.")]
+    [SerializeField] private TMP_Text investmentText;
 
     [Header("Buttons")]
     [SerializeField] private Button okButton;
@@ -50,6 +52,7 @@ public sealed class CommissionSweepPopup : UIView {
     private BattleHudContext _ctx;
     private CommissionType _type;
     private int _stage;
+    private int _expBonus;   // 경험치 투자 증가분(1000 분율). 레이드 의뢰에서만 0 보다 크다.
     private int _owned;
     private int _count = 1;
 
@@ -82,6 +85,12 @@ public sealed class CommissionSweepPopup : UIView {
         if (titleText != null) titleText.text = "즉시해결";
         if (subtitleText != null) subtitleText.text = $"{CommissionRewardRules.TypeName(type)} {stage}단계 반복";
         CurrencyIcon.Apply(ticketIcon, ctx.Currencies, CurrencyType.CommissionTicket);
+
+        _expBonus = CommissionRewardRules.ExpBonusPermille(type, ctx.Store.InvestmentLevels);
+        if (investmentText != null) {
+            investmentText.gameObject.SetActive(_expBonus > 0);
+            investmentText.text = CommissionRewardRules.ExpBonusLabel(_expBonus);
+        }
 
         // 보유가 0이면 조작 자체를 막는다(확인 버튼 비활성/부족 표시는 SetCount 가 처리).
         bool usable = _owned > 0;
@@ -118,8 +127,9 @@ public sealed class CommissionSweepPopup : UIView {
         if (insufficientHint != null) insufficientHint.SetActive(insufficient);
         if (okButton != null) okButton.interactable = !insufficient;
 
-        var rewards = CommissionRewardRules.ScaleRewards(
-            CommissionRewardRules.SweepRewards(_type, _stage), _count);
+        // 서버는 장수를 곱한 총량에 투자 증가분을 적용하므로 같은 순서로 계산한다(반올림까지 지급액과 같다).
+        var rewards = CommissionRewardRules.WithExpBonus(
+            CommissionRewardRules.ScaleRewards(CommissionRewardRules.SweepRewards(_type, _stage), _count), _expBonus);
         BuildRewards(rewards);
     }
 

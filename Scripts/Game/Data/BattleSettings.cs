@@ -7,7 +7,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "BattleSettings", menuName = "Anaka/Battle Settings")]
 public sealed class BattleSettings : ScriptableObject {
     [Header("Combat")]
-    [Tooltip("방어 감산 계수. 유효방어 = 방어 * (1-관통), 감산 = 유효방어 * 이 계수.")]
+    [Tooltip("방어 감산 계수. 유효방어 = max(0, 방어 - 관통), 감산 = 유효방어 * 이 계수.")]
     public float DefenseFactor = 0.5f;
     [Tooltip("적(몬스터) 공통 피격 VFX 프리팹(PLANNING 1-9).")]
     public GameObject CommonEnemyHitVfxPrefab;
@@ -91,6 +91,10 @@ public sealed class BattleSettings : ScriptableObject {
             if (StatusVfx[i].Type == type) return StatusVfx[i].Prefab;
         return null;
     }
+
+    [Tooltip("무적 상태 동안 유닛에 붙여 둘 공용 VFX 프리팹. 무적을 거는 쪽(스킬)이 따로 지정하지 않으면 이것을 쓴다. " +
+             "비워 두면 표시 없이 무적만 동작한다.")]
+    public GameObject InvulnerableVfxPrefab;
 
     [Header("Damage Popup (PLANNING 1-14)")]
     [Tooltip("팝인 시간(초). 작게 시작해 오버슈트 크기까지 튀어 오르는 구간. 짧을수록 탁 튄다.")]

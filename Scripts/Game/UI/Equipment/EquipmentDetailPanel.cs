@@ -49,6 +49,10 @@ public sealed class EquipmentDetailPanel : MonoBehaviour {
     [SerializeField] private Button equipButton;
     [SerializeField] private Button unequipButton;
     [SerializeField] private Button awakenButton;
+    [Tooltip("한계돌파 패널을 여는 버튼. 이미 한계돌파한 장비면 숨긴다(조건 미충족이어도 눌러서 조건을 볼 수 있다). 선택.")]
+    [SerializeField] private Button limitBreakButton;
+    [Tooltip("한계돌파한 장비일 때 켜는 표시(예: '한계돌파' 마크). 선택.")]
+    [SerializeField] private GameObject limitBrokenMark;
     [SerializeField] private Button levelUpButton;
     [Tooltip("레벨업 버튼에 표시할 필요 골드(예: 300). 선택.")]
     [SerializeField] private TMP_Text levelUpCostText;
@@ -56,6 +60,12 @@ public sealed class EquipmentDetailPanel : MonoBehaviour {
     [SerializeField] private Image levelUpCostIcon;
     [Tooltip("다음 레벨업으로 오르는 스탯 미리보기(예: '공격력 +1'). 상한에 닿으면 각성 안내로 바뀐다. 선택.")]
     [SerializeField] private TMP_Text levelUpGainText;
+    [Tooltip("이 장비 하나를 분해하는 버튼. 장착 중이거나 분해할 수 없는 등급(XR)이면 숨긴다. 선택.")]
+    [SerializeField] private Button disassembleButton;
+    [Tooltip("분해로 얻는 골드 표시(예: 1,000). 분해 버튼 안에 두면 버튼과 함께 숨겨진다. 선택.")]
+    [SerializeField] private TMP_Text disassembleGoldText;
+    [Tooltip("분해 보상 골드 아이콘. 재화 카탈로그에서 자동 배선된다. 분해 버튼 안에 둘 것. 선택.")]
+    [SerializeField] private Image disassembleGoldIcon;
     [SerializeField] private Button closeButton;
     [Tooltip("배경 탭으로 닫기(선택). 패널 뒤를 덮는 배경 이미지(보통 Dim)를 그대로 끌어다 놓으면 그 바깥을 눌러 닫을 수 있다. " +
              "클릭 처리는 코드가 붙이므로 Button 컴포넌트를 따로 달 필요가 없다. 비워 두면 배경 탭으로 닫히지 않는다(할당 = 사용).")]
@@ -67,8 +77,12 @@ public sealed class EquipmentDetailPanel : MonoBehaviour {
     public event Action UnequipRequested;
     /// <summary>각성 패널 열기 요청.</summary>
     public event Action AwakenRequested;
+    /// <summary>한계돌파 패널 열기 요청.</summary>
+    public event Action LimitBreakRequested;
     /// <summary>레벨업 요청.</summary>
     public event Action LevelUpRequested;
+    /// <summary>이 장비 하나의 분해 요청(확인 절차와 통신은 상위가 맡는다).</summary>
+    public event Action DisassembleRequested;
     /// <summary>패널 닫기 요청.</summary>
     public event Action CloseRequested;
 
@@ -90,7 +104,9 @@ public sealed class EquipmentDetailPanel : MonoBehaviour {
         Wire(equipButton, () => EquipRequested?.Invoke());
         Wire(unequipButton, () => UnequipRequested?.Invoke());
         Wire(awakenButton, () => AwakenRequested?.Invoke());
+        Wire(limitBreakButton, () => LimitBreakRequested?.Invoke());
         Wire(levelUpButton, () => LevelUpRequested?.Invoke());
+        Wire(disassembleButton, () => DisassembleRequested?.Invoke());
         Wire(closeButton, () => CloseRequested?.Invoke());
         // 배경 탭도 닫기 버튼과 같은 결과를 낸다(팝업들과 조작이 어긋나지 않게).
         TapToClose.Bind(tapToCloseArea, () => {
@@ -98,6 +114,7 @@ public sealed class EquipmentDetailPanel : MonoBehaviour {
             CloseRequested?.Invoke();
         });
         CurrencyIcon.Apply(levelUpCostIcon, _hud.Currencies, CurrencyType.Gold);
+        CurrencyIcon.Apply(disassembleGoldIcon, _hud.Currencies, CurrencyType.Gold);
 
         // 골드 보유량이 밖에서 바뀌어도(상점 구매/우편 수령 등) 비용 색과 버튼 활성이 즉시 따라오게 한다.
         _hud.Store.Gold.Subscribe(_ => OnGoldChanged()).AddTo(this);
@@ -134,7 +151,8 @@ public sealed class EquipmentDetailPanel : MonoBehaviour {
             icon.sprite = data.Icon;
             icon.enabled = data.Icon != null;
         }
-        if (gradeText != null) gradeText.SetGrade(data.Grade);
+        if (gradeText != null) gradeText.SetGrade(data.Grade, inst.LimitBroken);
+        if (limitBrokenMark != null) limitBrokenMark.SetActive(inst.LimitBroken);
         if (starView != null) starView.SetStarLevel(inst.StarLevel);
         if (levelText != null) levelText.text = $"Lv.{inst.Level} / {EquipmentRules.MaxLevel(inst.StarLevel)}";
         if (statsText != null) statsText.text = EquipmentRules.DescribeStats(inst, data);
@@ -144,7 +162,7 @@ public sealed class EquipmentDetailPanel : MonoBehaviour {
         if (nameText != null)
             nameText.text = data.DisplayName + (!equipped && !canEquip ? " (장착 불가)" : "");
 
-        RefreshSignature(data, equippedHere);
+        RefreshSignature(inst, data, equippedHere);
         RefreshPowerDelta(inst, equippedHere);
         RefreshActions(inst, data, equipped, equippedHere, canEquip);
     }
@@ -152,7 +170,7 @@ public sealed class EquipmentDetailPanel : MonoBehaviour {
     // 전용/공용 그룹: 무기는 전용무기 효과를, 무기가 아닌 부위(방어구/신발/악세서리)는
     // 캐릭터 제한이 없으므로 "공용"으로 표시한다(예전에는 그룹을 통째로 숨겨 아무 정보도 안 보였다).
     // 본인 전용무기를 "이 캐릭터가 장착 중"일 때만 초록(효과 발동 중).
-    private void RefreshSignature(EquipmentData data, bool equippedHere) {
+    private void RefreshSignature(EquipmentInstanceDto inst, EquipmentData data, bool equippedHere) {
         bool isWeapon = data.Slot == EquipmentSlot.Weapon;
         bool show = !isWeapon || data.IsSignature;
         if (signatureGroup != null) signatureGroup.SetActive(show);
@@ -171,7 +189,7 @@ public sealed class EquipmentDetailPanel : MonoBehaviour {
             signatureStateImage.color = active ? signatureActiveColor : signatureInactiveColor;
 
         if (signatureEffectText == null) return;
-        string effect = EquipmentRules.SignatureBonusDescription(data.Grade, data.WeaponType, data.Id);
+        string effect = EquipmentRules.SignatureBonusDescription(data.Grade, data.WeaponType, data.Id, inst.LimitBroken);
         if (active) signatureEffectText.text = $"적용 중\n{effect}";
         else if (own) signatureEffectText.text = $"장착 시 적용\n{effect}";
         else signatureEffectText.text = $"효과 없음";
@@ -206,9 +224,19 @@ public sealed class EquipmentDetailPanel : MonoBehaviour {
         }
         if (unequipButton != null) unequipButton.gameObject.SetActive(equippedHere);
 
-        // 각성: 최대 별레벨이면 막는다.
-        if (awakenButton != null)
-            awakenButton.interactable = EquipmentRules.CanAwaken(inst.StarLevel);
+        // 최대 별레벨 + 최대 레벨이면 더 키울 것이 없으므로 각성/레벨업 버튼을 아예 숨긴다(한계돌파만 남는다).
+        // 그 전에는 버튼을 보여 두고, 할 수 없는 쪽만 막는다(예: 최대 레벨이면 레벨업은 막고 각성으로 안내).
+        bool canAwaken = EquipmentRules.CanAwaken(inst.StarLevel);
+        bool fullyGrown = !canAwaken && !EquipmentRules.CanLevelUp(inst.StarLevel, inst.Level);
+        if (awakenButton != null) {
+            awakenButton.gameObject.SetActive(!fullyGrown);
+            awakenButton.interactable = canAwaken;
+        }
+        if (levelUpButton != null) levelUpButton.gameObject.SetActive(!fullyGrown);
+
+        // 한계돌파: 다 키운(최대 별레벨 + 최대 레벨) 미돌파 장비에만 보인다. 각성/레벨업 버튼과 자리를 맞바꾼다.
+        // 한계돌파권이 모자라도 버튼은 보여 두어, 눌러서 패널에서 무엇이 모자란지 볼 수 있게 한다.
+        if (limitBreakButton != null) limitBreakButton.gameObject.SetActive(fullyGrown && !inst.LimitBroken);
 
         // 레벨업: 별레벨이 열어준 상한에 닿으면 막고, 비용은 항상 현재 레벨 기준으로 표시한다.
         // 골드가 모자라도 버튼을 막는다(각성 패널과 같은 규칙. 눌러서 토스트로 거절당하지 않게).
@@ -227,6 +255,14 @@ public sealed class EquipmentDetailPanel : MonoBehaviour {
                 levelUpCostText.color = Color.white;
             }
         }
+
+        // 분해: 장착 중이면 숨긴다. 분해로 슬롯이 비면 캐릭터 스탯이 조용히 내려가므로, 해제를 거치게 해
+        // 유저가 그 사실을 알고 하도록 만든다(서버도 같은 이유로 장착 장비를 거절한다).
+        // 분해할 수 없는 등급(XR)과 한계돌파한 장비도 숨긴다. 눌러서 거절당하는 것보다 아예 없는 편이 낫다.
+        bool canDisassemble = EquipmentRules.CanDisassemble(inst, data);
+        if (disassembleButton != null) disassembleButton.gameObject.SetActive(canDisassemble);
+        if (disassembleGoldText != null)
+            disassembleGoldText.text = EquipmentRules.DisassembleGold(data.Grade).ToString("N0");
 
         // 다음 레벨업 상승치 미리보기. 상한에 닿았으면 무엇을 해야 더 크는지(각성) 알려준다.
         if (levelUpGainText != null) {

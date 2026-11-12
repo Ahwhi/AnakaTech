@@ -55,17 +55,19 @@ public enum StatType {
     CritRate,
     CritDamage,
     // 아래는 후속 추가분(인덱스 8~). 순서 고정.
-    MinDamageRatio,          // 8  최소 데미지 비율(%) - 지터 하한 상승(별 성장 전용)
-    MaxDamageRatio,          // 9  최대 데미지 비율(%) - 지터 상한 상승(별 성장 전용)
-    ArmorPen,                // 10 방어구 관통력(%)   - 별 성장 전용
-    FinalDamage,             // 11 최종 데미지(%)     - 별 성장 전용
+    // 계정 투자(InvestmentRules.StatOf)로도 오르는 스탯: CritRate/MinDamageRatio/MaxDamageRatio/FinalDamage/
+    // DamageTakenReduction/DoubleAttackChance/EvasionChance.
+    MinDamageRatio,          // 8  최소 데미지 비율(%) - 지터 하한 상승(별 성장, 투자)
+    MaxDamageRatio,          // 9  최대 데미지 비율(%) - 지터 상한 상승(별 성장, 투자)
+    ArmorPen,                // 10 방어구 관통력(방어력을 깎는 절대 수치, V1.12 부터) - 별 성장 전용
+    FinalDamage,             // 11 최종 데미지(%)     - 별 성장, 수련, 투자
     SkillAccel,              // 12 스킬 가속(%)       - 투자 가능
     SkillCooldownReduction,  // 13 스킬 쿨타임 감소(초) - 별 성장 전용
     // 방어 스탯(인덱스 14~). 장비 옵션 전용이며 전부 점근 감쇄(CombatStats.Resist01)를 통과한다.
     CritResist,              // 14 치명타 저항(%)      - 받는 치명타의 추가 배율만 감쇄
     StatusResist,            // 15 상태이상 저항(%)    - 상태이상 지속시간 감쇄(상태이상 구현 시 소비)
     DamageTakenReduction,    // 16 피격 데미지 감소(%) - 최종 데미지에 독립 곱연산
-    // 발동형 스탯(인덱스 17~). 수련 전용이며 값이 곧 발동 확률(%)이라 점근 감쇄를 쓰지 않는다.
+    // 발동형 스탯(인덱스 17~). 수련과 투자로 오르며 값이 곧 발동 확률(%)이라 점근 감쇄를 쓰지 않는다.
     DoubleAttackChance,      // 17 2회 공격 확률(%)   - 기본공격이 짧은 간격을 두고 한 번 더 나간다
     EvasionChance            // 18 회피 확률(%)       - 피격을 무효로 하고 MISS 를 표시한다
 }
@@ -110,7 +112,9 @@ public enum CurrencyType {
     GuildPoint = 12,         // 길드 포인트. 길드 레이드/대항전 보상으로 쌓이며 길드 상점의 결제 재화다.
     TrainingTicket = 13,     // 수련 완료권. 진행 중인 수련의 남은 시간을 즉시 당긴다(상점에서 주 1개 판매).
     ArenaCoin = 14,          // 쟁탈전 코인. 쟁탈전 승패/일일/주간 보상으로 쌓이며 쟁탈전 상점의 결제 재화다.
-    DispatchCertificate = 15 // 파견 증명서. 파견 완료 보상으로만 쌓이며 코스튬 구매의 결제 재화다.
+    DispatchCertificate = 15, // 파견 증명서. 파견 완료 보상으로만 쌓이며 코스튬 구매의 결제 재화다.
+    GachaMileage = 16,       // 모집 마일리지. 모집을 돌리면 소녀/장비를 가리지 않고 쌓이며 SSR 소녀 픽업에 쓴다.
+    LimitBreakTicket = 17    // 한계돌파권. 조건을 채운 캐릭터를 한계돌파할 때 1장 쓰인다.
 }
 
 /// <summary>
@@ -166,13 +170,16 @@ public static class GameEnumRules {
         _ => "-"
     };
 
-    /// <summary>등급별 중복 획득 시 지급되는 조각 수(PLANNING 5-9).</summary>
+    /// <summary>
+    /// 등급별 중복 획득 시 지급되는 조각 수.
+    /// 서버 GameRoster.DupShardsForGrade 와 값이 반드시 같아야 한다(실제 지급은 서버가 확정한다).
+    /// </summary>
     public static int ShardsOnDuplicate(Grade grade) => grade switch {
-        Grade.N   => 2,
-        Grade.R   => 2,
-        Grade.SR  => 5,
-        Grade.SSR => 10,
-        Grade.XR  => 10,
+        Grade.N   => 5,
+        Grade.R   => 5,
+        Grade.SR  => 10,
+        Grade.SSR => 50,
+        Grade.XR  => 50,
         _ => 0
     };
 }

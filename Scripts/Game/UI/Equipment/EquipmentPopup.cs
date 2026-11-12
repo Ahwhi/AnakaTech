@@ -45,6 +45,8 @@ public sealed class EquipmentPopup : UIView {
     [SerializeField] private EquipmentDetailPanel detailPanel;
     [Tooltip("각성 패널.")]
     [SerializeField] private EquipmentAwakenPanel awakenPanel;
+    [Tooltip("한계돌파 패널.")]
+    [SerializeField] private EquipmentLimitBreakPanel limitBreakPanel;
 
     [Header("Buttons")]
     [Tooltip("가방 패널을 켜고 끄는 버튼. 각인 페이지에서는 쓸 일이 없어 숨긴다.")]
@@ -88,11 +90,18 @@ public sealed class EquipmentPopup : UIView {
                 detailPanel.UnequipRequested += OnUnequip;
                 detailPanel.LevelUpRequested += () => OnLevelUp().Forget();
                 detailPanel.AwakenRequested += OpenAwaken;
+                detailPanel.LimitBreakRequested += OpenLimitBreak;
+                detailPanel.DisassembleRequested += () => OnDisassembleOne().Forget();
                 detailPanel.CloseRequested += CloseDetail;
             }
+            if (bagPanel != null) bagPanel.DisassembleRequested += () => OnDisassembleBulk().Forget();
             if (awakenPanel != null) {
                 awakenPanel.Awakened += () => OnAwakened().Forget();
                 awakenPanel.CloseRequested += CloseAwaken;
+            }
+            if (limitBreakPanel != null) {
+                limitBreakPanel.LimitBroken += () => OnLimitBroken().Forget();
+                limitBreakPanel.CloseRequested += CloseLimitBreak;
             }
             _wired = true;
         }
@@ -101,6 +110,7 @@ public sealed class EquipmentPopup : UIView {
         _selected = null;
         SetActiveSafe(detailPanel, false);
         SetActiveSafe(awakenPanel, false);
+        SetActiveSafe(limitBreakPanel, false);
         SetActiveSafe(bagPanel, false);
 
         bagPanel?.Initialize(_hud, _charId, OnBagCardClicked);
@@ -168,7 +178,10 @@ public sealed class EquipmentPopup : UIView {
     // 버튼 아이콘이 실제 상태와 어긋나지 않게 하기 위함이다.
     private void SetBagOpen(bool open) {
         if (bagPanel == null) return;
-        if (open) CloseAwaken();
+        if (open) {
+            CloseAwaken();
+            CloseLimitBreak();
+        }
         bagPanel.gameObject.SetActive(open);
         RefreshBagButton();
     }
@@ -195,6 +208,8 @@ public sealed class EquipmentPopup : UIView {
         // (안 하면 처음 연 장비의 각성 상태가 그대로 남아 상세 패널과 서로 다른 장비를 가리킨다.)
         if (awakenPanel != null && awakenPanel.gameObject.activeSelf)
             awakenPanel.Initialize(_hud, _charId, inst.InstanceId);
+        if (limitBreakPanel != null && limitBreakPanel.gameObject.activeSelf)
+            limitBreakPanel.Initialize(_hud, inst.InstanceId);
 
         RefreshSelectionMarks();
     }
@@ -207,11 +222,21 @@ public sealed class EquipmentPopup : UIView {
 
     private void OpenAwaken() {
         if (_selected == null || awakenPanel == null) return;
+        CloseLimitBreak();   // 각성과 한계돌파는 같은 자리에 뜨는 패널이라 하나만 연다.
         awakenPanel.gameObject.SetActive(true);
         awakenPanel.Initialize(_hud, _charId, _selected.InstanceId);
     }
 
     private void CloseAwaken() => SetActiveSafe(awakenPanel, false);
+
+    private void OpenLimitBreak() {
+        if (_selected == null || limitBreakPanel == null) return;
+        CloseAwaken();
+        limitBreakPanel.gameObject.SetActive(true);
+        limitBreakPanel.Initialize(_hud, _selected.InstanceId);
+    }
+
+    private void CloseLimitBreak() => SetActiveSafe(limitBreakPanel, false);
 
     private static void SetActiveSafe(Component c, bool on) {
         if (c != null && c.gameObject.activeSelf != on) c.gameObject.SetActive(on);
@@ -247,9 +272,8 @@ public sealed class EquipmentPopup : UIView {
         var progress = _hud.Store.GetProgress(_charId);
         if (data == null || progress == null) { combatPowerText.text = "-"; return; }
 
-        var bonus = _hud.Store.TotalBonusFor(_charId, _hud.EquipDb);
-        float power = new CharacterRuntime(data, progress, _hud.Settings, bonus).CombatPower;
-        combatPowerText.text = Mathf.RoundToInt(power).ToString("N0");
+        float power = _hud.Store.RuntimeFor(data, progress, _hud.Settings, _hud.EquipDb).CombatPower;
+        combatPowerText.text = power.ToString("N0");
     }
 
     // ── 입력 ──
@@ -311,11 +335,76 @@ public sealed class EquipmentPopup : UIView {
         });
     }
 
+    /// <summary>
+    /// 상세 화면의 개별 분해. 되돌릴 수 없는 조작이라 장비 이름과 보상 골드를 보여 주고 한 번 확인받는다.
+    /// 각성/레벨업한 장비도 여기서는 분해할 수 있다(유저가 그 하나를 직접 지목한 경우다).
+    /// </summary>
+    private async UniTaskVoid OnDisassembleOne() {
+        if (_selected == null || _busy) return;
+
+        // 장착 중인 장비는 분해하지 않는다. 상세 패널이 이미 버튼을 숨기지만, 그것은 표시 상태일 뿐이라
+        // 여기서도 값으로 확인한다(서버도 같은 이유로 한 번 더 막는다).
+        if (_selected.IsEquipped) { _hud.Ui.ShowToast("장착 중인 장비는 분해할 수 없습니다."); return; }
+
+        var data = _hud.EquipDb != null ? _hud.EquipDb.Get(_selected.EquipDataId) : null;
+        if (data == null || !EquipmentRules.CanDisassemble(_selected, data)) return;
+
+        long id = _selected.InstanceId;
+        int gold = EquipmentRules.DisassembleGold(data.Grade);
+
+        // 확인 팝업 대기까지 RunAsync 안에서 한다. 팝업이 떠 있는 동안 장비 화면이 닫히면 취소 예외가 나는데,
+        // 바깥에 두면 그것을 받아 줄 곳이 없다(중복 입력도 이 구간부터 막혀야 한다).
+        await RunAsync(async () => {
+            var confirm = await _hud.Ui.ShowPopupAsync<ConfirmCancelPopup>(_hud.Popups.ConfirmCancelPopup, _ct);
+            bool ok = await confirm.ShowAsync("장비 분해",
+                $"'{data.DisplayName}' 을(를) 분해할까요?\n골드 {gold:N0} 을(를) 얻습니다.\n분해한 장비는 되돌릴 수 없습니다.");
+            if (!ok) return;
+
+            var res = await _hud.Inventory.DisassembleAsync(new[] { id }, _ct);
+            if (!res.IsSuccess) { _hud.Ui.ShowToast(DisassembleFailMessage(res.FailReason)); return; }
+            await ApplyDisassembledAsync(res);
+        });
+    }
+
+    /// <summary>
+    /// 가방의 일괄 분해. 팝업에서 등급을 고르면 그 등급을 서버에 넘긴다(어떤 장비가 대상인지는 서버가 정한다).
+    /// 가방이 전송 상한을 넘겨 목록이 잘린 계정에서도 서버가 보이지 않는 장비까지 정리하므로,
+    /// 결과 개수는 팝업의 미리보기가 아니라 서버가 돌려준 값을 쓴다.
+    /// </summary>
+    private async UniTaskVoid OnDisassembleBulk() {
+        if (_busy) return;
+
+        // 팝업 대기까지 RunAsync 안에서 한다(개별 분해와 같은 이유).
+        await RunAsync(async () => {
+            var popup = await _hud.Ui.ShowPopupAsync<EquipmentDisassemblePopup>(
+                _hud.Popups.EquipmentDisassemblePopup, _ct);
+            var grades = await popup.ShowAsync(_hud);
+            if (grades == null || grades.Count == 0) return;
+
+            var res = await _hud.Inventory.DisassembleByGradeAsync(grades, _ct);
+            if (!res.IsSuccess) { _hud.Ui.ShowToast(DisassembleFailMessage(res.FailReason)); return; }
+            await ApplyDisassembledAsync(res);
+        });
+    }
+
+    // 분해 성공 후 공통 처리: 서버 권위 잔액을 먼저 반영하고 인벤토리를 다시 받는다.
+    private async UniTask ApplyDisassembledAsync(DisassembleResultDto res) {
+        _hud.Store.Gold.Value = res.NewGold;
+        _hud.Ui.ShowToast($"장비 {res.Count:N0}개를 분해해 골드 {res.GainedGold:N0} 을(를) 얻었습니다.");
+        await RefreshInventoryAsync();
+    }
+
     private async UniTaskVoid OnAwakened() {
         await RefreshInventoryAsync();
         // 각성 패널이 열려 있으면 새 별레벨/재료 목록으로 갱신한다(연속 각성 가능).
         if (awakenPanel != null && awakenPanel.gameObject.activeSelf) awakenPanel.Refresh();
         RefreshEventBadges();
+    }
+
+    // 한계돌파 성공: 돌파 상태(스탯 배수)를 인벤토리로 다시 받아 슬롯/전투력/상세를 함께 갱신한다.
+    private async UniTaskVoid OnLimitBroken() {
+        await RefreshInventoryAsync();
+        if (limitBreakPanel != null && limitBreakPanel.gameObject.activeSelf) limitBreakPanel.Refresh();
     }
 
     // 강화/각성은 장비 이벤트 미션의 진행 지표다. 달성되는 순간 메인 화면 이벤트 버튼에도 불이 들어오도록
@@ -357,12 +446,18 @@ public sealed class EquipmentPopup : UIView {
         else {
             CloseDetail();
             CloseAwaken();
+            CloseLimitBreak();
         }
     }
 
     private static string EquipFailMessage(int fail) => fail switch {
         7 => "이 캐릭터가 장착할 수 없는 장비입니다.",
         _ => "장착할 수 없습니다."
+    };
+
+    private static string DisassembleFailMessage(int fail) => fail switch {
+        1 => "분해할 수 있는 장비가 없습니다.",
+        _ => "분해할 수 없습니다."
     };
 
     private static string LevelUpFailMessage(int fail) => fail switch {

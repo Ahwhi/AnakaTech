@@ -21,7 +21,11 @@ using UnityEngine;
 /// 버튼 쪽(BadgeView)이 "배지 상태는 BadgeCenter 하나만 보면 된다"가 되도록 한다.
 /// 새 배지는 여기 상태 하나 + BadgeView.BadgeId 하나만 추가하면 된다(확장 포인트).
 /// </summary>
-public sealed class BadgeCenter {
+public sealed class BadgeCenter : IDisposable {
+    // 루트 스코프(씬보다 오래 사는) 서비스에 건 구독. 씬 스코프인 이 클래스가 스코프와 함께 사라질 때
+    // 반드시 끊어야 한다. 끊지 않으면 메인 씬을 다시 열 때마다 죽은 BadgeCenter 가 하나씩 쌓여
+    // 같은 통지에 여러 번 반응한다(씬 스코프 서비스는 스코프와 함께 사라지므로 여기 담지 않는다).
+    private readonly CompositeDisposable _rootSubscriptions = new();
     private readonly IEncyclopediaService _encyclopedia;
     private readonly IChargeRewardService _charge;
     private readonly IShopService _shop;
@@ -29,12 +33,20 @@ public sealed class BadgeCenter {
     private readonly PlayerStateStore _store;
     private readonly IEventBadgeService _events;
     private readonly HqNodeDatabase _hqDb;
+    private readonly CharacterDatabase _charDb;   // 도감 보상 단계 수(캐릭터 수에서 정해진다)
     private readonly IGuildService _guild;
     private readonly IFriendService _friend;
     private readonly IAchievementService _achievement;
     private readonly ITrainingService _training;
     private readonly IArenaService _arena;
     private readonly IDispatchService _dispatch;
+    private readonly IDoomService _doom;
+    private readonly IStoryService _story;
+    private readonly IPassService _pass;
+    private readonly IExpeditionService _expedition;
+    private readonly ITowerService _tower;
+    private readonly IHeroesService _heroes;
+    private readonly IFrontlineService _frontline;
 
     private readonly Subject<Unit> _changed = new();
 
@@ -53,9 +65,11 @@ public sealed class BadgeCenter {
 
     public BadgeCenter(IEncyclopediaService encyclopedia, IChargeRewardService charge, IShopService shop,
                        IMailService mail, PlayerStateStore store, IEventBadgeService events,
-                       HqNodeDatabase hqDb, IGuildService guild, IFriendService friend,
+                       HqNodeDatabase hqDb, CharacterDatabase charDb, IGuildService guild, IFriendService friend,
                        IAchievementService achievement, ITrainingService training, IArenaService arena,
-                       IDispatchService dispatch) {
+                       IDispatchService dispatch, IDoomService doom, IStoryService story,
+                       IPassService pass, IExpeditionService expedition, ITowerService tower,
+                       IHeroesService heroes, IFrontlineService frontline) {
         _encyclopedia = encyclopedia;
         _charge = charge;
         _shop = shop;
@@ -63,12 +77,20 @@ public sealed class BadgeCenter {
         _store = store;
         _events = events;
         _hqDb = hqDb;
+        _charDb = charDb;
         _guild = guild;
         _friend = friend;
         _achievement = achievement;
         _training = training;
         _arena = arena;
         _dispatch = dispatch;
+        _doom = doom;
+        _story = story;
+        _pass = pass;
+        _expedition = expedition;
+        _tower = tower;
+        _heroes = heroes;
+        _frontline = frontline;
         // 이벤트 배지가 바뀌면(읽음 처리/서버 최신화) 그대로 흘려보낸다. 구독자는 BadgeCenter 만 보면 된다.
         if (_events != null) _events.Changed.Subscribe(_ => _changed.OnNext(Unit.Default));
         // 보유 캐릭/별레벨/장비 변경 시 도감 + 덱 배지 재계산. 다이아 변동도 덱(별 승급 가능)에 영향.
@@ -76,10 +98,19 @@ public sealed class BadgeCenter {
         if (_store != null) {
             _store.CharactersChanged += _ => OnStoreChanged();
             _store.Diamond.Subscribe(_ => OnStoreChanged());
+            // 한계돌파권이 생기거나 쓰이면 한계돌파 가능 여부(덱 배지)가 달라진다.
+            _store.LimitBreakTicket.Subscribe(_ => OnStoreChanged());
             // 의뢰해결권/명성은 재화라 값 구독으로, 본부 노드 레벨은 값이 아니라 목록이라 변경 통지로 받는다.
             _store.CommissionTicket.Subscribe(_ => { RecomputeCommission(); _changed.OnNext(Unit.Default); });
+            _store.StageSweepTicket.Subscribe(_ => { RecomputeStageSweep(); _changed.OnNext(Unit.Default); });
             _store.Renown.Subscribe(_ => { RecomputeHeadquarters(); _changed.OnNext(Unit.Default); });
             _store.HeadquartersChanged += () => { RecomputeHeadquarters(); _changed.OnNext(Unit.Default); };
+            // 스테이지를 처음 깨면 그 자리에서 열리는 스토리가 생긴다. 해금 판정은 서버가 하므로 진도가 오를 때
+            // 다시 물어본다(팝업을 열어야 불이 들어오면 유저는 열린 줄을 모른다).
+            // 최초 로드 중에는 건너뛴다. 그때는 RefreshAsync 가 이미 받아 온다.
+            _store.HighestClearedDungeonIndex.Subscribe(_ => {
+                if (_loaded && _story != null) _story.RefreshAsync().Forget();
+            });
         }
         // 미수령 우편 수가 바뀌면(최신화/수령) 즉시 우편 배지 재계산 후 알린다(햄버거 종합 배지도 함께 갱신).
         if (_mail != null)
@@ -88,6 +119,9 @@ public sealed class BadgeCenter {
         // 메인 친구 버튼과 친구 신청 탭 배지가 같은 값을 보므로 한쪽만 켜지는 어긋남이 생기지 않는다.
         if (_friend != null)
             _friend.PendingRequests.Subscribe(_ => { RecomputeFriend(); _changed.OnNext(Unit.Default); });
+        // 기력 선물(보낼 친구 / 받을 기력)도 메인 친구 버튼 배지의 근거다.
+        if (_friend != null)
+            _friend.StaminaState.Subscribe(_ => { RecomputeFriend(); _changed.OnNext(Unit.Default); });
         // 수령 가능한 업적 보상이 생기거나 사라지면(조회/수령) 즉시 재계산한다.
         // 보상 탭 배지와 메인 업적 버튼 배지가 같은 값을 보므로 한쪽만 켜지는 어긋남이 없다.
         if (_achievement != null)
@@ -102,6 +136,37 @@ public sealed class BadgeCenter {
         // 완료 대기 중인 파견이 생기거나 사라지면 즉시 재계산한다(수련과 같은 근거/같은 구조).
         if (_dispatch != null)
             _dispatch.HasClaimable.Subscribe(_ => { RecomputeDispatch(); _changed.OnNext(Unit.Default); });
+        // 멸망전: 도달한 구간 중 안 받은 보상이 생기거나(판 종료) 사라지면(수령) 즉시 재계산한다.
+        // 판정 근거인 canClaim 을 서버 응답마다 서비스가 갱신하므로, 재접속 없이 그 자리에서 불이 켜진다.
+        // 오늘 무료 참여가 남아 있어도 켜진다(쟁탈전 무료 매칭과 같은 "놀고 있는 기회" 안내). 유료 참여는 근거가 아니다.
+        if (_doom != null) {
+            _doom.HasClaimable.Subscribe(_ => { RecomputeDoom(); _changed.OnNext(Unit.Default); });
+            _doom.HasFreeEntry.Subscribe(_ => { RecomputeDoom(); _changed.OnNext(Unit.Default); });
+        }
+        // 스토리: 읽을 수 있는 편이 생기거나(스테이지 클리어) 미수령 보상이 생기면/사라지면 즉시 재계산한다.
+        // StoryService 는 루트 스코프라(GameLifetimeScope) 구독을 반드시 끊어야 한다.
+        if (_story != null)
+            _story.HasBadge.Subscribe(_ => { RecomputeStory(); _changed.OnNext(Unit.Default); })
+                  .AddTo(_rootSubscriptions);
+        // 패스: 기력을 써서 새 레벨에 닿으면 서버가 현황을 밀어 주고(S_PassInfo), 서비스가 그 값으로 이 속성을 바꾼다.
+        // 그래서 패스 화면을 열거나 재접속하지 않아도 조건을 채우는 순간 패스 버튼과 햄버거 버튼에 불이 켜진다.
+        if (_pass != null)
+            _pass.HasClaimable.Subscribe(_ => { RecomputePass(); _changed.OnNext(Unit.Default); });
+        // 원정대: 오늘 칠 수 있으면 불이 켜지고, 출격하면(입장 응답) 그 자리에서 꺼진다.
+        if (_expedition != null)
+            _expedition.CanEnterToday.Subscribe(_ => { RecomputeExpedition(); _changed.OnNext(Unit.Default); });
+        // 무한 타워: 오늘 오를 수 있으면 불이 켜지고, 등반하면(등반 응답) 그 자리에서 꺼진다.
+        if (_tower != null)
+            _tower.CanClimbToday.Subscribe(_ => { RecomputeTower(); _changed.OnNext(Unit.Default); });
+        // 영웅전: 오늘 도전 횟수가 남아 있으면 불이 켜지고, 다 쓰면(입장 응답) 그 자리에서 꺼진다.
+        if (_heroes != null)
+            _heroes.CanEnterToday.Subscribe(_ => { RecomputeHeroes(); _changed.OnNext(Unit.Default); });
+        // 전선: 오늘 남은 전선 기력(현황 응답마다 갱신)과 보유 기력(기력 변동마다 갱신) 둘 다 1회분 이상이면 켜진다.
+        // 기력은 시간으로 차오르므로 전선 화면을 열지 않아도 1회분이 모이는 순간 불이 켜진다.
+        if (_frontline != null)
+            _frontline.Info.Subscribe(_ => { RecomputeFrontline(); _changed.OnNext(Unit.Default); });
+        if (_store != null)
+            _store.Stamina.Subscribe(_ => { RecomputeFrontline(); _changed.OnNext(Unit.Default); });
     }
 
     // 현재 계정의 New "봤음" 상태. 계정 분리는 로컬 세이브(UserDataManager)가 책임지므로 여기서는 창구만 쓴다.
@@ -114,6 +179,7 @@ public sealed class BadgeCenter {
     public EventBadge DeckBadge { get; private set; } = EventBadge.None;   // 육성 가능(빨간 동그라미) 또는 새 캐릭(NEW). Claimable 우선.
     public EventBadge MailBadge { get; private set; } = EventBadge.None;   // 미수령 우편 존재(빨간 동그라미).
     public EventBadge CommissionBadge { get; private set; } = EventBadge.None;     // 의뢰해결권 보유(빨간 동그라미).
+    public EventBadge StageSweepBadge { get; private set; } = EventBadge.None;     // 스테이지 소탕권 보유(빨간 동그라미).
     public EventBadge HeadquartersBadge { get; private set; } = EventBadge.None;   // 지금 올릴 수 있는 본부 노드 존재.
     /// <summary>
     /// 길드 버튼. 처리할 가입 신청이 있거나(운영진 이상. 권한 판단은 서버가 한다),
@@ -142,10 +208,40 @@ public sealed class BadgeCenter {
     /// <summary>메인 쟁탈전 버튼(오늘 무료 매칭이 남아 있으면 켜진다).</summary>
     public EventBadge ArenaBadge { get; private set; } = EventBadge.None;
 
+    /// <summary>원정대 버튼(이번 주 파티가 있고 오늘 아직 출격하지 않았으면 켜진다).</summary>
+    public EventBadge ExpeditionBadge { get; private set; } = EventBadge.None;
+
+    /// <summary>무한 타워 버튼(오늘 아직 한 층을 오르지 않았으면 켜진다).</summary>
+    public EventBadge TowerBadge { get; private set; } = EventBadge.None;
+
+    /// <summary>영웅전 버튼(오늘 도전 횟수가 남아 있고 끝까지 깨지 않았으면 켜진다).</summary>
+    public EventBadge HeroesBadge { get; private set; } = EventBadge.None;
+
+    /// <summary>전선 버튼(보유 기력과 오늘 남은 전선 기력이 모두 1회 참여분 이상이면 켜진다).</summary>
+    public EventBadge FrontlineBadge { get; private set; } = EventBadge.None;
+
     /// <summary>파견 버튼(시간이 다 됐는데 완료 버튼을 누르지 않은 파견이 있으면 켜진다).</summary>
     public EventBadge DispatchBadge { get; private set; } = EventBadge.None;
 
+    /// <summary>멸망전 버튼(받지 않은 구간 보상이 있거나 오늘 참여 횟수가 남아 있으면 켜진다).</summary>
+    public EventBadge DoomBadge { get; private set; } = EventBadge.None;
+
+    /// <summary>스토리 버튼(새로 읽을 수 있는 편이 있거나 미수령 완독 보상이 있으면 켜진다).</summary>
+    public EventBadge StoryBadge { get; private set; } = EventBadge.None;
+
+    /// <summary>패스 버튼(도달한 칸 중 받지 않은 보상이 있으면 켜진다. 평생 패스가 있으면 패스 줄까지 본다).</summary>
+    public EventBadge PassBadge { get; private set; } = EventBadge.None;
+
+    /// <summary>투자 버튼(별레벨이 올라 새로 열린 투자 슬롯을 아직 확인하지 않았으면 NEW).</summary>
+    public EventBadge InvestmentBadge { get; private set; } = EventBadge.None;
+
     public IObservable<Unit> Changed => _changed;
+
+    /// <summary>
+    /// 씬 스코프가 사라질 때 루트 스코프 서비스에 건 구독을 끊는다(VContainer 가 불러 준다).
+    /// 끊지 않으면 메인 씬을 다시 열 때마다 죽은 BadgeCenter 가 하나씩 쌓인다.
+    /// </summary>
+    public void Dispose() => _rootSubscriptions.Dispose();
 
     // 이벤트 배지(계산은 EventBadgeService 담당). 이벤트 버튼 전체 종합과 보상 키 1건.
     public EventBadge EventsBadge => _events != null ? _events.Aggregate : EventBadge.None;
@@ -174,7 +270,16 @@ public sealed class BadgeCenter {
             badge = Higher(badge, GuildBadge);
             badge = Higher(badge, TrainingBadge);
             badge = Higher(badge, ArenaBadge);
+            badge = Higher(badge, ExpeditionBadge);
+            badge = Higher(badge, TowerBadge);
+            badge = Higher(badge, HeroesBadge);
+            badge = Higher(badge, FrontlineBadge);
             badge = Higher(badge, DispatchBadge);
+            badge = Higher(badge, DoomBadge);
+            // 스토리: V1.12 에서 메뉴 버튼을 숨겼다(V1.13 리워크). 숨긴 버튼의 배지가 햄버거에만 켜지지 않도록 뺀다.
+            // 버튼을 다시 열 때 이 줄을 되살릴 것: badge = Higher(badge, StoryBadge);
+            badge = Higher(badge, PassBadge);
+            badge = Higher(badge, InvestmentBadge);
             return badge;
         }
     }
@@ -285,9 +390,51 @@ public sealed class BadgeCenter {
                 catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
             }
 
+            // 원정대: 오늘 칠 수 있는지만 최신화한다. 이후 변동은 출격 응답이 같은 값을 갱신한다.
+            if (_expedition != null) {
+                try { await _expedition.RefreshAsync(ct); }
+                catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
+            }
+
+            // 무한 타워: 오늘 오를 수 있는지만 최신화한다. 이후 변동은 등반 응답이 같은 값을 갱신한다.
+            if (_tower != null) {
+                try { await _tower.RefreshAsync(ct); }
+                catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
+            }
+
+            // 영웅전: 오늘 도전 횟수가 남았는지만 최신화한다. 이후 변동은 입장/클리어 응답이 같은 값을 갱신한다.
+            if (_heroes != null) {
+                try { await _heroes.RefreshAsync(ct); }
+                catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
+            }
+
+            // 전선: 오늘 남은 전선 기력을 최신화한다(자정 초기화 반영). 이후 변동은 입장/종료 응답이 같은 값을 갱신한다.
+            if (_frontline != null) {
+                try { await _frontline.RefreshAsync(ct); }
+                catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
+            }
+
             // 파견: 수련과 같은 이유로 진행 중인 슬롯의 완료 시각만 받아 둔다(이후 판정은 서비스가 시간으로 한다).
             if (_dispatch != null) {
                 try { await _dispatch.RefreshAsync(ct); }
+                catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
+            }
+
+            // 멸망전: 받지 않은 보상이 있는지만 받아 둔다. 이후 변동은 결과 보고/수령 응답이 같은 값을 갱신한다.
+            if (_doom != null) {
+                try { await _doom.RefreshAsync(ct); }
+                catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
+            }
+
+            // 스토리: 19편의 현황을 받아 둔다(해금 판정은 서버가 한다). 이후 변동은 완독/수령 응답이 갱신한다.
+            if (_story != null) {
+                try { await _story.RefreshAsync(ct); }
+                catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
+            }
+
+            // 패스: 받을 칸이 있는지만 받아 둔다. 이후 변동은 서버 푸시(새 레벨 도달, 평생 패스 구매)와 수령 응답이 갱신한다.
+            if (_pass != null) {
+                try { await _pass.RefreshAsync(ct); }
                 catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
             }
 
@@ -326,19 +473,112 @@ public sealed class BadgeCenter {
         RecomputeDeck();
         RecomputeMail();
         RecomputeCommission();
+        RecomputeStageSweep();
         RecomputeHeadquarters();
         RecomputeGuild();
         RecomputeFriend();
         RecomputeAchievement();
         RecomputeTraining();
         RecomputeArena();
+        RecomputeExpedition();
+        RecomputeTower();
+        RecomputeHeroes();
+        RecomputeFrontline();
         RecomputeDispatch();
+        RecomputeDoom();
+        RecomputeStory();
+        RecomputePass();
+        RecomputeInvestment();
+    }
+
+    // 투자 배지: 지금 별레벨로 열린 슬롯 수가 마지막으로 확인한 수보다 많으면 NEW.
+    // 해금 판정은 투자 팝업과 같은 규칙(InvestmentRules.UnlockedSlots, 보유 캐릭터 별레벨 총합)이라 화면과 어긋나지 않는다.
+    // 최초 1회(기록 없음)는 지금 열린 수를 봤음으로 심어 New 를 띄우지 않는다(이후 새로 열린 칸만 New).
+    // 보유 캐릭터를 받기 전에는 판정하지 않는다(총합 0 으로 심으면 접속 직후 전 슬롯이 New 로 보인다).
+    private void RecomputeInvestment() {
+        var s = Seen;
+        if (_store == null || s == null || _store.Characters.Count == 0) { InvestmentBadge = EventBadge.None; return; }
+
+        int unlocked = InvestmentRules.UnlockedSlots(TotalStarLevel());
+        if (s.seenInvestmentSlots <= 0) {
+            s.seenInvestmentSlots = unlocked;
+            UserDataManager.RequestSave();
+        }
+        InvestmentBadge = unlocked > s.seenInvestmentSlots ? EventBadge.Unread : EventBadge.None;
+    }
+
+    /// <summary>지금 열린 투자 슬롯을 "봤음"으로 기록(투자 팝업 진입 시).</summary>
+    public void MarkInvestmentSeen() {
+        var s = Seen;
+        if (_store == null || s == null || _store.Characters.Count == 0) return;
+        int unlocked = InvestmentRules.UnlockedSlots(TotalStarLevel());
+        if (s.seenInvestmentSlots == unlocked && InvestmentBadge == EventBadge.None) return;
+        s.seenInvestmentSlots = unlocked;
+        UserDataManager.RequestSave();
+        RecomputeInvestment();
+        _changed.OnNext(Unit.Default);
+    }
+
+    // 보유 캐릭터 별레벨 총합(투자 해금 기준, 서버 InvestmentRepository 와 같은 근거).
+    private int TotalStarLevel() {
+        int total = 0;
+        foreach (var p in _store.Characters.Values) if (p != null) total += p.StarLevel;
+        return total;
+    }
+
+    // 패스 배지: 받을 수 있는 칸이 있으면 빨간 동그라미. 판정은 서버가 하고(canClaim) 클라는 그 결과만 본다.
+    private void RecomputePass() {
+        bool claimable = _pass != null && _pass.HasClaimable.Value;
+        PassBadge = claimable ? EventBadge.Claimable : EventBadge.None;
+    }
+
+    // 스토리 배지: 새로 읽을 수 있는 편 또는 미수령 완독 보상. 판정 근거는 서버가 내려 준 현황 하나뿐이다.
+    private void RecomputeStory() {
+        bool on = _story != null && _story.HasBadge.Value;
+        StoryBadge = on ? EventBadge.Claimable : EventBadge.None;
+    }
+
+    // 멸망전 배지: 도달한 구간 중 아직 받지 않은 보상이 있거나 오늘 무료 참여가 남아 있으면 빨간 동그라미.
+    // 무료분을 쓰면 다음 참여는 유료라 꺼진다. 판정은 서버가 하고(RewardsBetween / 다음 참여 비용)
+    // 클라는 그 결과만 들고 있으므로 화면마다 어긋날 일이 없다.
+    private void RecomputeDoom() {
+        bool on = _doom != null && (_doom.HasClaimable.Value || _doom.HasFreeEntry.Value);
+        DoomBadge = on ? EventBadge.Claimable : EventBadge.None;
     }
 
     // 쟁탈전 배지: 오늘 무료 매칭이 남아 있으면 빨간 동그라미(쓸 수 있는 기회가 놀고 있다는 안내).
     private void RecomputeArena() {
         bool free = _arena != null && _arena.HasFreeEntry.Value;
         ArenaBadge = free ? EventBadge.Claimable : EventBadge.None;
+    }
+
+    // 원정대 배지: 이번 주 파티가 있고 오늘 아직 출격하지 않았으면 빨간 동그라미(쟁탈전과 같은 "놀고 있는 기회" 안내).
+    private void RecomputeExpedition() {
+        bool can = _expedition != null && _expedition.CanEnterToday.Value;
+        ExpeditionBadge = can ? EventBadge.Claimable : EventBadge.None;
+    }
+
+    // 무한 타워 배지: 오늘 아직 한 층을 오르지 않았으면 빨간 동그라미(쟁탈전과 같은 "놀고 있는 기회" 안내).
+    private void RecomputeTower() {
+        bool can = _tower != null && _tower.CanClimbToday.Value;
+        TowerBadge = can ? EventBadge.Claimable : EventBadge.None;
+    }
+
+    // 영웅전 배지: 오늘 도전 횟수가 남아 있으면 빨간 동그라미(무한 타워와 같은 "놀고 있는 기회" 안내).
+    private void RecomputeHeroes() {
+        bool can = _heroes != null && _heroes.CanEnterToday.Value;
+        HeroesBadge = can ? EventBadge.Claimable : EventBadge.None;
+    }
+
+    // 전선 배지: 지금 한 판을 깰 수 있는 기력이 있고(보유 기력) 오늘 전선에 더 쓸 수 있으면(하루 한도) 빨간 동그라미.
+    // 1회분 기력은 서버가 현황으로 내려준 값을 쓴다. 현황을 아직 받기 전이면 판단하지 않는다(오탐 방지).
+    private void RecomputeFrontline() {
+        var info = _frontline != null ? _frontline.Info.Value : null;
+        if (info == null || _store == null) { FrontlineBadge = EventBadge.None; return; }
+
+        int cost = info.StaminaPerClear;
+        bool can = info.DailyStaminaRemaining >= cost && _store.Stamina.Value >= cost;
+        FrontlineBadge = can ? EventBadge.Claimable : EventBadge.None;
     }
 
     // 수련 배지: 완료 시각이 지났는데 아직 수령하지 않은 수련이 있으면 빨간 동그라미.
@@ -365,10 +605,12 @@ public sealed class BadgeCenter {
 
     // 친구 배지: 내가 받은(대기 중) 친구 신청이 하나라도 있으면 빨간 동그라미.
     // 값의 출처는 FriendService 하나뿐이라 메인 버튼과 신청 탭이 항상 같은 상태가 된다.
+    // 메인 버튼은 기력 선물(보낼 친구 또는 받을 기력)이 있어도 켜진다. 신청 탭은 신청만 본다.
     private void RecomputeFriend() {
         bool pending = _friend != null && _friend.PendingRequests.Value > 0;
+        bool stamina = _friend != null && _friend.StaminaState.Value.HasAction;
         FriendRequestBadge = pending ? EventBadge.Claimable : EventBadge.None;
-        FriendBadge = FriendRequestBadge;
+        FriendBadge = pending || stamina ? EventBadge.Claimable : EventBadge.None;
     }
 
     // 길드 배지: 처리할 가입 신청(운영진 이상. 권한 판정은 서버가 하고 클라는 개수만 본다) 또는
@@ -407,6 +649,12 @@ public sealed class BadgeCenter {
         CommissionBadge = _store != null && _store.CommissionTicket.Value > 0 ? EventBadge.Claimable : EventBadge.None;
     }
 
+    // 소탕 배지: 스테이지 소탕권이 한 장이라도 있으면 빨간 동그라미(의뢰 배지와 같은 근거).
+    // 잔량은 접속 시 상점 지갑 조회로 스토어에 들어오고, 이후 소탕/구매/보상 수령이 같은 값을 갱신한다.
+    private void RecomputeStageSweep() {
+        StageSweepBadge = _store != null && _store.StageSweepTicket.Value > 0 ? EventBadge.Claimable : EventBadge.None;
+    }
+
     // 본부 배지: 지금 명성으로 올릴 수 있는 노드가 하나라도 있으면 빨간 동그라미.
     // 판정은 트리 화면과 같은 규칙(HqNodeRules)을 써서 배지와 화면이 어긋나지 않게 한다.
     private void RecomputeHeadquarters() {
@@ -423,6 +671,7 @@ public sealed class BadgeCenter {
     // 스토어 변경(캐릭/별레벨/다이아) 시: 덱은 즉시, 도감은 서버 수령여부 조회 후에만 재계산하고 알린다.
     private void OnStoreChanged() {
         RecomputeDeck();
+        if (_loaded) RecomputeInvestment();   // 별 승급으로 새 슬롯이 열리면 그 자리에서 New
         if (_loaded) RecomputeEncyclopedia();   // 수령 여부(서버) 조회 전에는 도감 재계산 안 함(오탐 방지)
         _changed.OnNext(Unit.Default);
     }
@@ -470,10 +719,15 @@ public sealed class BadgeCenter {
         int totalStar = 0;
         if (_store != null) foreach (var p in _store.Characters.Values) if (p != null) totalStar += p.StarLevel;
 
+        // 단계 수는 캐릭터 수에서 정해진다(도감 보상 팝업과 같은 규칙).
+        int characterCount = _charDb != null ? _charDb.All.Count : 0;
+        int collectionSteps = EncyclopediaRewardRules.CollectionSteps(characterCount);
+        int starSteps = EncyclopediaRewardRules.StarSteps(characterCount);
+
         bool claimable = false;
-        for (int step = 1; step <= EncyclopediaRewardRules.CollectionSteps && !claimable; step++)
+        for (int step = 1; step <= collectionSteps && !claimable; step++)
             if (collectionCount >= EncyclopediaRewardRules.CollectionThreshold(step) && !_claimedCollection.Contains(step)) claimable = true;
-        for (int step = 1; step <= EncyclopediaRewardRules.StarSteps && !claimable; step++)
+        for (int step = 1; step <= starSteps && !claimable; step++)
             if (totalStar >= EncyclopediaRewardRules.StarThreshold(step) && !_claimedStar.Contains(step)) claimable = true;
 
         EncyclopediaBadge = claimable ? EventBadge.Claimable : EventBadge.None;

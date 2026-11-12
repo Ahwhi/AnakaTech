@@ -92,7 +92,8 @@ public sealed class GuildRaidLifetimeScope : LifetimeScope {
         builder.Register<BattleHudContext>(Lifetime.Singleton);
 
         // 3) 씬에 배치된 컴포넌트를 주입 대상으로 등록한다.
-        builder.RegisterComponentInHierarchy<GuildRaidDirector>().AsSelf().As<BattleStage>();
+        // HUD 는 디렉터를 IBossGaugeSource 계약으로만 본다(원정대 씬과 같은 HUD 프리팹을 쓰기 위함).
+        builder.RegisterComponentInHierarchy<GuildRaidDirector>().AsSelf().As<BattleStage>().As<IBossGaugeSource>();
         builder.RegisterComponentInHierarchy<GuildRaidHudController>();
         builder.RegisterComponentInHierarchy<GuildRaidSceneManager>();
     }

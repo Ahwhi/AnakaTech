@@ -25,12 +25,12 @@ public sealed class InvestmentService : IInvestmentService {
         return dto;
     }
 
-    public async UniTask<InvestmentUpgradeResultDto> UpgradeAsync(int slotIndex, CancellationToken ct = default) {
+    public async UniTask<InvestmentUpgradeResultDto> UpgradeAsync(int slotIndex, int expectedLevel, CancellationToken ct = default) {
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         cts.CancelAfter(ResponseTimeout);
 
         var wait = _net.WaitPacketAsync<S_UpgradeInvestmentResult>(cts.Token);
-        _net.Send(new C_UpgradeInvestment { slotIndex = slotIndex }.Write());
+        _net.Send(new C_UpgradeInvestment { slotIndex = slotIndex, expectedLevel = expectedLevel }.Write());
         var res = await wait;
 
         return new InvestmentUpgradeResultDto {
@@ -40,6 +40,8 @@ public sealed class InvestmentService : IInvestmentService {
             NewLevel = res.newLevel,
             SpentGold = res.spentGold,
             NewGold = res.newGold,
+            SpentDiamond = res.spentDiamond,
+            NewDiamond = res.newDiamond,
             StarTotal = res.starTotal,
         };
     }

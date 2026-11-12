@@ -37,7 +37,21 @@ public enum AchievementMetric {
     NormalCharacterGacha = 30,
     SpecialCharacterGacha = 31,
     NormalEquipGacha = 32,
-    SpecialEquipGacha = 33
+    SpecialEquipGacha = 33,
+
+    // 게임(V1.11)
+    ExpeditionEntry = 34,
+    DoomEntry = 35,
+    TowerClear = 36,
+
+    // 성장(V1.11)
+    CharacterLimitBreak = 37,
+    EquipLimitBreak = 38,
+
+    // 게임(V1.12)
+    FrontlineClear = 39,
+    HeroesClear = 40,
+    FriendStaminaSend = 41
 }
 
 /// <summary>업적 분류(팝업 탭). 값은 서버 AchievementCategory 와 일치. 요약 탭은 이들의 합이라 여기 없다.</summary>

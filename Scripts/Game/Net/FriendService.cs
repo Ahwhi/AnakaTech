@@ -16,8 +16,10 @@ public sealed class FriendService : IFriendService, IDisposable {
 
     private readonly INetworkService _net;
     private readonly ReactiveProperty<int> _pendingRequests = new(0);
+    private readonly ReactiveProperty<FriendStaminaState> _staminaState = new(default);
 
     public IReadOnlyReactiveProperty<int> PendingRequests => _pendingRequests;
+    public IReadOnlyReactiveProperty<FriendStaminaState> StaminaState => _staminaState;
 
     public FriendService(INetworkService net) {
         _net = net;
@@ -26,9 +28,11 @@ public sealed class FriendService : IFriendService, IDisposable {
         if (_net != null) _net.PacketReceived += OnPacketReceived;
     }
 
-    // 친구 신청 도착/취소 푸시: 서버가 센 값을 그대로 반영한다(추가 통신 없이 배지 즉시 갱신).
+    // 친구 신청 도착/취소, 기력 선물 도착 푸시: 서버가 센 값을 그대로 반영한다(추가 통신 없이 배지 즉시 갱신).
     private void OnPacketReceived(IPacket packet) {
-        if (packet is S_FriendNotify notify) _pendingRequests.Value = notify.pendingRequests;
+        if (packet is not S_FriendNotify notify) return;
+        _pendingRequests.Value = notify.pendingRequests;
+        _staminaState.Value = new FriendStaminaState(notify.staminaSendable, notify.staminaClaimable);
     }
 
     public void Dispose() {
@@ -51,8 +55,10 @@ public sealed class FriendService : IFriendService, IDisposable {
                 RepresentativeCostumeId = f.representativeCostumeId,
                 CombatPower = f.combatPower,
                 IsOnline = f.online, HasPresence = true,
+                StaminaSentToMe = f.staminaSentToMe,
             });
         }
+        _staminaState.Value = new FriendStaminaState(res.staminaSendable, res.staminaClaimable);
         foreach (var r in res.requests) {
             dto.Requests.Add(new FriendUserDto {
                 AccountId = r.accountId, Nickname = r.nickname,
@@ -97,6 +103,40 @@ public sealed class FriendService : IFriendService, IDisposable {
 
         // 수락/거절은 내 신청함을 줄이므로 서버가 센 값으로 배지를 그 자리에서 맞춘다.
         if (dto.IsSuccess) _pendingRequests.Value = dto.PendingRequests;
+        return dto;
+    }
+
+    public async UniTask<FriendStaminaResultDto> SendStaminaAsync(CancellationToken ct = default) {
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.CancelAfter(ResponseTimeout);
+
+        var wait = _net.WaitPacketAsync<S_FriendStaminaSendResult>(cts.Token);
+        _net.Send(new C_FriendStaminaSend().Write());
+        var res = await wait;
+
+        var dto = new FriendStaminaResultDto {
+            IsSuccess = res.isSuccess, FailReason = res.failReason, Amount = res.sentCount,
+            State = new FriendStaminaState(res.staminaSendable, res.staminaClaimable),
+        };
+        // 실패해도 서버가 지금 상태를 함께 주므로 그대로 맞춘다(버튼/배지가 옛 상태로 남지 않게).
+        _staminaState.Value = dto.State;
+        return dto;
+    }
+
+    public async UniTask<FriendStaminaResultDto> ClaimStaminaAsync(CancellationToken ct = default) {
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.CancelAfter(ResponseTimeout);
+
+        var wait = _net.WaitPacketAsync<S_FriendStaminaClaimResult>(cts.Token);
+        _net.Send(new C_FriendStaminaClaim().Write());
+        var res = await wait;
+
+        var dto = new FriendStaminaResultDto {
+            IsSuccess = res.isSuccess, FailReason = res.failReason, Amount = res.claimedStamina,
+            NewStamina = res.newStamina,
+            State = new FriendStaminaState(res.staminaSendable, res.staminaClaimable),
+        };
+        _staminaState.Value = dto.State;
         return dto;
     }
 

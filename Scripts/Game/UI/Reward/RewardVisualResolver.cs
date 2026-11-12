@@ -71,6 +71,10 @@ public static class RewardVisualResolver {
                 var data = CostumeOf(hud, item.RefId);
                 return new RewardSlotView.RewardVisual(data != null ? data.Illustration : null, Qty(item.Amount), name);
             }
+            case RewardItemKind.UnitSkin: {
+                var data = UnitSkinOf(hud, item.RefId);
+                return new RewardSlotView.RewardVisual(data != null ? data.icon : null, Qty(item.Amount), name);
+            }
             case RewardItemKind.Equip: {
                 // 무엇이 오는지 정해진 장비라 랜덤 장비 아이콘이 아니라 그 장비의 아이콘을 그대로 보여 준다.
                 var data = hud != null && hud.EquipDb != null ? hud.EquipDb.Get(item.RefId) : null;
@@ -81,6 +85,12 @@ public static class RewardVisualResolver {
                 var data = hud != null && hud.CharDb != null ? hud.CharDb.Get(item.RefId) : null;
                 return new RewardSlotView.RewardVisual(data != null ? data.Illustration : null, Qty(item.Amount), name);
             }
+            case RewardItemKind.LifetimePass:
+                // 상품 자체를 구성품 자리에 보여 주는 표시라 상점 카드와 같은 아이콘(상품 키)을 쓴다.
+                return Icon(hud != null && hud.ShopIcons != null ? hud.ShopIcons.Get(PassRules.LifetimeOfferId) : null, item.Amount, name);
+            case RewardItemKind.EventToken:
+                return Icon(hud != null && hud.ShopIcons != null ? hud.ShopIcons.Get(EventTokens.IconKey(item.CurrencyKey)) : null,
+                            item.Amount, name);
             default:
                 return new RewardSlotView.RewardVisual(null, Qty(item.Amount), name);
         }
@@ -116,6 +126,10 @@ public static class RewardVisualResolver {
                 var data = CostumeOf(hud, item.RefId);
                 return data != null ? $"{data.DisplayName} 코스튬" : "코스튬";
             }
+            case RewardItemKind.UnitSkin: {
+                var data = UnitSkinOf(hud, item.RefId);
+                return data != null ? data.displayName : "아웃핏";
+            }
             case RewardItemKind.Equip: {
                 var data = hud != null && hud.EquipDb != null ? hud.EquipDb.Get(item.RefId) : null;
                 return data != null ? data.DisplayName : "장비";
@@ -124,6 +138,8 @@ public static class RewardVisualResolver {
                 var data = hud != null && hud.CharDb != null ? hud.CharDb.Get(item.RefId) : null;
                 return data != null ? $"{data.DisplayName} 조각" : "소녀 조각";
             }
+            case RewardItemKind.LifetimePass: return "평생 패스";
+            case RewardItemKind.EventToken: return EventTokens.Name(item.CurrencyKey);
             default: return "";
         }
     }
@@ -131,6 +147,10 @@ public static class RewardVisualResolver {
     // 코스튬 원본. DB 미할당이거나 아직 등록되지 않은 id 면 null 이라 공용 문구로 떨어진다.
     private static CostumeData CostumeOf(BattleHudContext hud, int costumeId) =>
         costumeId != 0 && hud != null && hud.CostumeDb != null ? hud.CostumeDb.Get(costumeId) : null;
+
+    private static UnitSkinCatalog.Entry UnitSkinOf(BattleHudContext hud, int unitSkinId) =>
+        unitSkinId != 0 && hud != null && hud.CostumeDb != null && hud.CostumeDb.UnitSkins != null
+            ? hud.CostumeDb.UnitSkins.Get(unitSkinId) : null;
 
     // 지급이 확정된 각인(id != 0)만 해석한다. 예고 표시(id == 0)나 DB 미할당이면 null 이라 공용 아이콘/문구로 떨어진다.
     private static EngravingData EngravingOf(BattleHudContext hud, int engravingId) =>

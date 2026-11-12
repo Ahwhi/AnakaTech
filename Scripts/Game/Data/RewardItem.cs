@@ -19,7 +19,10 @@ public enum RewardItemKind {
     RandomGeneralEquip,   // 랜덤 공용부위 장비(방어구/신발/악세서리, 전용무기 제외). RandomEquip 과 나오는 것이 달라 따로 둔다.
     Costume,              // 코스튬(RefId = 코스튬 id). 단품이라 수량 개념이 없다.
     Equip,                // 대상을 지정한 장비(RefId = 장비 id). 랜덤 장비와 달리 무엇이 오는지 정해져 있다.
-    CharacterShard        // 특정 소녀의 조각(RefId = 캐릭터 id, Amount = 개수). 만능조각과 달리 대상이 정해져 있다.
+    CharacterShard,       // 특정 소녀의 조각(RefId = 캐릭터 id, Amount = 개수). 만능조각과 달리 대상이 정해져 있다.
+    LifetimePass,         // 평생 패스(표시 전용). 서버 지급 품목이 아니라 상점 구성품 자리에 상품 자체를 보여 줄 때 쓴다.
+    EventToken,           // 이벤트 전용 재화(CurrencyKey = 이벤트 키, 돌림판 다트 등). 지갑 재화가 아니라 그 이벤트 안에서만 쓴다.
+    UnitSkin              // 아웃핏(RefId = 아웃핏 id, Amount = 개수). 장비처럼 여러 개 가질 수 있다(V1.12).
 }
 
 public readonly struct RewardItem {
@@ -54,6 +57,12 @@ public readonly struct RewardItem {
     public static RewardItem Equip(int equipId, int amount = 1) => new(RewardItemKind.Equip, amount, 0, null, equipId);
     /// <param name="charDataId">조각의 주인 소녀 id.</param>
     public static RewardItem CharacterShard(int charDataId, int amount) => new(RewardItemKind.CharacterShard, amount, 0, null, charDataId);
+    /// <summary>평생 패스 아이콘 1개(표시 전용, 아이콘은 ShopIconCatalog 의 상품 키).</summary>
+    public static RewardItem LifetimePass() => new(RewardItemKind.LifetimePass, 1, 0, null, 0);
+    /// <param name="eventKey">재화를 쓰는 이벤트 키. 이름/아이콘은 EventTokens 가 이 키로 고른다.</param>
+    public static RewardItem EventToken(string eventKey, int amount) => new(RewardItemKind.EventToken, amount, 0, eventKey, 0);
+    /// <param name="unitSkinId">지급되는 아웃핏 id.</param>
+    public static RewardItem UnitSkin(int unitSkinId, int amount = 1) => new(RewardItemKind.UnitSkin, amount, 0, null, unitSkinId);
 
     /// <summary>
     /// 수량 배수를 적용한 사본(상점 수량 선택, 반복 지급 일수 등 같은 보상을 여러 번 받는 표시에 사용).
@@ -66,11 +75,15 @@ public readonly struct RewardItem {
         return new RewardItem(Kind, Amount * multiplier, Grade, CurrencyKey, RefId);
     }
 
+    /// <summary>수량만 바꾼 사본. 같은 보상 여러 개를 한 칸으로 합쳐 보여 줄 때 쓴다(합산 결과를 그대로 넣는다).</summary>
+    public RewardItem WithAmount(int amount) => new(Kind, amount, Grade, CurrencyKey, RefId);
+
     /// <summary>
     /// 서버가 내려준 지급 항목(kind/value/qty/currencyKey)을 표시용 RewardItem 으로 옮긴다.
     /// kind 는 서버 Room.ToRewardKind 와 짝을 이룬다:
     ///   0=골드 1=다이아 2=기력 3=캐릭터 4=범용재화 5=만능조각 6=장비 7=프로필테두리 8=각인도면 9=소모품
     ///   10=랜덤등급 만능조각 11=랜덤 공용부위 장비 12=코스튬 13=캐릭터 경험치 14=지정 장비 15=캐릭터 조각
+    ///   16=이벤트 전용 재화(currencyKey 가 이벤트 키) 17=아웃핏(value 가 아웃핏 id, qty 가 개수)
     /// 수량 규약도 서버와 같다: 지갑/재화형은 value 가 금액(qty 는 배수), 개수형은 value 가 대상(등급/id)이고 qty 가 개수다.
     /// 랜덤 장비(6)는 value 가 등급이고, 지정 장비(14)는 value 가 장비 id 다(각성 재료처럼 대상이 정해진 보상).
     /// 각인도면(8)은 value 에 서버가 실제로 뽑은 각인 id 가 실려 온다.
@@ -94,6 +107,8 @@ public readonly struct RewardItem {
             13 => Exp(value * count),
             14 => Equip(value, count),
             15 => CharacterShard(value, count),
+            16 => EventToken(currencyKey, value * count),
+            17 => UnitSkin(value, count),
             _ => Gold(value * count)
         };
     }

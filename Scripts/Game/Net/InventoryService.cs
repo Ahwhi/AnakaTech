@@ -30,6 +30,7 @@ public sealed class InventoryService : IInventoryService {
                 Level = e.level,
                 MainPoints = e.mainPoints,
                 EquippedCharDataId = e.equippedCharDataId,
+                LimitBroken = e.limitBroken,
             };
             inst.OptionPoints[0] = e.opt1Points;
             inst.OptionPoints[1] = e.opt2Points;
@@ -117,4 +118,56 @@ public sealed class InventoryService : IInventoryService {
             GainedLevels = res.gainedLevels
         };
     }
+
+    public async UniTask<EquipLimitBreakResultDto> LimitBreakAsync(long instanceId, CancellationToken ct = default) {
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.CancelAfter(ResponseTimeout);
+
+        var wait = _net.WaitPacketAsync<S_EquipLimitBreakResult>(cts.Token);
+        _net.Send(new C_EquipLimitBreak { instanceId = instanceId }.Write());
+        var res = await wait;
+        return new EquipLimitBreakResultDto {
+            IsSuccess = res.isSuccess,
+            FailReason = res.failReason,
+            InstanceId = res.instanceId,
+            NewLimitBreakTicket = res.newLimitBreakTicket
+        };
+    }
+
+    public async UniTask<DisassembleResultDto> DisassembleAsync(IReadOnlyList<long> instanceIds, CancellationToken ct = default) {
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.CancelAfter(ResponseTimeout);
+
+        var pkt = new C_DisassembleEquip();
+        if (instanceIds != null)
+            for (int i = 0; i < instanceIds.Count; i++)
+                pkt.targets.Add(new C_DisassembleEquip.Target { instanceId = instanceIds[i] });
+
+        var wait = _net.WaitPacketAsync<S_DisassembleEquipResult>(cts.Token);
+        _net.Send(pkt.Write());
+        return ToDisassembleDto(await wait);
+    }
+
+    public async UniTask<DisassembleResultDto> DisassembleByGradeAsync(IReadOnlyList<Grade> grades, CancellationToken ct = default) {
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.CancelAfter(ResponseTimeout);
+
+        var pkt = new C_DisassembleEquipByGrade();
+        if (grades != null)
+            for (int i = 0; i < grades.Count; i++)
+                pkt.targets.Add(new C_DisassembleEquipByGrade.Target { grade = (int)grades[i] });
+
+        var wait = _net.WaitPacketAsync<S_DisassembleEquipResult>(cts.Token);
+        _net.Send(pkt.Write());
+        return ToDisassembleDto(await wait);
+    }
+
+    // 두 분해 경로가 같은 응답 패킷을 쓰므로 변환도 한 곳에 둔다.
+    private static DisassembleResultDto ToDisassembleDto(S_DisassembleEquipResult res) => new() {
+        IsSuccess = res.isSuccess,
+        FailReason = res.failReason,
+        Count = res.count,
+        GainedGold = res.gainedGold,
+        NewGold = res.newGold
+    };
 }

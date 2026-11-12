@@ -51,11 +51,11 @@ public sealed class IapRecoveryCoordinator : IDisposable {
     public async UniTask InitializeAsync(ShopCatalogDto catalog) {
         if (_hud.Iap == null || !_hud.Iap.IsSupported || catalog == null) return;
 
-        var productIds = CashProductIds(catalog);
-        if (productIds.Count == 0) return;
+        var products = CashProducts(catalog);
+        if (products.Count == 0) return;
 
         try {
-            bool ok = await _hud.Iap.InitializeAsync(productIds, _ct);
+            bool ok = await _hud.Iap.InitializeAsync(products, _ct);
             if (!ok) Debug.LogWarning("[IAP] 스토어 준비에 실패했습니다. 현금 상품 구매가 막힙니다.");
         } catch (OperationCanceledException) {
         } catch (Exception e) {
@@ -76,10 +76,10 @@ public sealed class IapRecoveryCoordinator : IDisposable {
 
         try {
             var catalog = await _hud.Shop.RequestShopAsync(_ct);
-            var productIds = CashProductIds(catalog);
-            if (productIds.Count == 0) return;
+            var products = CashProducts(catalog);
+            if (products.Count == 0) return;
 
-            bool ok = await _hud.Iap.EnsureProductsAsync(productIds, _ct);
+            bool ok = await _hud.Iap.EnsureProductsAsync(products, _ct);
             // 준비 전이라 건너뛴 경우는 경고할 일이 아니다(뒤이어 도는 준비 과정이 함께 등록한다).
             if (!ok && _hud.Iap.IsReady)
                 Debug.LogWarning("[IAP] 새로 열린 상품을 스토어에 등록하지 못했습니다.");
@@ -89,15 +89,15 @@ public sealed class IapRecoveryCoordinator : IDisposable {
         }
     }
 
-    // 카탈로그에서 현금 결제 상품의 id 만 추린다. 그 외 재화 상품은 스토어를 거치지 않는다.
-    private static List<string> CashProductIds(ShopCatalogDto catalog) {
-        var ids = new List<string>();
-        if (catalog == null) return ids;
+    // 카탈로그에서 현금 결제 상품만 추린다(상품 종류도 카탈로그 값 그대로). 그 외 재화 상품은 스토어를 거치지 않는다.
+    private static List<IapProduct> CashProducts(ShopCatalogDto catalog) {
+        var products = new List<IapProduct>();
+        if (catalog == null) return products;
 
         foreach (var offer in catalog.Offers)
             if (offer != null && offer.Currency == ShopPurchaseHelper.CashCurrency)
-                ids.Add(offer.OfferId);
-        return ids;
+                products.Add(new IapProduct(offer.OfferId, offer.NonConsumable));
+        return products;
     }
 
     // 확정되지 않은 채 남아 있던 결제. 서버에 태워 지급받고 확정한다.

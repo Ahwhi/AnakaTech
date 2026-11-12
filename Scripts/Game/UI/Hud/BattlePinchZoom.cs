@@ -14,6 +14,9 @@ using UnityEngine.InputSystem.Controls;
 /// 입력을 가로채지 않는 것이 중요하다. 팝업이 떠 있거나 손가락이 UI 위에 있으면 아무 일도 하지 않으므로,
 /// 목록을 두 손가락으로 문질러도 화면이 확대되지 않는다.
 /// 줌은 전투 무대 공통 기능이라 메인 씬과 의뢰 씬이 이 컴포넌트를 그대로 공유한다(ZoomPanel 과 같은 자리).
+///
+/// PC(Google Play Games 등)에서는 마우스 휠로도 같은 줌을 조작한다. 휠은 터치와 다른 장치라 서로 간섭하지 않으며,
+/// 터치 기기에는 휠 입력이 들어오지 않으므로 모바일 조작감은 그대로다.
 /// </summary>
 public sealed class BattlePinchZoom : MonoBehaviour {
     [Tooltip("손가락 간격이 두 배가 될 때 줌이 전체 범위의 몇 배만큼 움직일지. 클수록 조금만 벌려도 크게 변한다.")]
@@ -21,6 +24,16 @@ public sealed class BattlePinchZoom : MonoBehaviour {
 
     [Tooltip("이 픽셀만큼 간격이 변해야 조작으로 인정한다. 두 손가락을 그냥 올려 둔 미세한 흔들림을 걸러 낸다.")]
     [SerializeField] private float deadZonePixels = 4f;
+
+    [Tooltip("마우스 휠 한 칸에 줌이 전체 범위의 몇 배만큼 움직일지(PC/Google Play Games 용). 0 이면 휠 줌을 끈다.")]
+    [SerializeField] private float wheelStep = 0.1f;
+
+    // 휠 값의 단위는 입력 설정에 따라 한 칸 = 약 120(플랫폼 원값) 또는 약 1(정규화)이다.
+    // 이 값보다 크면 원값으로 보고 120 으로 나눠 "칸 수"로 맞춘다. 어느 설정이든 한 칸의 조작감이 같다.
+    private const float RawWheelThreshold = 10f;
+    private const float RawWheelPerNotch = 120f;
+    // 한 프레임에 여러 칸이 몰려 들어와도(빠르게 굴림) 줌이 튀지 않도록 칸 수를 제한한다.
+    private const float MaxWheelNotchesPerFrame = 3f;
 
     private BattleHudContext _ctx;
 
@@ -33,6 +46,12 @@ public sealed class BattlePinchZoom : MonoBehaviour {
 
     private void Update() {
         if (_ctx == null || _ctx.Stage == null) return;
+
+        // 마우스 휠(PC). 터치 기기에는 휠 입력이 없어 이 분기는 항상 건너뛰며, 아래 핀치 경로는 그대로다.
+        if (TryReadWheel(out float notches)) {
+            // 휠을 위로(양수) 굴리면 확대 = 직교 크기가 작아진다(핀치로 벌리는 것과 같은 방향).
+            _ctx.Stage.SetZoom(_ctx.Stage.Zoom - notches * wheelStep * _ctx.Stage.ZoomRange);
+        }
 
         if (!TryReadPinch(out float distance)) {
             _pinching = false;
@@ -82,6 +101,30 @@ public sealed class BattlePinchZoom : MonoBehaviour {
         if (IsOverUI(a) || IsOverUI(b)) return false;
 
         distance = Vector2.Distance(a.position.ReadValue(), b.position.ReadValue());
+        return true;
+    }
+
+    /// <summary>
+    /// 이번 프레임 마우스 휠이 굴러간 칸 수(위로 양수). 마우스가 없거나 굴리지 않았거나 조작으로 볼 수 없으면 false.
+    ///
+    /// 핀치와 같은 조건으로 막는다. 팝업/로딩 중이거나 커서가 UI 위에 있으면 넘긴다(스크롤 목록 위에서 휠은 목록을 굴린다).
+    /// </summary>
+    private bool TryReadWheel(out float notches) {
+        notches = 0f;
+        if (wheelStep <= 0f) return false;
+
+        var mouse = Mouse.current;
+        if (mouse == null) return false;
+
+        float raw = mouse.scroll.ReadValue().y;
+        if (Mathf.Approximately(raw, 0f)) return false;
+        if (_ctx.Ui != null && (_ctx.Ui.HasOpenPopup || _ctx.Ui.IsLoading)) return false;
+
+        var events = EventSystem.current;
+        if (events != null && events.IsPointerOverGameObject()) return false;
+
+        notches = Mathf.Abs(raw) > RawWheelThreshold ? raw / RawWheelPerNotch : raw;
+        notches = Mathf.Clamp(notches, -MaxWheelNotchesPerFrame, MaxWheelNotchesPerFrame);
         return true;
     }
 

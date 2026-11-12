@@ -41,6 +41,7 @@ public sealed class ArenaService : IArenaService {
             NextEntryCost = res.nextEntryCost,
             SeasonEndUnix = res.seasonEndUnix,
             LastDefenseLogId = res.lastDefenseLogId,
+            Runes = ArenaRuneLoadout.Parse(res.runesCsv),
         };
         _hasFreeEntry.Value = ArenaRules.HasFreeEntry(dto.UsedEntries);
         return dto;
@@ -67,6 +68,8 @@ public sealed class ArenaService : IArenaService {
             NewDiamond = res.newDiamond,
             UsedEntries = res.usedEntries,
             NextEntryCost = res.nextEntryCost,
+            MyRunes = ArenaRuneLoadout.Parse(res.myRunesCsv),
+            OpponentRunes = ArenaRuneLoadout.Parse(res.opponentRunesCsv),
         };
         // 매칭에 성공했으면 횟수가 하나 줄었으므로 배지 근거도 함께 갱신한다.
         if (dto.IsSuccess) _hasFreeEntry.Value = ArenaRules.HasFreeEntry(dto.UsedEntries);
@@ -119,6 +122,38 @@ public sealed class ArenaService : IArenaService {
                 CreatedUnix = e.createdUnix,
             });
         return dto;
+    }
+
+    public async UniTask<ArenaSetRunesResultDto> SetRunesAsync(ArenaRuneLoadout runes, CancellationToken ct = default) {
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.CancelAfter(ResponseTimeout);
+
+        var wait = _net.WaitPacketAsync<S_ArenaSetRunesResult>(cts.Token);
+        _net.Send(new C_ArenaSetRunes { runesCsv = runes != null ? runes.ToCsv() : "" }.Write());
+        var res = await wait;
+
+        return new ArenaSetRunesResultDto {
+            IsSuccess = res.isSuccess,
+            FailReason = res.failReason,
+            Runes = ArenaRuneLoadout.Parse(res.runesCsv),
+        };
+    }
+
+    public async UniTask<List<ArenaSeasonRecordDto>> RequestHistoryAsync(CancellationToken ct = default) {
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.CancelAfter(ResponseTimeout);
+
+        var wait = _net.WaitPacketAsync<S_ArenaHistory>(cts.Token);
+        _net.Send(new C_ArenaHistory().Write());
+        var res = await wait;
+
+        var list = new List<ArenaSeasonRecordDto>(res.seasons.Count);
+        foreach (var s in res.seasons)
+            list.Add(new ArenaSeasonRecordDto {
+                SeasonKey = s.seasonKey ?? "", Score = s.score, Wins = s.wins, Losses = s.losses,
+                Rank = s.rank, IsCurrent = s.isCurrent,
+            });
+        return list;
     }
 
     public async UniTask RefreshAsync(CancellationToken ct = default) {

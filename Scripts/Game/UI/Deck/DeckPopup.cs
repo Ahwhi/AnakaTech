@@ -60,6 +60,8 @@ public sealed class DeckPopup : UIView, IHudPopup {
     [SerializeField] private Image skillIcon;
     [Tooltip("선택 캐릭터의 스킬 설명. 비우면 표시 안 함.")]
     [SerializeField] private TMP_Text skillDescText;
+    [Tooltip("상태이상 설명(i) 버튼. 스킬이 상태이상을 걸 때만 눌리며, 누르면 그 상태이상들의 설명 팝업을 연다. 비우면 사용 안 함.")]
+    [SerializeField] private Button skillStatusInfoButton;
 
     [Header("Detail - Stats (각 능력치를 값만 표시. 라벨은 정적 UI로 옆에 배치. 비우면 표시 안 함)")]
     [SerializeField] private TMP_Text attackText;
@@ -84,6 +86,8 @@ public sealed class DeckPopup : UIView, IHudPopup {
     [SerializeField] private Button equipButton;
     [Tooltip("코스튬 패널 열기(선택 캐릭터의 외형 교체). 아직 코스튬이 없는 캐릭터도 열 수 있다(기본 칸만 보인다).")]
     [SerializeField] private Button costumeButton;
+    [Tooltip("아웃핏 패널 열기(선택 캐릭터의 전투 유닛 아웃핏 교체, V1.12).")]
+    [SerializeField] private Button unitSkinButton;
     [Tooltip("편성 프리셋 팝업 열기(3칸 저장/적용).")]
     [SerializeField] private Button presetButton;
     [Tooltip("아이템 사용 팝업 열기(선택 캐릭터에게 경험치 쿠폰 등을 사용).")]
@@ -98,6 +102,8 @@ public sealed class DeckPopup : UIView, IHudPopup {
     [SerializeField] private EquipmentPopup equipmentPanel;
     [Tooltip("코스튬 패널. DeckPopup 하위에 비활성 상태로 두고 코스튬 버튼으로 연다.")]
     [SerializeField] private CostumePopup costumePanel;
+    [Tooltip("아웃핏 패널. DeckPopup 하위에 비활성 상태로 두고 아웃핏 버튼으로 연다.")]
+    [SerializeField] private UnitSkinPopup unitSkinPanel;
     [Tooltip("편성 패널. DeckPopup 하위에 비활성 상태로 두고 편성 버튼으로 연다.")]
     [SerializeField] private CompositionPanel compositionPanel;
 
@@ -116,6 +122,9 @@ public sealed class DeckPopup : UIView, IHudPopup {
     [Tooltip("일러스트 패널이 착지할 자리. 빈 RectTransform 을 원하는 위치/크기로 배치해 연결한다. " +
              "슬롯은 유니티 앵커로 배치되므로 해상도가 바뀌어도 착지점이 정확하다. 비우면 정보 패널 자리로 폴백.")]
     [SerializeField] private RectTransform illustDockedSlot;
+    [Tooltip("도킹 중 카드 스크롤뷰의 오른쪽 끝 기준. 빈 RectTransform 을 놓으면 그 오른쪽 경계까지 스크롤뷰 폭을 줄여 " +
+             "패널에 가려진 카드도 스크롤로 꺼내 누를 수 있게 한다. 비우면 스크롤뷰는 그대로 둔다.")]
+    [SerializeField] private RectTransform scrollDockedEdge;
     [Tooltip("정보 패널을 화면 밖으로 뺄 때 추가로 더 밀어낼 여유(기준 해상도 px). 그림자가 걸쳐 보이면 늘린다.")]
     [SerializeField] private float dockOffscreenMargin = 32f;
     [SerializeField] private float dockSlideDuration = 0.3f;
@@ -160,6 +169,9 @@ public sealed class DeckPopup : UIView, IHudPopup {
     private CanvasGroup _infoGroup;
     private bool _dockHomesCaptured;
     private bool _docked;
+    private bool _scrollDocked;   // 이번 도킹에서 카드 스크롤뷰를 줄였는지(패널마다 다르다).
+    private RectTransform _scrollRt;
+    private Vector2 _scrollHomeOffsetMax;
     private readonly Vector3[] _corners = new Vector3[4];   // GetWorldCorners 재사용 버퍼(할당 방지).
 
     public void Initialize(MainHudContext ctx) {
@@ -200,12 +212,16 @@ public sealed class DeckPopup : UIView, IHudPopup {
             equipButton.onClick.AddListener(() => { _ctx.Sound.PlaySfx(SfxKey.ButtonClick); OpenEquipmentAsync().Forget(); });
         if (costumeButton != null)
             costumeButton.onClick.AddListener(() => { _ctx.Sound.PlaySfx(SfxKey.ButtonClick); OpenCostumeAsync().Forget(); });
+        if (unitSkinButton != null)
+            unitSkinButton.onClick.AddListener(() => { _ctx.Sound.PlaySfx(SfxKey.ButtonClick); OpenUnitSkinAsync().Forget(); });
         if (presetButton != null)
             presetButton.onClick.AddListener(() => { _ctx.Sound.PlaySfx(SfxKey.ButtonClick); OpenPresetAsync().Forget(); });
         if (itemButton != null)
             itemButton.onClick.AddListener(() => { _ctx.Sound.PlaySfx(SfxKey.ButtonClick); OpenItemAsync().Forget(); });
         if (closeButton != null)
             closeButton.onClick.AddListener(() => { _ctx.Sound.PlaySfx(SfxKey.ButtonClick); OnCloseRequestedAsync().Forget(); });
+        if (skillStatusInfoButton != null)
+            skillStatusInfoButton.onClick.AddListener(() => { _ctx.Sound.PlaySfx(SfxKey.ButtonClick); OpenSkillStatusInfoAsync().Forget(); });
     }
 
     // ── 그리드 ─────────────────────────────────────
@@ -335,6 +351,8 @@ public sealed class DeckPopup : UIView, IHudPopup {
             equipmentPanel.Initialize(_ctx, _selected.Id);
         if (costumePanel != null && costumePanel.gameObject.activeSelf)
             costumePanel.Initialize(_ctx, _selected.Id);
+        if (unitSkinPanel != null && unitSkinPanel.gameObject.activeSelf)
+            unitSkinPanel.Initialize(_ctx, _selected.Id);
     }
 
     private void RefreshDetail() {
@@ -348,16 +366,16 @@ public sealed class DeckPopup : UIView, IHudPopup {
         if (_selected == null) return;
         var progress = _ctx.Store.GetProgress(_selected.Id);
         // 시너지는 편집 중인 편성 기준으로 본다(편성 패널에서 막 맞춘 시너지가 상세 전투력에도 바로 보이도록).
-        var runtime = new CharacterRuntime(_selected, progress, _ctx.Settings,
-                                           _ctx.Store.TotalBonusFor(_selected.Id, _ctx.EquipDb, _session.Members));
+        var runtime = _ctx.Store.RuntimeFor(_selected, progress, _ctx.Settings, _ctx.EquipDb, _session.Members);
         var s = runtime.FinalStats;
 
         if (nameText != null) nameText.text = _selected.DisplayName;
         if (titleText != null) titleText.text = _selected.Title;
         // 등급 표시 3개(있는 것만) 모두 같은 등급으로 채운다(레이어드 표현용). 색 적용은 각 GradeText 의 applyColor 로 결정.
-        if (gradeText != null) gradeText.SetGrade(_selected.Grade);
-        if (gradeText2 != null) gradeText2.SetGrade(_selected.Grade);
-        if (gradeText3 != null) gradeText3.SetGrade(_selected.Grade);
+        bool limitBroken = progress != null && progress.LimitBroken;   // 한계돌파면 등급 뒤에 + 를 붙인다
+        if (gradeText != null) gradeText.SetGrade(_selected.Grade, limitBroken);
+        if (gradeText2 != null) gradeText2.SetGrade(_selected.Grade, limitBroken);
+        if (gradeText3 != null) gradeText3.SetGrade(_selected.Grade, limitBroken);
         if (levelText != null) levelText.text = progress != null ? progress.Level.ToString() : "";
         if (starLevelView != null) starLevelView.SetStarLevel(progress != null ? progress.StarLevel : 0);
 
@@ -367,7 +385,7 @@ public sealed class DeckPopup : UIView, IHudPopup {
         float expRatio = progress != null ? progress.ExpRatio : 0f;
         if (expSlider != null) expSlider.value = expRatio;
         if (expText != null) expText.text = $"{exp:N0} / {maxExp:N0} ({expRatio * 100f:0.00}%)";
-        if (combatPowerText != null) combatPowerText.text = Mathf.RoundToInt(runtime.CombatPower).ToString("N0");
+        if (combatPowerText != null) combatPowerText.text = runtime.CombatPower.ToString("N0");
         if (weaponTypeText != null) weaponTypeText.text = GameEnumRules.WeaponDisplayName(_selected.WeaponType);
 
         if (weaponTypeImage != null) {
@@ -380,14 +398,46 @@ public sealed class DeckPopup : UIView, IHudPopup {
         SetStatTexts(s);
     }
 
+    // 선택 캐릭터가 지금 쓰는 스킬(한계돌파했으면 한계돌파 스킬). 표시와 상태이상 설명이 같은 스킬을 본다.
+    private UnitSkill SelectedSkill {
+        get {
+            if (_selected == null) return null;
+            var progress = _ctx.Store.GetProgress(_selected.Id);
+            return _selected.SkillFor(progress != null && progress.LimitBroken);
+        }
+    }
+
     // 선택 캐릭터의 스킬 이름/아이콘/설명을 표시한다(설명은 툴팁 대신 바로 노출).
     private void RefreshSkill() {
-        var skill = _selected != null ? _selected.Skill : null;
+        var skill = SelectedSkill;
         if (skillNameText != null) skillNameText.text = skill != null ? skill.SkillName : "";
         if (skillDescText != null) skillDescText.text = skill != null ? SkillTextFormat.Colorize(skill.Description) : "";
         if (skillIcon != null) {
             skillIcon.sprite = skill != null ? skill.SkillIcon : null;
             skillIcon.enabled = skill != null && skill.SkillIcon != null;
+        }
+
+        // 상태이상을 거는 스킬일 때만 설명 버튼이 눌린다. 눌러도 빈 팝업만 뜨면 고장으로 보이기 때문이다.
+        if (skillStatusInfoButton != null)
+            skillStatusInfoButton.interactable = !string.IsNullOrEmpty(SkillStatusDescription(skill));
+    }
+
+    // 선택 스킬이 거는 상태이상들의 설명(없으면 빈 문자열). 버튼 활성 판정과 팝업 본문이 같은 값을 쓴다.
+    private static string SkillStatusDescription(UnitSkill skill) =>
+        skill != null ? StatusEffectRules.DescribeAll(skill.InflictedStatusEffects) : "";
+
+    // 공용 확인 팝업(제목 + 본문 + 확인)으로 띄운다. 스탯 설명(i) 버튼(StatRowView)과 같은 방식이다.
+    private async UniTaskVoid OpenSkillStatusInfoAsync() {
+        string body = SkillStatusDescription(SelectedSkill);
+        var reference = _ctx.Popups != null ? _ctx.Popups.ConfirmPopup : null;
+        if (string.IsNullOrEmpty(body) || reference == null || !reference.RuntimeKeyIsValid()) return;
+
+        try {
+            var popup = await _ctx.Ui.ShowPopupAsync<ConfirmPopup>(reference, _ct);
+            await popup.ShowAsync("상태이상", body);
+        } catch (OperationCanceledException) {
+        } catch (Exception e) {
+            Debug.LogException(e);
         }
     }
 
@@ -485,6 +535,7 @@ public sealed class DeckPopup : UIView, IHudPopup {
         // 유저가 구분할 수 없고, 캐릭터를 넘겨 볼 때마다 버튼이 켜졌다 꺼졌다 해서 화면도 불안정해진다.
         // 코스튬이 없는 캐릭터는 패널에 기본 칸만 나오므로 "아직 코스튬이 없다"가 그대로 읽힌다.
         if (costumeButton != null) costumeButton.interactable = _selected != null;
+        if (unitSkinButton != null) unitSkinButton.interactable = _selected != null;
     }
 
     private void ShowIllustration(CharacterData data) {
@@ -548,7 +599,7 @@ public sealed class DeckPopup : UIView, IHudPopup {
     private async UniTaskVoid OpenGrowthAsync() {
         if (_selected == null) { _ctx.Ui.ShowToast("캐릭터를 선택하세요."); return; }
         if (growthPanel == null) return;
-        DockOpen();   // 우측에 육성 패널이 도킹될 공간 확보(정보 좌측 퇴장, 일러스트 좌측 이동).
+        DockOpen(shrinkCardScroll: true);   // 육성 패널만 카드 스크롤뷰를 덮는다. 우측에 육성 패널이 도킹될 공간 확보(정보 좌측 퇴장, 일러스트 좌측 이동).
         growthPanel.Initialize(_ctx, _selected.Id);
         await growthPanel.ShowAsync();
         await growthPanel.WaitUntilClosedAsync();
@@ -560,7 +611,7 @@ public sealed class DeckPopup : UIView, IHudPopup {
     private async UniTaskVoid OpenEquipmentAsync() {
         if (_selected == null) { _ctx.Ui.ShowToast("캐릭터를 선택하세요."); return; }
         if (equipmentPanel == null) return;
-        DockOpen();   // 장비 패널도 육성과 동일 크기라 같은 방식으로 공간 확보.
+        DockOpen(shrinkCardScroll: false);   // 장비 패널도 육성과 동일 크기라 같은 방식으로 공간 확보.
         equipmentPanel.Initialize(_ctx, _selected.Id);
         await equipmentPanel.ShowAsync();
         await equipmentPanel.WaitUntilClosedAsync();
@@ -572,7 +623,7 @@ public sealed class DeckPopup : UIView, IHudPopup {
     private async UniTaskVoid OpenCostumeAsync() {
         if (_selected == null) { _ctx.Ui.ShowToast("캐릭터를 선택하세요."); return; }
         if (costumePanel == null) return;
-        DockOpen();   // 코스튬 패널도 육성/장비와 같은 크기라 같은 방식으로 공간 확보.
+        DockOpen(shrinkCardScroll: false);   // 코스튬 패널도 육성/장비와 같은 크기라 같은 방식으로 공간 확보.
         costumePanel.Initialize(_ctx, _selected.Id);
         await costumePanel.ShowAsync();
         await costumePanel.WaitUntilClosedAsync();
@@ -580,6 +631,18 @@ public sealed class DeckPopup : UIView, IHudPopup {
         // 코스튬은 일러스트와 능력치를 함께 바꾸므로 상세를 통째로 다시 그린다.
         RefreshDetail();
         RefreshCardsAppearance();
+    }
+
+    private async UniTaskVoid OpenUnitSkinAsync() {
+        if (_selected == null) { _ctx.Ui.ShowToast("캐릭터를 선택하세요."); return; }
+        if (unitSkinPanel == null) return;
+        DockOpen(shrinkCardScroll: false);   // 코스튬 패널과 같은 방식으로 공간 확보.
+        unitSkinPanel.Initialize(_ctx, _selected.Id);
+        await unitSkinPanel.ShowAsync();
+        await unitSkinPanel.WaitUntilClosedAsync();
+        DockClose();
+        // 아웃핏은 능력치를 바꾸므로 상세를 다시 그린다(유닛 모습은 다음 전투부터 바뀐다).
+        RefreshDetail();
     }
 
     // 코스튬이 바뀐 캐릭터의 그리드 카드 일러스트를 제자리 갱신한다(재정렬/재생성 없이 스크롤 유지).
@@ -612,7 +675,7 @@ public sealed class DeckPopup : UIView, IHudPopup {
 
     private async UniTaskVoid OpenCompositionAsync() {
         if (compositionPanel == null) return;
-        DockOpen();   // 편성 패널도 육성/장비와 같은 크기라 같은 방식으로 공간 확보.
+        DockOpen(shrinkCardScroll: false);   // 편성 패널도 육성/장비와 같은 크기라 같은 방식으로 공간 확보.
         _compositionEdited = false;
         compositionPanel.Changed += OnCompositionChanged;
         compositionPanel.Initialize(_ctx, _session);
@@ -711,10 +774,15 @@ public sealed class DeckPopup : UIView, IHudPopup {
             _infoGroup = infoPanel.GetComponent<CanvasGroup>();
         }
         if (illustPanel != null) _illustHome = illustPanel.anchoredPosition;
+        if (scrollDockedEdge != null && Scroll != null) {
+            _scrollRt = (RectTransform)Scroll.transform;
+            _scrollHomeOffsetMax = _scrollRt.offsetMax;
+        }
         _dockHomesCaptured = true;
     }
 
-    private void DockOpen() {
+    // shrinkCardScroll: 패널이 카드 스크롤뷰를 덮는 경우에만 true. 덮지 않는 패널은 스크롤뷰를 그대로 둔다.
+    private void DockOpen(bool shrinkCardScroll) {
         if (_docked) return;   // 이미 도킹된 상태면 중복 실행 방지.
         // 레이아웃이 확정된 뒤 측정해야 첫 오픈에서도(세이프에어리어/레이아웃 그룹 반영 전) 좌표가 정확하다.
         Canvas.ForceUpdateCanvases();
@@ -731,6 +799,8 @@ public sealed class DeckPopup : UIView, IHudPopup {
             seq.Join(infoPanel.DOAnchorPos(InfoOffscreenPos(), dockSlideDuration).SetEase(Ease.InOutCubic));
             if (_infoGroup != null) seq.Join(_infoGroup.DOFade(0f, dockSlideDuration));
         }
+        _scrollDocked = shrinkCardScroll && _scrollRt != null;
+        if (_scrollDocked) seq.Join(ScrollRightTween(ScrollDockedOffsetMaxX()));
         _dockTween = seq;
     }
 
@@ -745,6 +815,8 @@ public sealed class DeckPopup : UIView, IHudPopup {
         }
         if (illustPanel != null)
             seq.Join(illustPanel.DOAnchorPos(_illustHome, dockSlideDuration).SetEase(Ease.InOutCubic));
+        if (_scrollDocked) seq.Join(ScrollRightTween(_scrollHomeOffsetMax.x));
+        _scrollDocked = false;
         _dockTween = seq;
     }
 
@@ -755,6 +827,26 @@ public sealed class DeckPopup : UIView, IHudPopup {
         _dockTween = null;
         if (illustPanel != null) illustPanel.anchoredPosition = IllustDockedPos();
         if (infoPanel != null) infoPanel.anchoredPosition = InfoOffscreenPos();
+        if (_scrollDocked) _scrollRt.offsetMax = new Vector2(ScrollDockedOffsetMaxX(), _scrollRt.offsetMax.y);
+    }
+
+    // 카드 스크롤뷰의 오른쪽 끝만 움직인다(왼쪽 끝과 카드 배치는 그대로, 보이는 폭만 줄었다 늘어난다).
+    private Tween ScrollRightTween(float targetX) =>
+        DOTween.To(() => _scrollRt.offsetMax.x,
+                   x => _scrollRt.offsetMax = new Vector2(x, _scrollRt.offsetMax.y),
+                   targetX, dockSlideDuration).SetEase(Ease.InOutCubic);
+
+    // 도킹 중 스크롤뷰의 offsetMax.x. 오른쪽 끝이 scrollDockedEdge 의 오른쪽 경계에 닿는 값이다.
+    // 트윈 중에 호출되어도 같은 값이 나오도록 홈 기준으로 역산한다(AnchoredPosForWorldCenter 와 같은 방식).
+    private float ScrollDockedOffsetMaxX() {
+        var parent = _scrollRt.parent as RectTransform;
+        if (parent == null || scrollDockedEdge == null) return _scrollHomeOffsetMax.x;
+
+        scrollDockedEdge.GetWorldCorners(_corners);
+        float edgeRight = parent.InverseTransformPoint(_corners[2]).x;
+        _scrollRt.GetWorldCorners(_corners);
+        float rightAtHome = parent.InverseTransformPoint(_corners[2]).x + (_scrollHomeOffsetMax.x - _scrollRt.offsetMax.x);
+        return _scrollHomeOffsetMax.x + (edgeRight - rightAtHome);
     }
 
     // 일러스트 패널의 도킹 목표. 슬롯이 있으면 슬롯 중심에 정확히 맞추고,

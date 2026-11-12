@@ -25,6 +25,8 @@ public sealed class EquipmentCard : MonoBehaviour {
     [Tooltip("지금 보고 있는 캐릭터에게 전투력 상승이 가장 큰 장비일 때만 켜지는 표식(추천 표시). 선택.\n"
            + "판정은 목록을 만드는 쪽(가방 패널)이 하고 SetBestUpgrade 로 켜 준다 - 카드 혼자서는 알 수 없다.")]
     [SerializeField] private GameObject bestUpgradeBadge;
+    [Tooltip("한계돌파한 장비일 때만 켜지는 그룹(마크/테두리 등). 선택.")]
+    [SerializeField] private GameObject limitBreakGroup;
     [SerializeField] private GameObject selectedFrame;
     [SerializeField] private Button button;
 
@@ -43,7 +45,7 @@ public sealed class EquipmentCard : MonoBehaviour {
         if (gradeText != null) {
             bool showGrade = data != null;
             gradeText.gameObject.SetActive(showGrade);
-            if (showGrade) gradeText.SetGrade(data.Grade);
+            if (showGrade) gradeText.SetGrade(data.Grade, inst != null && inst.LimitBroken);
         }
         if (nameText != null) {
             // AutoSize 는 줄바꿈이 켜져 있으면 폰트를 줄이기 전에 먼저 줄을 넘긴다. 줄바꿈을 꺼서
@@ -57,6 +59,8 @@ public sealed class EquipmentCard : MonoBehaviour {
         if (statsText != null) statsText.text = EquipmentRules.DescribeStats(inst, data);
         if (signatureBadge != null)
             signatureBadge.SetActive(data != null && data.IsOwnSignatureOf(viewerCharDataId));
+        // 풀에서 재사용한 카드에 옛 상태가 남지 않도록 매번 확정한다.
+        if (limitBreakGroup != null) limitBreakGroup.SetActive(inst != null && inst.LimitBroken);
         // 추천 표식은 목록 쪽이 켜 준다. 풀에서 재사용한 카드에 옛 표식이 남지 않도록 여기서 먼저 끈다.
         if (bestUpgradeBadge != null) bestUpgradeBadge.SetActive(false);
 

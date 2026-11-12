@@ -7,7 +7,7 @@ using UnityEngine.UI;
 /// 저장은 GameData 에, 실제 적용은 DisplaySettings 에 맡기므로 이 페이지는 UI 배선만 담당한다.
 /// 선택지는 DisplaySettings 의 옵션표가 단일 진실 원천이라, 값을 늘려도 여기를 고칠 일이 없다.
 ///
-/// 화면 절전(꺼짐 방지)은 설정 항목이 아니다. 평소에는 항상 막아 두고 잠금 모드 동안에만 허용하므로,
+/// 화면 꺼짐은 설정 항목이 아니다. 항상 막아 두고(꺼지면 방치 사냥이 멈춘다) 잠금 중에는 절전 모드로 부하만 줄이므로,
 /// 유저가 정할 것은 "언제 자동으로 잠글지" 하나뿐이다.
 /// </summary>
 public sealed class SettingDisplayPage : SettingPage {

@@ -29,7 +29,10 @@ public sealed class ProfileService : IProfileService {
             CombatPowerRank = res.combatPowerRank,
             AchievementRank = res.achievementRank,
         };
-        foreach (var f in res.profileFrames) dto.ProfileFrameIds.Add(f.profileFrameId);
+        foreach (var f in res.profileFrames) {
+            dto.ProfileFrameIds.Add(f.profileFrameId);
+            if (f.expiresUnix > 0) dto.ProfileFrameExpires[f.profileFrameId] = f.expiresUnix;
+        }
         return dto;
     }
 
@@ -74,7 +77,7 @@ public sealed class ProfileService : IProfileService {
             IsSuccess = res.isSuccess,
             FailReason = res.failReason,
             Nickname = res.nickname,
-            NewDiamond = res.newDiamond,
+            NewCertificate = res.newCertificate,
             NewTicketQty = res.newTicketQty,
         };
     }

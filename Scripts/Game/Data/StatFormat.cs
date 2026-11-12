@@ -96,7 +96,8 @@ public static class StatFormat {
         StatType.CritDamage  => v.ToString("0.#") + "%",
         StatType.MinDamageRatio         => v.ToString("0.#") + "%",
         StatType.MaxDamageRatio         => v.ToString("0.#") + "%",
-        StatType.ArmorPen               => v.ToString("0.#") + "%",
+        // 관통은 V1.12 부터 방어력을 직접 깎는 절대 수치라 % 를 붙이지 않는다.
+        StatType.ArmorPen               => v.ToString("0.#"),
         StatType.FinalDamage            => v.ToString("0.#") + "%",
         StatType.SkillAccel             => v.ToString("0.#") + "%",
         StatType.SkillCooldownReduction => v.ToString("0.##") + "초",

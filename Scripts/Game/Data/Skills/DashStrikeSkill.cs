@@ -6,6 +6,7 @@ using UnityEngine;
 /// 시전자의 시각 표현만 대상 사이를 빠르게 오가며(논리 위치 불변), 도착 시점마다 데미지를 준 뒤 다음 대상으로 이어진다.
 /// 예) C2002 셀도우 스텝: 전방 최대 4명 각 90% (총 360%).
 /// 예) C3401 백열난타: 최대 6명 각 90% + 마지막 대상 피니셔 260% (총 800%). finisherMultiplier 사용.
+/// 예) C4401 데빌 키스: 최대 10명 각 150%, 시전 중 무적. invulnerableWhileCasting 사용.
 /// </summary>
 [CreateAssetMenu(fileName = "DashStrikeSkill", menuName = "Anaka/Skills/Dash Strike")]
 public sealed class DashStrikeSkill : DamageSkill {
@@ -45,6 +46,15 @@ public sealed class DashStrikeSkill : DamageSkill {
     [Tooltip("마지막 1파 타격 후 2파까지 지연(초). 보통 원위치 복귀(returnDuration) 뒤 검집을 닫는 타이밍으로 잡는다.")]
     [SerializeField] private float secondWaveDelay = 0.3f;
 
+    [Header("Invulnerability (선택, 시전 중 무적)")]
+    [Tooltip("체크 시 스킬 시전부터 원위치 복귀(2파가 있으면 2파)까지 시전자가 무적이 된다. 모든 피격이 MISS 로 처리되며 적의 타게팅은 바뀌지 않는다. 예: C4401 리리카.")]
+    [SerializeField] private bool invulnerableWhileCasting;
+    [Tooltip("무적 동안 시전자를 따라다니는 VFX. 비우면 BattleSettings 의 공용 무적 VFX 를 쓴다.")]
+    [SerializeField] private GameObject invulnerableVfxOverride;
+
+    // 무적 안전 상한에 더하는 여유(초). 정상 경로는 Finish 가 직접 해제하므로 이 값은 예약 실행이 취소됐을 때만 쓰인다.
+    private const float InvulnerableSafetyMargin = 0.5f;
+
     // 훑은 대상 각각에게 대시 1타 + (설정 시) 마무리 2파. 피니셔는 실제로는 마지막 1명에게만 들어가지만
     // 여기서는 세트에 포함해 신고한다(대상이 여럿일 때 소폭 후하게 평가된다).
     public override SkillPowerProfile PowerProfile {
@@ -67,7 +77,27 @@ public sealed class DashStrikeSkill : DamageSkill {
         TakeNearest(ctx.Caster.Position, enemies, maxTargets, targets);
         if (targets.Count == 0) return;
 
+        BeginInvulnerability(ctx, targets.Count);
         DashHit(ctx, targets, 0);
+    }
+
+    // 시전 중 무적 시작. 해제는 Finish 가 하며, 상한은 대상 전원을 훑는 최장 시간 + 여유다.
+    private void BeginInvulnerability(SkillContext ctx, int targetCount) {
+        if (!invulnerableWhileCasting || !(ctx.Caster is IInvulnerableUnit unit)) return;
+        float maxSeconds = targetCount * (dashDuration + hitPause)
+                         + (finisherMultiplier > 0f ? finisherDelay : 0f)
+                         + EndDelay
+                         + InvulnerableSafetyMargin;
+        unit.BeginInvulnerability(maxSeconds, invulnerableVfxOverride);
+    }
+
+    // 마지막 타격(피니셔 포함) 이후 스킬이 끝나기까지의 시간: 원위치 복귀와 2파 중 늦은 쪽.
+    private float EndDelay =>
+        Mathf.Max(returnDuration, secondWaveMultiplier > 0f ? secondWaveDelay : 0f);
+
+    private void EndInvulnerability(SkillContext ctx) {
+        if (!invulnerableWhileCasting || !ctx.Caster.Exists()) return;
+        if (ctx.Caster is IInvulnerableUnit unit) unit.EndInvulnerability();
     }
 
     // targets[i] 로 대시(연출) -> dashDuration 후 타격 -> hitPause 후 다음 대상. 마지막이면 복귀 + (선택)2파.
@@ -114,8 +144,10 @@ public sealed class DashStrikeSkill : DamageSkill {
     }
 
     // 대시 종료: 원위치로 복귀하고, 2파가 설정돼 있으면 잠시 후 마무리 타격을 넣는다.
+    // 무적(설정 시)은 복귀와 2파가 모두 끝나는 시점(EndDelay)에 해제한다.
     private void Finish(SkillContext ctx, List<ICombatUnit> targets) {
         ctx.Runtime.ReturnCaster(ctx.Caster, returnDuration);
+        if (invulnerableWhileCasting) ctx.Runtime.Schedule(EndDelay, () => EndInvulnerability(ctx));
         if (secondWaveMultiplier <= 0f) return;
         if (secondWaveDelay > 0f) ctx.Runtime.Schedule(secondWaveDelay, () => SecondWave(ctx, targets));
         else SecondWave(ctx, targets);

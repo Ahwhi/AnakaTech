@@ -54,7 +54,9 @@ public sealed class UnitStatusEffects {
     public void Apply(in StatusEffectSpec spec, in CombatStats source, ICombatUnit caster, float resistSoftK) {
         if (!spec.IsValid || !spec.Roll()) return;
 
-        float duration = CombatMath.StatusDuration(spec.Duration, _owner.Stats, resistSoftK);
+        // 시전자 쪽 지속시간 보정(무한 타워 층 보너스 등)을 먼저 곱한 뒤 대상의 저항으로 줄인다.
+        float scale = caster is BattleUnit castUnit && castUnit != null ? castUnit.InflictDurationScale(spec.Type) : 1f;
+        float duration = CombatMath.StatusDuration(spec.Duration * scale, _owner.Stats, resistSoftK);
         if (duration <= 0f) return;
 
         var existing = Find(spec.Type);

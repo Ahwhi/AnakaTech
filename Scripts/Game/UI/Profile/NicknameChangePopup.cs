@@ -7,8 +7,8 @@ using UnityEngine.UI;
 using static Enums;
 
 /// <summary>
-/// 닉네임 변경 팝업. 입력 + 중복확인 버튼 + 확인 버튼(닉네임 변경권 우선, 없으면 다이아 500). 서버가 형식/중복/결제를 판정한다.
-/// 성공 시 PlayerStateStore(닉네임/다이아)를 갱신하고 닫는다. 계정 생성 시 변경권 1장이 무료 지급되어 있다.
+/// 닉네임 변경 팝업. 입력 + 중복확인 버튼 + 확인 버튼(닉네임 변경권 우선, 없으면 파견 증명서 500). 서버가 형식/중복/결제를 판정한다.
+/// 성공 시 PlayerStateStore(닉네임/파견 증명서)를 갱신하고 닫는다. 계정 생성 시 변경권 1장이 무료 지급되어 있다.
 /// </summary>
 public sealed class NicknameChangePopup : UIView, IHudPopup {
     [SerializeField] private TMP_InputField inputField;
@@ -16,9 +16,9 @@ public sealed class NicknameChangePopup : UIView, IHudPopup {
     [Tooltip("중복확인 결과 텍스트.")]
     [SerializeField] private TMP_Text resultText;
     [SerializeField] private Button confirmButton;
-    [Tooltip("결제 수량 텍스트(변경권 1 또는 다이아 500).")]
+    [Tooltip("결제 수량 텍스트(변경권 1 또는 파견 증명서 500).")]
     [SerializeField] private TMP_Text costText;
-    [Tooltip("결제 재화 아이콘(변경권 또는 다이아).")]
+    [Tooltip("결제 재화 아이콘(변경권 또는 파견 증명서).")]
     [SerializeField] private Image costIcon;
     [SerializeField] private Button closeButton;
 
@@ -68,15 +68,15 @@ public sealed class NicknameChangePopup : UIView, IHudPopup {
         RefreshConfirm();
     }
 
-    // 결제 표시: 변경권 보유 시 변경권 x1, 없으면 다이아 500.
+    // 결제 표시: 변경권 보유 시 변경권 x1, 없으면 NicknameRules 의 대체 재화(파견 증명서 500).
     // 두 아이콘 모두 재화 카탈로그(CurrencyCatalog)에서 타입으로 조회한다 - 아이콘을 팝업마다 개별 할당하지 않아
     // 같은 재화를 쓰는 다른 UI 와 자동으로 일관된다(변경 시 카탈로그 한 곳만 수정).
     private void RefreshCost() {
         bool useTicket = _ticketQty > 0;
-        if (costText != null) costText.text = useTicket ? "1" : "500";
+        if (costText != null) costText.text = useTicket ? "1" : NicknameRules.ChangeCost.ToString("N0");
         if (costIcon != null) {
             var sprite = _hud.Currencies != null
-                ? _hud.Currencies.Icon(useTicket ? CurrencyType.NicknameTicket : CurrencyType.Diamond)
+                ? _hud.Currencies.Icon(useTicket ? CurrencyType.NicknameTicket : NicknameRules.ChangeCurrency)
                 : null;
             costIcon.sprite = sprite;
             costIcon.enabled = sprite != null;
@@ -148,7 +148,7 @@ public sealed class NicknameChangePopup : UIView, IHudPopup {
                 return;
             }
             _hud.Store.Nickname.Value = res.Nickname;
-            _hud.Store.Diamond.Value = res.NewDiamond;
+            _hud.Store.DispatchCertificate.Value = res.NewCertificate;
             _ticketQty = res.NewTicketQty;
             _hud.Sound.PlaySfx(SfxKey.Purchase);
             _hud.Ui.ShowToast("닉네임이 변경되었습니다.");

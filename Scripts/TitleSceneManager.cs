@@ -61,8 +61,10 @@ public class TitleSceneManager : MonoBehaviour {
     [SerializeField] private float readyHoldSeconds = 0.6f;
 
     private string _baseMessage = string.Empty;
+    private string _failDetail = string.Empty;   // 부트 실패 단계/원인. 팝업을 띄우지 못해도 화면에 남게 상태 문구 아래에 붙인다.
     private int _dotCount;
     private bool _starting;
+    private bool _retryOnTap;   // 실패 팝업을 띄우지 못했을 때 빈 화면 터치를 "다시 시도"로 쓴다.
 
     private IBootStatus _boot;
     private IBootFlow _bootFlow;
@@ -127,6 +129,8 @@ public class TitleSceneManager : MonoBehaviour {
 
     // ── 상태 ────────────────────────────────────────────────
     private void OnStateChanged(BootState state) {
+        if (state != BootState.Failed) ClearFailure();
+
         switch (state) {
             case BootState.LoggingIn:
                 // 로그인 게이트: 로딩 패널을 숨기고 LoginPanel 이 버튼을 띄우게 한다.
@@ -148,6 +152,7 @@ public class TitleSceneManager : MonoBehaviour {
                 SetLoadingVisible(true);
                 // 실패 사유(점검/업데이트/연결 실패)를 명확히 표시한다. 일반 오류 문구는 분류되지 않은 예외에만 나온다.
                 _baseMessage = _boot.FailReason.ToMessage();
+                _failDetail = _boot.FailMessage ?? string.Empty;
                 RefreshStateText();
                 if (progressGroup != null) progressGroup.SetActive(false);
                 ShowFailurePopupAsync().Forget();
@@ -174,11 +179,20 @@ public class TitleSceneManager : MonoBehaviour {
 
     // 부트 실패 시 사유별 안내 팝업. 연결 실패는 재시도하면 부트를 다시 돌린다.
     private async UniTaskVoid ShowFailurePopupAsync() {
-        var popup = await _ui.ShowPopupAsync<ConfirmPopup>(_popups.ConfirmPopup);
-
         if (_boot.FailReason == BootFailReason.ForceUpdate) {
-            await popup.ShowAsync("업데이트 필요", "최신 버전으로 업데이트가 필요합니다.");
-            // TODO: 스토어로 이동 또는 앱 종료
+            await ShowForceUpdateAsync();
+            return;
+        }
+
+        // 실패 팝업도 어드레서블(Local_Core)에서 불러온다. 어드레서블이 앱 안의 번들조차 열지 못하는 상태
+        // (설치된 빌드와 카탈로그의 짝이 맞지 않는 경우 등)면 팝업 로드가 실패한다. 예전에는 이때 아무 안내 없이
+        // 상태 문구만 남고 다시 시도할 방법도 없었다. 원인은 이미 상태 문구에 붙어 있으므로 화면 터치로 재시도를 연다.
+        ConfirmPopup popup;
+        try {
+            popup = await _ui.ShowPopupAsync<ConfirmPopup>(_popups.ConfirmPopup);
+        } catch (Exception e) {
+            Debug.LogWarning($"[TitleSceneManager] 실패 안내 팝업을 열지 못했습니다: {e.Message}");
+            if (_boot.FailReason == BootFailReason.CannotConnect) EnableTapToRetry();
             return;
         }
 
@@ -194,6 +208,36 @@ public class TitleSceneManager : MonoBehaviour {
         string detail = string.IsNullOrEmpty(_boot.FailMessage) ? string.Empty : $"\n({_boot.FailMessage})";
         await popup.ShowAsync("연결 실패", $"서버에 연결할 수 없습니다.{detail}\n확인을 누르면 다시 시도합니다.");
         _bootFlow.RunAsync().Forget();
+    }
+
+    /// <summary>
+    /// 강제 업데이트 안내. 확인하면 스토어를 열고, 안내를 다시 띄운다.
+    ///
+    /// 안내를 계속 다시 띄우는 이유: 업데이트하지 않으면 게임을 시작할 수 없다(부트가 이 지점에서 멈춰 있고
+    /// 재시도로도 풀리지 않는다). 안내가 한 번 닫히고 끝나면 유저는 아무 버튼도 없는 타이틀 화면에 남아
+    /// 스토어로 갈 방법을 잃는다. 그래서 스토어에서 되돌아왔거나 팝업을 잘못 닫았을 때 항상 같은 자리로
+    /// 돌아오게 한다. 선택지를 하나만 두는 것도 같은 이유다("취소"가 있으면 막다른 길이 생긴다).
+    /// </summary>
+    private async UniTask ShowForceUpdateAsync() {
+        var ct = this.GetCancellationTokenOnDestroy();
+        const string title = "업데이트 필요";
+
+        try {
+            while (!ct.IsCancellationRequested) {
+                var popup = await _ui.ShowPopupAsync<ConfirmPopup>(_popups.ConfirmPopup, ct);
+                await popup.ShowAsync(title, "최신 버전으로 업데이트가 필요합니다.\n확인을 누르면 스토어로 이동합니다.");
+
+                if (StoreLink.TryOpen()) continue;
+
+                // 스토어 주소 자체가 잘못된 경우. 같은 안내를 반복해도 소용이 없으므로 내려받기 주소를 알리고 멈춘다.
+                var notice = await _ui.ShowPopupAsync<ConfirmPopup>(_popups.ConfirmPopup, ct);
+                await notice.ShowAsync(title,
+                    $"스토어를 열 수 없습니다.\n아래 주소에서 최신 버전을 내려받아 주세요.\n{StoreLink.DownloadPageUrl}");
+                return;
+            }
+        } catch (OperationCanceledException) {
+            // 타이틀 화면을 떠나는 중이다(부트 재실행/앱 종료). 이어서 할 일이 없다.
+        }
     }
 
     // ── 진행률 ──────────────────────────────────────────────
@@ -225,11 +269,37 @@ public class TitleSceneManager : MonoBehaviour {
             .AddTo(this);
     }
 
+    private const string FailDetailSize = "60%";
+    private const string RetryHint = "화면을 누르면 다시 시도합니다";
+
     private void RefreshStateText() {
         if (stateText == null) return;
-        stateText.text = string.IsNullOrEmpty(_baseMessage)
+        string text = string.IsNullOrEmpty(_baseMessage)
             ? string.Empty
             : _baseMessage + new string('.', _dotCount);
+
+        // 실패 원인은 한 줄 아래에 작게 붙인다. 예외 메시지에 '<' 등이 섞여도 태그로 읽히지 않게 noparse 로 감싼다.
+        if (!string.IsNullOrEmpty(_failDetail))
+            text += $"\n<size={FailDetailSize}>(<noparse>{_failDetail}</noparse>)</size>";
+        if (_retryOnTap)
+            text += $"\n<size={FailDetailSize}>{RetryHint}</size>";
+        stateText.text = text;
+    }
+
+    // 새 부트가 시작되면(재시도 포함) 이전 실패 표시와 터치 재시도를 거둔다.
+    private void ClearFailure() {
+        _failDetail = string.Empty;
+        if (!_retryOnTap) return;
+        _retryOnTap = false;
+        if (pressToStartArea != null) pressToStartArea.gameObject.SetActive(false);
+    }
+
+    private void EnableTapToRetry() {
+        _retryOnTap = true;
+        // 로딩 패널은 실패 문구를 보여 주느라 켜져 있다. 터치가 그 패널에 막히지 않도록 입력만 통과시킨다.
+        if (loadingGroup != null) loadingGroup.blocksRaycasts = false;
+        if (pressToStartArea != null) pressToStartArea.gameObject.SetActive(true);
+        RefreshStateText();
     }
 
     // ── 표시 토글 ───────────────────────────────────────────
@@ -275,7 +345,14 @@ public class TitleSceneManager : MonoBehaviour {
         }
     }
 
-    private void OnPressToStart() => StartGameAsync().Forget();
+    private void OnPressToStart() {
+        if (_retryOnTap) {
+            ClearFailure();
+            _bootFlow.RunAsync().Forget();
+            return;
+        }
+        StartGameAsync().Forget();
+    }
 
     // 첫 터치에만 반응하고(중복 전환 방지), 깜빡임/입력을 끈 뒤 다음 씬으로 전환한다.
     private async UniTaskVoid StartGameAsync() {

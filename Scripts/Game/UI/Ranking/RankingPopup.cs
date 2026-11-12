@@ -24,10 +24,12 @@ public sealed class RankingPopup : UIView, IHudPopup, IHudPopupTab {
         RankingCategory.GuildCombatPower,
         RankingCategory.Achievement,
         RankingCategory.ArenaScore,
+        RankingCategory.RepresentativePower,
+        RankingCategory.DoomScore,
     };
 
     [Header("Tabs")]
-    [Tooltip("탭 버튼(유저 / 길드 / 업적 / 쟁탈전 순).")]
+    [Tooltip("탭 버튼(유저 / 길드 / 업적 / 쟁탈전 / 대표 소녀 / 멸망전 순).")]
     [SerializeField] private UITabButton[] tabButtons;
     [Tooltip("탭 페이지(탭 버튼과 같은 순서).")]
     [SerializeField] private GameObject[] tabPages;
@@ -35,15 +37,19 @@ public sealed class RankingPopup : UIView, IHudPopup, IHudPopupTab {
     [SerializeField] private Transform[] rankRoots;
 
     [Header("Slot Prefabs")]
-    [Tooltip("탭별 줄 프리팹(탭과 같은 순서: 유저 / 길드 / 업적). 랭킹마다 보여 주는 값이 달라 프리팹을 따로 둔다.")]
+    [Tooltip("탭별 줄 프리팹(탭과 같은 순서: 유저 / 길드 / 업적 / 쟁탈전 / 대표 소녀 / 멸망전). 랭킹마다 보여 주는 값이 달라 프리팹을 따로 둔다.")]
     [SerializeField] private RankingSlot[] slotPrefabs;
 
     [Header("My Rank")]
-    [Tooltip("내 순위. 순위권 밖이면 안내 문구가 들어가며, 구간별 색은 RankColorCatalog 가 정한다.")]
-    [SerializeField] private RankText myRankText;
-    [Tooltip("내 점수(전투력 또는 업적 점수).")]
-    [SerializeField] private TMP_Text myScoreText;
-    [Tooltip("선택. 집계 시각 안내(예: '10:20 기준').")]
+    [Tooltip("내 순위 칸. 목록 줄과 같은 RankingSlot 컴포넌트로, 순위/점수/닉네임/초상화/테두리/길드 마크 등 " +
+             "배치한 칸만 채운다. 탭마다 그 랭킹의 내 값으로 바뀐다. 순위 RankText 는 Number Only 를 꺼 두면 " +
+             "순위권 밖일 때 안내 문구가 나온다.")]
+    [SerializeField] private RankingSlot mySlot;
+    [Tooltip("선택. 내 순위 칸의 점수 아이콘(전투력 / 쟁탈전 점수 등). 탭마다 아래 스프라이트로 바뀐다.")]
+    [SerializeField] private Image myScoreIcon;
+    [Tooltip("탭별 점수 아이콘 스프라이트(탭과 같은 순서). 비어 있는 칸은 아이콘을 끈다.")]
+    [SerializeField] private Sprite[] myScoreIconSprites;
+    [Tooltip("선택. 집계 시각 안내(예: '10시 20분').")]
     [SerializeField] private TMP_Text updatedText;
     [Tooltip("선택. 순위가 하나도 없을 때 켜는 안내(탭과 같은 순서). 비워 두면 표시하지 않는다.")]
     [SerializeField] private GameObject[] emptyLabels;
@@ -171,15 +177,38 @@ public sealed class RankingPopup : UIView, IHudPopup, IHudPopupTab {
     }
 
     private void ApplyMyRank(RankingCategory category, RankingBoardDto board) {
-        // 순위 표기와 색은 프로필 팝업과 같은 컴포넌트를 쓴다(한 게임 안에서 표기가 갈리지 않게).
-        if (myRankText != null) myRankText.SetRank(board.MyRank);
-        if (myScoreText != null) myScoreText.text = ScoreText(category, board.MyScore);
+        ApplyMySlot(category, board);
+        ApplyMyScoreIcon(category);
         if (updatedText != null) {
             bool has = board.UpdatedUnix > 0;
             updatedText.gameObject.SetActive(has);
-            if (has) updatedText.text = $"{KstTime.From(board.UpdatedUnix):HH:mm} 기준";
+            if (has) updatedText.text = $"{KstTime.From(board.UpdatedUnix):HH'시' mm'분'}";
         }
     }
+
+    // 내 순위 칸은 목록 줄과 같은 컴포넌트로 그린다(목록에서 나를 찾은 것과 같은 모습이 되게).
+    // 프로필 버튼은 내 칸에서는 쓰지 않으므로 넘기지 않는다.
+    private void ApplyMySlot(RankingCategory category, RankingBoardDto board) {
+        if (mySlot == null) return;
+
+        string score = ScoreText(category, board.MyScore);
+        var mine = board.Mine;
+        if (mine == null) mySlot.BindEmpty(category == RankingCategory.GuildCombatPower ? NoGuildText : "", score);
+        else if (category == RankingCategory.GuildCombatPower) mySlot.BindGuild(mine, markCatalog, score, false);
+        else mySlot.BindUser(mine, _ctx, markCatalog, score, false, null);
+    }
+
+    private void ApplyMyScoreIcon(RankingCategory category) {
+        if (myScoreIcon == null) return;
+        int tab = Array.IndexOf(TabCategories, category);
+        var sprite = myScoreIconSprites != null && tab >= 0 && tab < myScoreIconSprites.Length
+            ? myScoreIconSprites[tab] : null;
+        myScoreIcon.sprite = sprite;
+        myScoreIcon.gameObject.SetActive(sprite != null);
+    }
+
+    /// <summary>길드 랭킹에서 무소속일 때 내 순위 칸의 이름 자리에 넣는 문구.</summary>
+    private const string NoGuildText = "소속 길드 없음";
 
     // 전투력은 숫자 그대로, 업적은 점수 단위를 붙인다. 표시 규칙이 한 곳에만 있도록 여기서 정한다.
     private static string ScoreText(RankingCategory category, long score) =>

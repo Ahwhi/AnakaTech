@@ -35,6 +35,8 @@ public enum TutorialAnchorId {
     GachaCharacterBanner = 20,     // 가챠 메뉴에서 소녀 모집 배너
     GachaEquipBanner = 21,         // 가챠 메뉴에서 장비 모집 배너
     GachaDrawButton = 22,          // 실제 모집 실행 버튼
+    GachaResultClose = 23,         // 모집 결과 연출 팝업을 닫는 자리("탭하여 닫기" 안내)
+    GachaMenuClose = 24,           // 가챠 메뉴 팝업의 닫기 버튼
 
     // 편성 / 성장 ───────────────────────────────
     DeckCharacterCard = 30,        // 덱 팝업 좌측 소녀 카드(여러 개면 첫 카드)

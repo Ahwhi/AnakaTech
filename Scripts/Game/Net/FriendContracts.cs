@@ -45,6 +45,8 @@ public sealed class FriendUserDto {
     public long CreatedUnix;
     /// <summary>지금 접속 중인지. 접속 표시를 내려주는 목록(친구 탭)에서만 의미가 있다.</summary>
     public bool IsOnline;
+    /// <summary>오늘 이 친구가 나에게 기력을 보냈는지(받았든 안 받았든). 친구 탭에서만 의미가 있다.</summary>
+    public bool StaminaSentToMe;
     /// <summary>
     /// 접속 여부를 알고 있는 줄인지. 신청/차단 탭은 서버가 접속 여부를 내려주지 않으므로 false 다.
     /// IsOnline 하나만 보면 "모름"과 "접속 안 함"이 구분되지 않아 오프라인으로 단정해 버린다.
@@ -62,6 +64,38 @@ public sealed class FriendHomeDto {
     public List<FriendUserDto> Blocked = new();
 
     public bool IsFull => MaxFriends > 0 && Friends.Count >= MaxFriends;
+}
+
+/// <summary>
+/// 친구 기력 선물의 지금 상태(오늘 기준, 하루 상한 반영). 서버가 센 값이며 친구 팝업 버튼과 배지의 근거다.
+/// 보낼 친구가 남아 있으면 보내기가 우선이고, 다 보낸 뒤에 받을 기력이 있으면 받기다.
+/// </summary>
+public readonly struct FriendStaminaState {
+    /// <summary>지금 보낼 수 있는 친구 수.</summary>
+    public readonly int Sendable;
+    /// <summary>지금 받을 수 있는 기력.</summary>
+    public readonly int Claimable;
+
+    public FriendStaminaState(int sendable, int claimable) {
+        Sendable = sendable;
+        Claimable = claimable;
+    }
+
+    public bool CanSend => Sendable > 0;
+    public bool CanClaim => !CanSend && Claimable > 0;
+    /// <summary>할 일이 있는지(배지 근거).</summary>
+    public bool HasAction => Sendable > 0 || Claimable > 0;
+}
+
+/// <summary>기력 선물 보내기/받기 결과.</summary>
+public sealed class FriendStaminaResultDto {
+    public bool IsSuccess;
+    public int FailReason;
+    /// <summary>보낸 친구 수(보내기) 또는 받은 기력(받기).</summary>
+    public int Amount;
+    /// <summary>받은 뒤 기력(받기만 의미가 있다).</summary>
+    public int NewStamina;
+    public FriendStaminaState State;
 }
 
 /// <summary>친구 쓰기 작업 결과. 처리 후의 관계가 함께 와서 프로필 팝업이 재조회 없이 버튼을 갱신한다.</summary>
@@ -126,6 +160,18 @@ public interface IFriendService {
     /// 접속 중 신청이 오거나 취소되면 서버 푸시(S_FriendNotify)로 즉시 갱신된다.
     /// </summary>
     IReadOnlyReactiveProperty<int> PendingRequests { get; }
+
+    /// <summary>
+    /// 친구 기력 선물 상태. 배지와 친구 팝업 버튼이 구독한다. 친구 목록 조회, 보내기/받기 응답,
+    /// 친구가 나에게 보냈을 때의 서버 푸시(S_FriendNotify)로 갱신된다.
+    /// </summary>
+    IReadOnlyReactiveProperty<FriendStaminaState> StaminaState { get; }
+
+    /// <summary>오늘 안 보낸 친구 전원에게 기력을 보낸다.</summary>
+    UniTask<FriendStaminaResultDto> SendStaminaAsync(CancellationToken ct = default);
+
+    /// <summary>오늘 받은 기력 선물을 모두 받는다.</summary>
+    UniTask<FriendStaminaResultDto> ClaimStaminaAsync(CancellationToken ct = default);
 
     UniTask<FriendHomeDto> RequestHomeAsync(CancellationToken ct = default);
 

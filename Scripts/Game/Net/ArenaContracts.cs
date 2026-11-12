@@ -23,6 +23,8 @@ public sealed class ArenaHomeDto {
     public long SeasonEndUnix;
     /// <summary>내가 방어자인 가장 최근 기록의 id(0 = 없음). 내역 버튼 알림의 근거다.</summary>
     public long LastDefenseLogId;
+    /// <summary>장착 룬(저장한 적 없으면 서버가 기본 구성을 보낸다).</summary>
+    public ArenaRuneLoadout Runes = ArenaRuneLoadout.Default();
 
     /// <summary>지금 매칭할 수 있는지(횟수가 남아 있는지).</summary>
     public bool CanMatch => NextEntryCost >= 0;
@@ -43,6 +45,28 @@ public sealed class ArenaMatchResultDto {
     public int NewDiamond;
     public int UsedEntries;
     public int NextEntryCost;
+    /// <summary>양쪽 장착 룬(이 판의 전투 보정).</summary>
+    public ArenaRuneLoadout MyRunes = ArenaRuneLoadout.Default();
+    public ArenaRuneLoadout OpponentRunes = ArenaRuneLoadout.Default();
+}
+
+/// <summary>룬 저장 결과. 실패해도 Runes 는 서버가 가진 구성이다.</summary>
+public sealed class ArenaSetRunesResultDto {
+    public bool IsSuccess;
+    public int FailReason;
+    public ArenaRuneLoadout Runes = ArenaRuneLoadout.Default();
+}
+
+/// <summary>역대 전적 1줄(진행 중 시즌 또는 지난 시즌 기록).</summary>
+public sealed class ArenaSeasonRecordDto {
+    /// <summary>KST "yyyy-MM".</summary>
+    public string SeasonKey = "";
+    public int Score;
+    public int Wins;
+    public int Losses;
+    /// <summary>시즌 최종 순위(진행 중이면 현재 순위). 0 = 순위권 밖.</summary>
+    public int Rank;
+    public bool IsCurrent;
 }
 
 /// <summary>전투 결과 보고의 반영 결과.</summary>
@@ -109,6 +133,12 @@ public interface IArenaService {
                                               CancellationToken ct = default);
 
     UniTask<ArenaLogDto> RequestLogAsync(CancellationToken ct = default);
+
+    /// <summary>룬 장착 저장.</summary>
+    UniTask<ArenaSetRunesResultDto> SetRunesAsync(ArenaRuneLoadout runes, CancellationToken ct = default);
+
+    /// <summary>역대 전적(맨 앞이 진행 중 시즌, 이후 지난 시즌 최신순).</summary>
+    UniTask<List<ArenaSeasonRecordDto>> RequestHistoryAsync(CancellationToken ct = default);
 
     /// <summary>무료 매칭 잔여 여부만 최신화한다(배지 초기 로드용). 실패해도 조용히 넘어간다.</summary>
     UniTask RefreshAsync(CancellationToken ct = default);

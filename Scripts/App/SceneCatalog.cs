@@ -18,12 +18,27 @@ public sealed class SceneCatalog : ScriptableObject {
     [SerializeField] private AssetReference guildRaidScene;
     [Tooltip("유저 대 유저 전투 씬. 길드 대항전의 '공격'(향후 아레나 등)에서 진입할 대상.")]
     [SerializeField] private AssetReference pvpBattleScene;
+    [Tooltip("멸망전 씬. 메인의 멸망전 팝업에서 '도전 시작' 으로 진입할 대상.")]
+    [SerializeField] private AssetReference doomScene;
     [Tooltip("스토리 씬. StoryPlaybackRequest 로 재생할 스토리와 끝난 뒤 갈 씬을 예약하고 진입한다.")]
     [SerializeField] private AssetReference storyScene;
+    [Tooltip("원정대 씬. 원정대 팝업의 장소 카드에서 입장할 대상.")]
+    [SerializeField] private AssetReference expeditionScene;
+    [Tooltip("무한 타워 씬. 무한 타워 팝업의 등반 버튼에서 진입할 대상.")]
+    [SerializeField] private AssetReference towerScene;
+    [Tooltip("전선 씬. 전선 팝업의 참여 버튼에서 진입할 대상.")]
+    [SerializeField] private AssetReference frontlineScene;
+    [Tooltip("영웅전 씬. 영웅전 팝업의 도전 버튼에서 진입할 대상.")]
+    [SerializeField] private AssetReference heroesScene;
 
     public AssetReference MainScene => mainScene;
     public AssetReference CommissionScene => commissionScene;
     public AssetReference GuildRaidScene => guildRaidScene;
     public AssetReference PvpBattleScene => pvpBattleScene;
+    public AssetReference DoomScene => doomScene;
     public AssetReference StoryScene => storyScene;
+    public AssetReference ExpeditionScene => expeditionScene;
+    public AssetReference TowerScene => towerScene;
+    public AssetReference FrontlineScene => frontlineScene;
+    public AssetReference HeroesScene => heroesScene;
 }

@@ -71,6 +71,15 @@ public sealed class GachaMenuPopup : UIView, IHudPopup {
     [Tooltip("무료 뽑기 안내/남은 시간 텍스트(선택). 무료 대상 라인에서 '무료 뽑기 가능' 또는 '무료까지 HH:MM:SS'.")]
     [SerializeField] private TMP_Text freeTimerText;
 
+    [Header("Mileage (모집 마일리지)")]
+    [Tooltip("마일리지 게이지. 한 번 쓸 분량(20,000)을 가득 찬 것으로 본다. 그 이상 모아도 가득 찬 채로 멈추고 " +
+             "정확한 양은 아래 텍스트가 알려 준다. 0~1 범위로 다루므로 Min/Max 는 건드릴 필요가 없다.")]
+    [SerializeField] private Slider mileageSlider;
+    [Tooltip("보유 마일리지 문구(예: 34,000 / 20,000). 상한으로 잘라 표시하지 않는다.")]
+    [SerializeField] private TMP_Text mileageText;
+    [Tooltip("마일리지 픽업 팝업을 여는 버튼. 마일리지가 모자라면 꺼진다.")]
+    [SerializeField] private Button mileagePickButton;
+
     [Header("Rates")]
     [Tooltip("확률 보기 버튼(선택).")]
     [SerializeField] private Button ratesButton;
@@ -134,6 +143,7 @@ public sealed class GachaMenuPopup : UIView, IHudPopup {
             if (ratesButton != null) ratesButton.onClick.AddListener(() => { _hud.Sound.PlaySfx(SfxKey.ButtonClick); OpenRatesAsync().Forget(); });
             if (rotationInfoButton != null) rotationInfoButton.onClick.AddListener(() => { _hud.Sound.PlaySfx(SfxKey.ButtonClick); OpenRotationInfoAsync().Forget(); });
             if (rotationDetailButton != null) rotationDetailButton.onClick.AddListener(() => { _hud.Sound.PlaySfx(SfxKey.ButtonClick); OpenPickupDetailAsync().Forget(); });
+            if (mileagePickButton != null) mileagePickButton.onClick.AddListener(() => { _hud.Sound.PlaySfx(SfxKey.ButtonClick); OpenMileagePickAsync().Forget(); });
             if (closeButton != null) closeButton.onClick.AddListener(() => { _hud.Sound.PlaySfx(SfxKey.ButtonClick); CloseAsync().Forget(); });
             _wired = true;
         }
@@ -204,7 +214,74 @@ public sealed class GachaMenuPopup : UIView, IHudPopup {
         if (rotationInfoButton != null) rotationInfoButton.gameObject.SetActive(CurrentPickup().Has);
 
         UpdateFreeUI();
+        UpdateMileage();
     }
+
+    /// <summary>
+    /// 마일리지 게이지/버튼 갱신.
+    ///
+    /// 어느 탭에서 보이게 할지는 코드가 정하지 않는다. 탭의 contentRoots 에 마일리지 묶음을 넣어 두면
+    /// 그 탭에서만 켜지고, 같은 오브젝트를 여러 탭에 넣을 수도 있다(특수 소녀/특수 장비 두 곳에 넣으면 된다).
+    /// 그래서 여기서는 값만 채우고 표시 여부는 건드리지 않는다.
+    /// </summary>
+    private void UpdateMileage() {
+        int mileage = _hud.Store.GachaMileage.Value;
+
+        if (mileageSlider != null) {
+            mileageSlider.minValue = 0f;
+            mileageSlider.maxValue = 1f;
+            mileageSlider.SetValueWithoutNotify(GachaMileageRules.Fill(mileage));
+        }
+        if (mileageText != null) mileageText.text = GachaMileageRules.Describe(mileage);
+
+        // 모자라도 열 수 있게 둔다. 버튼이 죽어 있으면 마일리지가 무엇에 쓰는 것인지 알 방법이 없어서,
+        // 모으는 이유 자체가 전달되지 않는다. 무엇을 받을 수 있는지 먼저 보여 주고,
+        // 실제 소모는 팝업 안에서 막는다(MileagePickPopup).
+        if (mileagePickButton != null) mileagePickButton.interactable = true;
+    }
+
+    /// <summary>
+    /// 마일리지 픽업. 고른 소녀를 서버가 확정해 주고, 그 결과를 모집 1회와 똑같은 연출로 보여 준다.
+    /// 지급 경로가 모집과 같아서(GrantCharacter) 결과 모양도 같고, 중복이면 조각이 들어온다.
+    /// </summary>
+    private async UniTaskVoid OpenMileagePickAsync() {
+        if (_busy) return;
+        var reference = _hud.Popups.MileagePickPopup;
+        if (reference == null || !reference.RuntimeKeyIsValid()) return;
+
+        _busy = true;
+        try {
+            var popup = await _hud.Ui.ShowPopupAsync<MileagePickPopup>(reference, _ct);
+            int charDataId = await popup.ShowAsync(_hud, _ct);
+            if (charDataId == 0) return;
+
+            var res = await _hud.Shop.PickWithMileageAsync(charDataId, _ct);
+            if (!res.IsSuccess) { _hud.Ui.ShowToast(MileagePickFailMessage(res.FailReason)); return; }
+
+            // 서버 확정 잔액을 먼저 반영한다(연출 중에 게이지가 옛 값으로 남지 않게).
+            _hud.Store.SetCurrency(CurrencyType.GachaMileage, res.NewMileage);
+
+            // 모집과 같은 경로로 보유 목록에 반영한다. 이것을 빠뜨리면 새로 받은 소녀가
+            // 다시 접속할 때까지 편성/도감에 나타나지 않는다(모집은 ShopPurchaseHelper 가 해 준다).
+            var rolls = new List<GachaRollDto> { res.ToRoll() };
+            _hud.Store.ApplyGachaRolls(rolls);
+
+            await AnimateCharAsync(rolls);
+        } catch (OperationCanceledException) {
+        } catch (Exception e) {
+            Debug.LogException(e);
+            _hud.Ui.ShowToast("픽업에 실패했습니다.");
+        } finally {
+            _busy = false;
+            Refresh();
+        }
+    }
+
+    private static string MileagePickFailMessage(int fail) => fail switch {
+        1 => "고를 수 없는 소녀입니다.",
+        2 => "마일리지가 부족합니다.",
+        _ => "픽업할 수 없습니다."
+    };
 
     // 뽑기 버튼 표시: 모집권 아이콘 + 사용 매수(x1/x10) 고정. 다이아 표시/빨강/비활성 없음(부족은 눌렀을 때 구매로 유도).
     private void ConfigPull(Button btn, ShopOfferDto offer, Image ticketIcon, TMP_Text ticketText) {

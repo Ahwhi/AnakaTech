@@ -45,10 +45,18 @@ public readonly struct PkceCodes {
 }
 
 /// <summary>
-/// 시스템 브라우저로 로그인시키고, 앱으로 돌아오는 딥링크에서 인가 코드를 받아 오는 흐름.
+/// 제공자의 로그인 페이지를 띄우고, 돌아온 주소에서 인가 코드를 받아 오는 흐름.
 ///
-/// 앱 안에 웹뷰를 띄우지 않고 시스템 브라우저를 쓰는 이유는, 이미 로그인된 세션을 그대로 쓸 수 있고
-/// 사용자가 주소창으로 진짜 제공자 페이지임을 확인할 수 있기 때문이다(제공자들이 요구하는 방식이기도 하다).
+/// 페이지를 띄우는 방법은 플랫폼마다 다르고, 이 클래스가 그 차이를 흡수한다.
+///   iOS  - 앱 위에 뜨는 인증 시트(WebAuthNative). 콜백 주소를 시트가 직접 돌려준다.
+///   그 외 - 시스템 브라우저를 열고, 앱으로 돌아오는 딥링크에서 콜백 주소를 받는다.
+///
+/// iOS 가 브라우저로 나가지 않는 이유는 두 가지다. 앱을 벗어나 로그인시키면 애플 심사에서 거절되고,
+/// 인증 시트는 주소창과 인증서 표시를 그대로 갖고 있어 앱 안 웹뷰와 달리 제공자들도 허용한다.
+/// 어느 쪽이든 사용자가 진짜 제공자 페이지임을 확인할 수 있고, 기기에 남은 로그인 세션도 그대로 쓴다.
+///
+/// 돌아온 주소를 해석하는 규칙(error, state, code)은 제공자와 플랫폼에 무관한 OAuth 규격이라
+/// 어느 경로로 받았든 같은 검사를 거친다.
 ///
 /// 한 번에 하나의 로그인만 진행된다(LoginManager 가 중복 탭을 막는다). 그래서 대기 중인 요청도 하나만 둔다.
 /// </summary>
@@ -63,11 +71,26 @@ public static class OAuthBrowserFlow {
     private static bool _leftApp;   // 브라우저가 떠서 앱이 포커스를 잃은 적이 있는지
 
     /// <summary>
-    /// 브라우저를 열고 지정한 스킴으로 돌아올 때까지 기다린 뒤, 인가 코드를 돌려준다.
+    /// 로그인 페이지를 열고 지정한 스킴으로 돌아올 때까지 기다린 뒤, 인가 코드를 돌려준다.
     /// 사용자가 취소하거나 응답이 어긋나면 OperationCanceledException 또는 InvalidOperationException 을 던진다.
     /// </summary>
+    /// <param name="redirectScheme">돌아올 때 쓰는 스킴 이름(예: anaka). 콜론이나 슬래시를 붙이지 않는다.</param>
     public static async UniTask<string> RequestAuthorizationCodeAsync(
         string authorizeUrl, string redirectScheme, string expectedState, CancellationToken ct) {
+
+        string returnedUrl = WebAuthNative.IsSupported
+            ? await WebAuthNative.AuthenticateAsync(authorizeUrl, redirectScheme, ct)
+            : await OpenSystemBrowserAndWaitAsync(authorizeUrl, redirectScheme, ct);
+
+        return ReadAuthorizationCode(returnedUrl, expectedState);
+    }
+
+    /// <summary>
+    /// 시스템 브라우저로 로그인시키고, 앱으로 돌아오는 딥링크에서 콜백 주소를 받는다.
+    /// 앱 안 인증 시트를 쓸 수 없는 플랫폼(안드로이드)의 경로다.
+    /// </summary>
+    private static async UniTask<string> OpenSystemBrowserAndWaitAsync(
+        string authorizeUrl, string redirectScheme, CancellationToken ct) {
 
         EnsureSubscribed();
 
@@ -80,30 +103,34 @@ public static class OAuthBrowserFlow {
         try {
             Application.OpenURL(authorizeUrl);
 
-            string returnedUrl;
             using (ct.Register(() => _pending?.TrySetCanceled()))
-                returnedUrl = await _pending.Task;
-
-            var query = ParseQuery(returnedUrl);
-
-            // 사용자가 동의를 거부하면 error=access_denied 로 돌아온다. 실패가 아니라 취소로 다룬다.
-            if (query.TryGetValue("error", out var error)) {
-                if (error == "access_denied") throw new OperationCanceledException();
-                throw new InvalidOperationException($"인증 서버가 오류를 반환했습니다: {error}");
-            }
-
-            // 내가 보낸 요청에 대한 응답인지 확인한다. 다르면 다른 요청의 응답이거나 위조다.
-            if (!query.TryGetValue("state", out var state) || state != expectedState)
-                throw new InvalidOperationException("인증 응답의 state 가 일치하지 않습니다.");
-
-            if (!query.TryGetValue("code", out var code) || string.IsNullOrEmpty(code))
-                throw new InvalidOperationException("인증 응답에 코드가 없습니다.");
-
-            return code;
+                return await _pending.Task;
         } finally {
             _pending = null;
             _pendingScheme = null;
         }
+    }
+
+    /// <summary>
+    /// 돌아온 콜백 주소에서 인가 코드를 꺼낸다. 어느 경로로 받았든 검사 기준은 같다(OAuth 규격).
+    /// </summary>
+    private static string ReadAuthorizationCode(string returnedUrl, string expectedState) {
+        var query = ParseQuery(returnedUrl);
+
+        // 사용자가 동의를 거부하면 error=access_denied 로 돌아온다. 실패가 아니라 취소로 다룬다.
+        if (query.TryGetValue("error", out var error)) {
+            if (error == "access_denied") throw new OperationCanceledException();
+            throw new InvalidOperationException($"인증 서버가 오류를 반환했습니다: {error}");
+        }
+
+        // 내가 보낸 요청에 대한 응답인지 확인한다. 다르면 다른 요청의 응답이거나 위조다.
+        if (!query.TryGetValue("state", out var state) || state != expectedState)
+            throw new InvalidOperationException("인증 응답의 state 가 일치하지 않습니다.");
+
+        if (!query.TryGetValue("code", out var code) || string.IsNullOrEmpty(code))
+            throw new InvalidOperationException("인증 응답에 코드가 없습니다.");
+
+        return code;
     }
 
     // 앱이 이미 떠 있는 상태로 돌아오는 경우와, 딥링크로 새로 실행되는 경우를 모두 받는다.

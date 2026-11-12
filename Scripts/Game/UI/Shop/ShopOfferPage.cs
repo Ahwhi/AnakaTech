@@ -49,6 +49,10 @@ public sealed class ShopOfferPage : MonoBehaviour {
     [Tooltip("확률 보기 버튼. 선택 상품이 확률 표기 가능(HasRates: 가챠/랜덤 등급 상품)일 때만 노출.")]
     [SerializeField] private Button ratesButton;
 
+    [Header("Costume Preview (선택)")]
+    [Tooltip("코스튬 미리보기 버튼. 선택 상품의 구성품이 코스튬 1개일 때만 노출하고, 누르면 미리보기 팝업을 연다.")]
+    [SerializeField] private Button costumePreviewButton;
+
     [Header("Withdrawal (현금 결제 상품 전용, 선택)")]
     [Tooltip("청약철회 안내 문구 + 규정 보기 버튼을 담는 루트. 현금(cash) 결제 상품을 선택했을 때만 켠다.")]
     [SerializeField] private GameObject withdrawalGroup;
@@ -102,6 +106,8 @@ public sealed class ShopOfferPage : MonoBehaviour {
 
         if (buyButton != null) buyButton.onClick.AddListener(() => { _hud.Sound.PlaySfx(SfxKey.ButtonClick); OnBuy(); });
         if (ratesButton != null) ratesButton.onClick.AddListener(() => { _hud.Sound.PlaySfx(SfxKey.ButtonClick); OpenRatesAsync().Forget(); });
+        if (costumePreviewButton != null)
+            costumePreviewButton.onClick.AddListener(() => { _hud.Sound.PlaySfx(SfxKey.ButtonClick); OpenCostumePreviewAsync().Forget(); });
         // 충전보상 버튼은 서브탭과 무관하게 상시 노출한다(프리팹에서 꺼둔 채 저장돼도 켜지도록 여기서 확정).
         if (chargeRewardButton != null) {
             chargeRewardButton.gameObject.SetActive(true);
@@ -220,15 +226,16 @@ public sealed class ShopOfferPage : MonoBehaviour {
         if (first != null) SelectItem(first);
     }
 
-    // 오퍼 종류에 맞는 카드 프리팹을 생성한다. 구성품 미러에 등록된 패키지/세트 오퍼와
-    // 한정 판매 상품은 구성품 표시가 가능한 전용 카드를 쓴다(한정 판매는 구성을 보여 주는 것이 상품의 전부다).
+    // 오퍼 종류에 맞는 카드 프리팹을 생성한다. 구성품 미러에 등록된 패키지/세트 오퍼, 한정 판매 상품,
+    // 구성품이 둘 이상인 상품은 구성품 표시가 가능한 전용 카드를 쓴다. 마지막 조건 덕분에 서버에 새 패키지를
+    // 추가해도 클라 미러를 고치지 않고 구성품 카드로 나타난다(구성은 서버가 보낸 지급 목록으로 그린다).
     private ShopItemCard SpawnCard(ShopOfferDto o) =>
         packageItemCardPrefab != null && UsesPackageCard(o)
             ? Instantiate(packageItemCardPrefab, itemGrid)
             : Instantiate(itemCardPrefab, itemGrid);
 
     private static bool UsesPackageCard(ShopOfferDto o) =>
-        o.Flash || ShopPackageRewards.IsPackage(o.OfferId);
+        o.Flash || ShopPackageRewards.IsPackage(o.OfferId) || (!o.IsGacha && o.Grants.Count >= 2);
 
     // 카드에 그릴 구성품. 미러에 등록된 상품은 그 값을 쓰고, 한정 판매처럼 등록되지 않은 상품은
     // 서버가 함께 보내 준 지급 목록을 그대로 쓴다(새 상품이 늘어도 클라를 고칠 일이 없다).
@@ -271,6 +278,9 @@ public sealed class ShopOfferPage : MonoBehaviour {
         // 확률 표기 가능 상품(가챠/랜덤 등급 상품)만 확률 보기 버튼 노출.
         if (ratesButton != null) ratesButton.gameObject.SetActive(offer.HasRates);
 
+        // 코스튬 상품만 미리보기 버튼 노출.
+        if (costumePreviewButton != null) costumePreviewButton.gameObject.SetActive(CostumeOf(offer) != null);
+
         // 현금(인앱) 결제 상품만 청약철회 안내/규정 버튼 노출.
         bool cash = offer.Currency == CurrencyIcon.CashKey;
         if (withdrawalGroup != null) withdrawalGroup.SetActive(cash);
@@ -287,11 +297,13 @@ public sealed class ShopOfferPage : MonoBehaviour {
         _detailRewardSlots.Clear();
 
         // 가챠는 결과가 확률로 정해져 구성품이 없다(확률 보기 버튼으로 안내).
-        bool hasGrants = offer != null && offer.Grants != null && offer.Grants.Count > 0;
+        // 구성품은 카드 미리보기와 같은 출처(미러 우선, 없으면 서버 지급 목록)를 써서 카드와 상세가 어긋나지 않게 한다.
+        var grants = ShopPackageRewards.DisplayGrants(offer);
+        bool hasGrants = grants.Count > 0;
         if (detailRewardGroup != null) detailRewardGroup.SetActive(hasGrants);
         if (!hasGrants || detailRewardRoot == null || detailRewardSlotPrefab == null) return;
 
-        foreach (var item in offer.Grants) {
+        foreach (var item in grants) {
             var slot = Instantiate(detailRewardSlotPrefab, detailRewardRoot);
             slot.Bind(RewardVisualResolver.Resolve(_hud, item));
             _detailRewardSlots.Add(slot);
@@ -334,7 +346,12 @@ public sealed class ShopOfferPage : MonoBehaviour {
     private void OnBuy() {
         if (_selected == null || _busy) return;
         if (_selected.SoldOut) { _hud.Ui.ShowToast("이미 구매한 상품입니다."); return; }
-        if (_selected.Locked) { _hud.Ui.ShowToast("지금은 구매할 수 없습니다."); return; }
+        if (_selected.Locked) {
+            _hud.Ui.ShowToast(_selected.RequiredGuildLevel > 0
+                ? ShopPurchaseHelper.GuildLevelRequiredMessage(_selected.RequiredGuildLevel)
+                : "지금은 구매할 수 없습니다.");
+            return;
+        }
 
         ConfirmThenBuyAsync(_selected).Forget();
     }
@@ -420,8 +437,9 @@ public sealed class ShopOfferPage : MonoBehaviour {
     // 실제 구매 + 결과 반영(공용 경로). 성공 시 결과 DTO, 실패 시 null 반환. 재화 부족(다이아/골드)은 확인 후 해당 페이지로 유도.
     private async UniTask<BuyResultDto> BuyAndApplyAsync(string offerId, int qty = 1) {
         // 결제 수단을 함께 넘긴다. 현금 상품이면 공용 경로가 스토어 결제부터 태운다.
-        string currency = _catalog?.Offers?.FirstOrDefault(o => o.OfferId == offerId)?.Currency;
-        var r = await ShopPurchaseHelper.BuyAndApplyAsync(_hud, offerId, qty, _ct, currency: currency);
+        var offer = _catalog?.Offers?.FirstOrDefault(o => o.OfferId == offerId);
+        var r = await ShopPurchaseHelper.BuyAndApplyAsync(_hud, offerId, qty, _ct, currency: offer?.Currency,
+                                                          nonConsumable: offer != null && offer.NonConsumable);
         if (!r.Result.IsSuccess) {
             // 사용자가 스토어 결제 창을 스스로 닫은 경우는 실패 안내를 띄우지 않는다(정상 경로다).
             if (r.Result.FailReason == ShopPurchaseHelper.CancelledFail) return null;
@@ -536,12 +554,36 @@ public sealed class ShopOfferPage : MonoBehaviour {
     // 크롭/확대하게 한다(그림 안의 어디를 볼지는 CostumeData 가 스스로 정한다).
     // 전용 상품 이미지를 등록해 둔 상품은 그 그림이 카드에 맞게 그려진 것이므로 아이콘 그대로 쓴다.
     private IIllustrationSource IllustrationFor(ShopOfferDto offer) {
-        if (offer.Grants == null || offer.Grants.Count != 1) return null;
-        if (offer.Grants[0].Kind != RewardItemKind.Costume) return null;
-        if (_hud == null || _hud.ShopIcons == null || _hud.CostumeDb == null) return null;
+        if (_hud == null || _hud.ShopIcons == null) return null;
         if (_hud.ShopIcons.Get(offer.ImageKey) != null) return null;
 
+        return CostumeOf(offer);
+    }
+
+    // 구성품이 코스튬 1개인 상품의 코스튬(그 외 상품이면 null). 카드 그림과 미리보기 버튼이 같은 판정을 쓴다.
+    private CostumeData CostumeOf(ShopOfferDto offer) {
+        if (offer == null || offer.Grants == null || offer.Grants.Count != 1) return null;
+        if (offer.Grants[0].Kind != RewardItemKind.Costume) return null;
+        if (_hud == null || _hud.CostumeDb == null) return null;
+
         return _hud.CostumeDb.Get(offer.Grants[0].RefId);
+    }
+
+    // 선택한 코스튬 상품의 미리보기(보기 전용). 구매는 이 페이지의 구매 버튼이 그대로 맡는다.
+    private async UniTaskVoid OpenCostumePreviewAsync() {
+        var costume = CostumeOf(_selected);
+        if (costume == null) return;
+
+        var reference = _hud.Popups.CostumePreviewPopup;
+        if (reference == null || !reference.RuntimeKeyIsValid()) return;
+        try {
+            var popup = await _hud.Ui.ShowPopupAsync<CostumePreviewPopup>(reference, _ct);
+            popup.Bind(_hud, costume.Id);
+            await popup.ShowAsync();
+        } catch (OperationCanceledException) {
+        } catch (Exception e) {
+            Debug.LogException(e);
+        }
     }
 
     private Sprite IconFor(string currency) => CurrencyIcon.ForKey(_hud, currency);
@@ -558,6 +600,7 @@ public sealed class ShopOfferPage : MonoBehaviour {
         "etc" => "기타",
         "profile_frame" => "테두리",
         "costume" => "코스튬",
+        "unit_skin" => "아웃핏",
         "stepup" => "스텝업",
         "daily" => "일간",
         "weekly" => "주간",

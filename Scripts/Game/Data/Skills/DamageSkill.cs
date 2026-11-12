@@ -44,6 +44,9 @@ public abstract class DamageSkill : UnitSkill {
     [SerializeField] private GameObject muzzleVfxPrefab;
     [Tooltip("머즐 VFX 를 발사 방향(발사 지점->대상)으로 회전시켜 재생할지. 방향성 있는 화염/시위 연출이면 켠다. 사방 대칭이면 끈다.")]
     [SerializeField] private bool orientMuzzleToDirection = true;
+    [Tooltip("체크 시 날아가는 도중 대상이 죽으면 발사체가 가장 가까운 생존 적으로 대상을 바꿔 계속 날아간다(허공에 버려지는 발사체가 없다). " +
+             "끄면 기존처럼 대상이 죽으면 효과 없이 사라진다. 대상에게 데미지를 꽂는 발사체(Hit/연쇄)에만 적용된다. 예: C4202 아이사.")]
+    [SerializeField] private bool projectileRetargetOnTargetLost;
 
     [Header("Timing (선택)")]
     [Tooltip("같은 대상에 대한 다단 히트 사이의 간격(초). 0이면 한 프레임에 동시 처리(뭉쳐 나감). " +
@@ -118,6 +121,7 @@ public abstract class DamageSkill : UnitSkill {
                 Prefab = projectilePrefab,
                 Speed = projectileSpeed,
                 FaceDirection = projectileFaceDirection,
+                RetargetOnTargetLost = projectileRetargetOnTargetLost,
                 OnHit = hit => { ApplyHit(ctx, hit.Target, multiplier, hit.Position); onArrive?.Invoke(hit.Position); }
             };
             PlayMuzzle(ctx, from, target.Position);
@@ -195,6 +199,7 @@ public abstract class DamageSkill : UnitSkill {
             Prefab = projectilePrefab,
             Speed = projectileSpeed,
             FaceDirection = projectileFaceDirection,
+            RetargetOnTargetLost = projectileRetargetOnTargetLost,
             OnHit = onArrive
         };
         PlayMuzzle(ctx, ctx.CastOrigin, target.Position);

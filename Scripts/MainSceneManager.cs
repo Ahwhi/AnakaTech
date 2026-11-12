@@ -44,6 +44,7 @@ public class MainSceneManager : MonoBehaviour {
     private IChatService _chat;
     private MainHudContext _hud;
     private UIPopupCatalog _popups;
+    private ISessionRecovery _recovery;
 
     [Inject]
     public void Construct(IMainDataService mainData, IInventoryService inventory, IEngravingService engraving, ICostumeService costume,
@@ -52,7 +53,7 @@ public class MainSceneManager : MonoBehaviour {
                           PlayerStateStore store, IUIService ui, BattleDirector battle, IHeartbeatService heartbeat,
                           IOfflineRewardPresenter offlineReward,
                           IFlashSaleService flashSale, IChatService chat,
-                          MainHudContext hud, UIPopupCatalog popups) {
+                          MainHudContext hud, UIPopupCatalog popups, ISessionRecovery recovery) {
         _mainData = mainData;
         _inventory = inventory;
         _engraving = engraving;
@@ -72,6 +73,7 @@ public class MainSceneManager : MonoBehaviour {
         _chat = chat;
         _hud = hud;
         _popups = popups;
+        _recovery = recovery;
     }
 
     private void Start() {
@@ -108,6 +110,12 @@ public class MainSceneManager : MonoBehaviour {
 
                 // 소모품은 전투에 영향을 주지 않지만, 덱 화면이 열리기 전에 받아 두면 목록이 빈 채로 뜨지 않는다.
                 _store.ApplyItems(await _item.RequestInfoAsync(ct));
+
+                // 범용 재화(파견 증명서/마일리지/모집권 등) 잔량. 메인 데이터에는 일부만 실려 오므로, 나머지는
+                // 상점 카탈로그의 지갑으로 한 번 맞춰 둔다. 빠뜨리면 그 재화를 스스로 받아 오지 않는 팝업
+                // (예: 파견)의 재화 패널이 상점을 한 번 다녀올 때까지 0 으로 보인다. 없어도 게임은 돌므로 실패해도 넘어간다.
+                await TryLoadAsync(async () => _store.ApplyShopCurrencies((await _hud.Shop.RequestShopAsync(ct)).Currencies),
+                                   "재화", ct);
 
                 // 의뢰 정보는 팝업을 열 때도 다시 받지만, 여기서 미리 받아야 입장권 알림 배지가 접속 직후부터 켜진다.
                 _store.ApplyCommissionInfo(await _commission.RequestInfoAsync(ct));
@@ -159,6 +167,21 @@ public class MainSceneManager : MonoBehaviour {
         // 최근 대화를 한 번 받아 둔다. 메인 화면의 채팅 한 줄이 접속 직후부터 채워져 있게 하는 것이 목적이고,
         // 이후 대화는 서버 푸시로 계속 쌓인다(채팅창을 열지 않아도 흐름이 이어진다).
         _chat.RefreshAsync(ct).Forget();
+
+        // 앱을 내려 두었다 돌아와 화면 그대로 다시 붙은 경우(ConnectionGuard), 메인 진입이 다시 일어나지 않는다.
+        // 끊겨 있던 동안 놓친 서버 푸시(우편/이벤트/대화/한정 판매)와 새 세션에서 받을 수 있는 오프라인 보상을 여기서 맞춘다.
+        _recovery.Recovered
+                 .Subscribe(_ => ResyncAfterRecovery(ct))
+                 .AddTo(this);
+    }
+
+    private void ResyncAfterRecovery(CancellationToken ct) {
+        _chat.RefreshAsync(ct).Forget();
+        _flashSale.RefreshAsync(ct).Forget();
+        if (_hud.Badges != null) _hud.Badges.RefreshAsync(ct).Forget();
+
+        // 오프라인 보상은 서버 기준(최소 오프라인 시간)을 넘겼을 때만 지급되므로, 잠깐 다녀온 경우에는 아무것도 뜨지 않는다.
+        _offlineReward.PresentAsync(ct).Forget();
     }
 
     /// <summary>
@@ -182,6 +205,10 @@ public class MainSceneManager : MonoBehaviour {
         if (reference == null || !reference.RuntimeKeyIsValid()) return;
 
         try {
+            // 절전 모드(잠금 화면) 중에 열린 판매는 바로 띄우지 않고, 유저가 잠금을 풀어 화면으로 돌아왔을 때 띄운다.
+            // 절전이 아니면 기다리지 않고 지나간다.
+            await UniTask.WaitUntil(() => !PowerSaveMode.Active.Value, cancellationToken: ct);
+
             var popup = await _ui.ShowPopupAsync<FlashSalePopup>(reference, ct);
             popup.Initialize(_hud);
             await popup.ShowAsync();

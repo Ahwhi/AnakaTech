@@ -61,7 +61,24 @@ public sealed class ArenaPopup : UIView, IHudPopup, IHudPopupTab {
     [Tooltip("다이아가 부족할 때 비용 문구에 적용할 색.")]
     [SerializeField] private Color insufficientColor = new Color(0.90f, 0.20f, 0.20f, 1f);
 
+    [Header("Runes")]
+    [Tooltip("장착 중인 룬 효과 줄이 생성될 부모(VerticalLayoutGroup 권장). 장착한 계열마다 한 줄.")]
+    [SerializeField] private Transform runeEffectContent;
+    [SerializeField] private ArenaRuneEffectRow runeEffectRowPrefab;
+    [Tooltip("계열별 룬 아이콘 에셋(룬 장착 팝업과 같은 것을 넣는다).")]
+    [SerializeField] private ArenaRuneIconTable runeIconTable;
+    [Tooltip("선택. 장착한 룬이 하나도 없을 때 켜는 안내.")]
+    [SerializeField] private GameObject runeEmptyNotice;
+    [Tooltip("RunePanel 의 LayoutAutoRebuild. 효과 줄 생성/켜고 끄기는 문자열 변화가 아니라 자동 감지에 안 걸리므로 직접 알린다.")]
+    [SerializeField] private LayoutAutoRebuild runeLayoutRebuild;
+    [Tooltip("선택. 사용 코스트(예: 7 / 7).")]
+    [SerializeField] private TMP_Text runeCostText;
+    [Tooltip("룬 장착 팝업을 여는 버튼.")]
+    [SerializeField] private Button runeButton;
+
     [Header("Buttons")]
+    [Tooltip("역대 전적 팝업을 여는 버튼.")]
+    [SerializeField] private Button historyButton;
     [Tooltip("보상 정보 팝업(공용)을 여는 버튼.")]
     [SerializeField] private Button rewardInfoButton;
     [Tooltip("쟁탈전 내역 팝업을 여는 버튼.")]
@@ -84,6 +101,7 @@ public sealed class ArenaPopup : UIView, IHudPopup, IHudPopupTab {
     private ArenaHomeDto _home;
     private bool _busy;
     private bool _shopBuilt;
+    private readonly List<ArenaRuneEffectRow> _runeRows = new();
     // 비용 문구의 평상시 색. 프리팹에서 정한 색을 그대로 쓰려고 첫 표시 때 한 번만 기억한다.
     private Color _costDefaultColor = Color.white;
     private bool _costColorCaptured;
@@ -112,6 +130,10 @@ public sealed class ArenaPopup : UIView, IHudPopup, IHudPopupTab {
             rewardInfoButton.onClick.AddListener(() => { _ctx.Sound.PlaySfx(SfxKey.ButtonClick); OpenRewardInfoAsync().Forget(); });
         if (logButton != null)
             logButton.onClick.AddListener(() => { _ctx.Sound.PlaySfx(SfxKey.ButtonClick); OpenLogAsync().Forget(); });
+        if (runeButton != null)
+            runeButton.onClick.AddListener(() => { _ctx.Sound.PlaySfx(SfxKey.ButtonClick); OpenRunesAsync().Forget(); });
+        if (historyButton != null)
+            historyButton.onClick.AddListener(() => { _ctx.Sound.PlaySfx(SfxKey.ButtonClick); OpenHistoryAsync().Forget(); });
     }
 
     private void BuildTabs() {
@@ -159,6 +181,7 @@ public sealed class ArenaPopup : UIView, IHudPopup, IHudPopupTab {
         if (freeEntryText != null) freeEntryText.text = ArenaRules.FreeEntryText(_home.UsedEntries);
 
         BuildMySquad();
+        BuildRunes();
 
         // 매칭 버튼: 무료분이 남았으면 "매칭", 유료면 "추가 매칭" + 비용, 다 썼거나 다이아가 모자라면 잠근다
         // (서버도 같은 규칙으로 막지만, 누를 수 없는 버튼을 보여 주지 않는 편이 낫다).
@@ -225,11 +248,12 @@ public sealed class ArenaPopup : UIView, IHudPopup, IHudPopupTab {
                 var progress = _ctx.Store.GetProgress(charId);
                 slot.Bind(_ctx.Appearance.Mine(charId),
                           progress != null ? progress.StarLevel : 0,
-                          progress != null ? progress.Level : 0);
+                          progress != null ? progress.Level : 0,
+                          progress != null && progress.LimitBroken);
             }
         }
         if (myPowerText != null)
-            myPowerText.text = Mathf.RoundToInt(AccountStats.TotalDeckCombatPower(_ctx)).ToString("N0");
+            myPowerText.text = AccountStats.TotalDeckCombatPower(_ctx).ToString("N0");
     }
 
     private void Update() {
@@ -309,7 +333,7 @@ public sealed class ArenaPopup : UIView, IHudPopup, IHudPopupTab {
                 return;
             }
 
-            EnterBattle(match.OpponentAccountId, opponentDeck);
+            EnterBattle(match, opponentDeck);
         } catch (OperationCanceledException) {
         } catch (Exception e) {
             Debug.LogException(e);
@@ -328,14 +352,16 @@ public sealed class ArenaPopup : UIView, IHudPopup, IHudPopupTab {
     private const float MatchAnimationSeconds = 1.5f;
 
     // PvP 씬으로 넘어간다. 씬 경계를 넘는 인자는 컨테이너로 전달할 수 없으므로 세션에 담는다.
-    private void EnterBattle(int opponentAccountId, UserDeckDto opponentDeck) {
+    private void EnterBattle(ArenaMatchResultDto match, UserDeckDto opponentDeck) {
         if (_ctx.Scenes == null || _ctx.Scenes.PvpBattleScene == null || !_ctx.Scenes.PvpBattleScene.RuntimeKeyIsValid()) {
             Debug.LogError("[ArenaPopup] SceneCatalog 에 PvP 전투 씬이 할당되지 않았습니다.");
             _ctx.Ui.ShowToast("전투 씬을 열 수 없습니다.");
             return;
         }
 
-        PvpBattleSession.Set(PvpBattleSession.OriginType.Arena, opponentAccountId, opponentDeck);
+        // 양 팀 룬은 매칭 시점 서버 값이다(이 판 도중 상대가 룬을 바꿔도 이 판은 그대로).
+        PvpBattleSession.Set(PvpBattleSession.OriginType.Arena, match.OpponentAccountId, opponentDeck,
+                             match.MyRunes, match.OpponentRunes);
 
         // CloseAllPopups 는 이 팝업 자신도 파괴하므로, 그 뒤에 쓸 것들을 먼저 지역 변수로 확보한다.
         var ui = _ctx.Ui;
@@ -380,6 +406,56 @@ public sealed class ArenaPopup : UIView, IHudPopup, IHudPopupTab {
         } catch (Exception e) {
             Debug.LogException(e);
             _ctx.Ui.ShowToast("상점을 불러오지 못했습니다.");
+        }
+    }
+
+    // ── 룬 / 역대 전적 ──────────────────────────────
+    // 효과 줄은 계열마다 한 번만 만들어 두고, 구성이 바뀌면 장착 여부에 따라 켜고 끈다.
+    private void BuildRunes() {
+        var runes = _home != null ? _home.Runes : null;
+        if (_runeRows.Count == 0 && runeEffectContent != null && runeEffectRowPrefab != null) {
+            for (int f = 0; f < ArenaRuneRules.FamilyCount; f++) {
+                var family = (ArenaRuneRules.Family)f;
+                var row = Instantiate(runeEffectRowPrefab, runeEffectContent);
+                row.Bind(family, runeIconTable != null ? runeIconTable.IconOf(family) : null);
+                _runeRows.Add(row);
+            }
+        }
+        foreach (var row in _runeRows) if (row != null) row.SetLevel(runes != null ? runes.LevelOf(row.Family) : 0);
+        int cost = runes != null ? runes.TotalCost : 0;
+        if (runeEmptyNotice != null) runeEmptyNotice.SetActive(cost == 0);
+        if (runeCostText != null) runeCostText.text = ArenaRuneRules.CostText(cost);
+        if (runeLayoutRebuild != null) runeLayoutRebuild.RebuildDeferred();
+    }
+
+    // 룬 팝업이 저장까지 마치고 새 구성을 돌려준다. 바뀌었으면 이 화면의 효과 문구만 다시 그린다.
+    private async UniTaskVoid OpenRunesAsync() {
+        if (_home == null) return;
+        var reference = _ctx.Popups.ArenaRunePopup;
+        if (reference == null || !reference.RuntimeKeyIsValid()) { _ctx.Ui.ShowToast("준비 중입니다."); return; }
+
+        try {
+            var popup = await _ctx.Ui.ShowPopupAsync<ArenaRunePopup>(reference, _ct);
+            var saved = await popup.ShowAsync(_ctx, _home.Runes);
+            if (saved == null || _home == null) return;
+            _home.Runes = saved;
+            BuildRunes();
+        } catch (OperationCanceledException) {
+        } catch (Exception e) {
+            Debug.LogException(e);
+        }
+    }
+
+    private async UniTaskVoid OpenHistoryAsync() {
+        var reference = _ctx.Popups.ArenaHistoryPopup;
+        if (reference == null || !reference.RuntimeKeyIsValid()) { _ctx.Ui.ShowToast("준비 중입니다."); return; }
+
+        try {
+            var popup = await _ctx.Ui.ShowPopupAsync<ArenaHistoryPopup>(reference, _ct);
+            await popup.ShowAsync(_ctx);
+        } catch (OperationCanceledException) {
+        } catch (Exception e) {
+            Debug.LogException(e);
         }
     }
 

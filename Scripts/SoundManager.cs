@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using UniRx;
 using UnityEngine;
 using VContainer;
 using static Enums;
@@ -29,6 +30,11 @@ public class SoundManager : MonoBehaviour, ISoundService {
 
     private CancellationToken _lifetime;
 
+    // 절전 모드 동안은 소리를 내지 않는다. 볼륨 설정(세이브)은 건드리지 않고 재생만 멈춘다.
+    private bool _suspended;
+    // BGM 을 틀어 둔 상태인지(StopBgm 전까지). 멈춘 동안 곡이 바뀌어도 풀릴 때 지금 곡으로 다시 튼다.
+    private bool _bgmWanted;
+
     [Inject]
     public void Construct(IAssetService asset) {
         _asset = asset;
@@ -36,6 +42,25 @@ public class SoundManager : MonoBehaviour, ISoundService {
 
     private void Awake() {
         _lifetime = this.GetCancellationTokenOnDestroy();
+        PowerSaveMode.Active.Subscribe(SetSuspended).AddTo(this);
+    }
+
+    // 멈출 때 BGM 은 일시정지(풀리면 이어서), 효과음은 즉시 끊는다. 멈춘 동안 들어온 효과음 요청은 버린다
+    // (쌓아 두면 풀리는 순간 한꺼번에 터진다). 멈춘 동안은 오디오 디코딩도 하지 않아 그만큼 CPU 를 덜 쓴다.
+    private void SetSuspended(bool suspended) {
+        if (_suspended == suspended) return;
+        _suspended = suspended;
+
+        if (suspended) {
+            if (bgmSource != null) bgmSource.Pause();
+            if (sfxSource != null) sfxSource.Stop();
+            return;
+        }
+
+        if (bgmSource == null || !_bgmWanted || bgmSource.clip == null || bgmSource.isPlaying) return;
+        // 멈춘 사이 곡이 바뀌었으면 UnPause 로는 재생되지 않으므로 처음부터 튼다.
+        bgmSource.UnPause();
+        if (!bgmSource.isPlaying) bgmSource.Play();
     }
 
     // 볼륨의 단일 진실 원천은 세이브 값이고, AudioSource 볼륨은 거기서 파생한다(마스터 x 개별).
@@ -78,10 +103,12 @@ public class SoundManager : MonoBehaviour, ISoundService {
     // BGM ---------------------------------------------------------------------
     public void PlayBgm(AudioClip clip) {
         if (bgmSource == null || clip == null) return;
-        if (bgmSource.clip == clip && bgmSource.isPlaying) return;
+        if (bgmSource.clip == clip && (bgmSource.isPlaying || (_suspended && _bgmWanted))) return;
+        _bgmWanted = true;
         bgmSource.clip = clip;
         bgmSource.loop = true;
-        bgmSource.Play();
+        // 멈춘 동안에는 곡만 바꿔 두고, 재생은 풀릴 때(SetSuspended) 한다.
+        if (!_suspended) bgmSource.Play();
     }
 
     public void PlayBgm(BgmKey key) {
@@ -106,6 +133,7 @@ public class SoundManager : MonoBehaviour, ISoundService {
     }
 
     public void StopBgm() {
+        _bgmWanted = false;
         if (bgmSource != null) bgmSource.Stop();
     }
 
@@ -155,11 +183,12 @@ public class SoundManager : MonoBehaviour, ISoundService {
 
     // SFX ---------------------------------------------------------------------
     public void PlaySfx(AudioClip clip) {
-        if (sfxSource == null || clip == null) return;
+        if (_suspended || sfxSource == null || clip == null) return;
         sfxSource.PlayOneShot(clip);
     }
 
     public void PlaySfx(SfxKey key) {
+        if (_suspended) return;   // 멈춘 동안에는 클립 로드도 하지 않는다.
         key = Resolve(key);
         if (!TryStartSfx(key)) return;
         if (_sfxCache.TryGetValue(key, out var clip)) { PlaySfx(clip); return; }

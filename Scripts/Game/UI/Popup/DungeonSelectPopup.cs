@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using TMPro;
 using UniRx;
@@ -24,6 +25,10 @@ public sealed class DungeonSelectPopup : UIView {
     [Tooltip("던전 그룹 선택 드롭다운. 옵션은 DungeonDatabase 의 그룹에서 자동 생성된다. 그룹이 없으면 숨기고 전체 던전을 보여준다.")]
     [SerializeField] private TMP_Dropdown groupDropdown;
 
+    [Header("Best")]
+    [Tooltip("누르면 지금 도전할 수 있는 가장 높은 던전을 고른 것과 같다(목록에서 그 항목을 누른 것과 같은 동작). 선택.")]
+    [SerializeField] private Button bestButton;
+
     [Header("Close")]
     [SerializeField] private Button closeButton;
 
@@ -39,6 +44,9 @@ public sealed class DungeonSelectPopup : UIView {
     protected override void Awake() {
         base.Awake();
         if (closeButton != null) closeButton.onClick.AddListener(() => CloseAsync().Forget());
+        if (bestButton != null) bestButton.onClick.AddListener(SelectBest);
+        // 그룹 목록을 펼치면 지금 고른 그룹이 목록 가운데 보이게 한다(장이 늘어 그룹이 많다).
+        if (groupDropdown != null) groupDropdown.ScrollToSelectedOnExpand().AddTo(this);
     }
 
     public void Setup(MainHudContext ctx, Action<int> onSelect) {
@@ -70,7 +78,8 @@ public sealed class DungeonSelectPopup : UIView {
         if (_groups.Count == 0) return;
 
         var options = new List<string>(_groups.Count);
-        for (int i = 0; i < _groups.Count; i++) options.Add(_groups[i].DisplayName);
+        // 그룹이 장이라 표시 순서 번호를 앞에 붙인다(예: "21. 페리의 방"). 그룹이 많아도 몇 장인지 바로 읽힌다.
+        for (int i = 0; i < _groups.Count; i++) options.Add($"{i + 1}. {_groups[i].DisplayName}");
 
         groupDropdown.onValueChanged.RemoveAllListeners();
         groupDropdown.ClearOptions();
@@ -92,13 +101,50 @@ public sealed class DungeonSelectPopup : UIView {
 
             var item = Instantiate(itemPrefab, contentRoot);
             _previews.TryGetValue(dungeon.DungeonIndex, out var preview);
-            item.Bind(_ctx, dungeon, preview, index => {
-                _onSelect?.Invoke(index);
-                CloseAsync().Forget();
-            });
+            item.Bind(_ctx, dungeon, preview, Select);
             _spawned.Add(item);
         }
         RefreshStates();
+        ScrollToCurrentAsync(this.GetCancellationTokenOnDestroy()).Forget();
+    }
+
+    // 지금 플레이 중인 던전이 목록 가운데 오도록 스크롤한다. 고른 그룹에 그 던전이 없으면 맨 위로 돌린다
+    // (그룹을 바꿨는데 이전 그룹의 스크롤 위치가 남아 있으면 엉뚱한 중간부터 보인다).
+    // 막 생성한 항목은 이번 프레임에 아직 크기가 정해지지 않았을 수 있어 레이아웃이 한 번 돈 뒤에 맞춘다.
+    private async UniTaskVoid ScrollToCurrentAsync(CancellationToken ct) {
+        await UniTask.Yield(PlayerLoopTiming.PostLateUpdate, ct);
+        if (_ctx == null || contentRoot == null) return;
+
+        var scroll = contentRoot.GetComponentInParent<ScrollRect>();
+        if (scroll == null) return;
+
+        int current = _ctx.Store.CurrentDungeonIndex.Value;
+        foreach (var item in _spawned) {
+            if (item == null || item.DungeonIndex != current) continue;
+            scroll.ScrollTo((RectTransform)item.transform);
+            return;
+        }
+        scroll.ScrollToStart();
+    }
+
+    // 던전 선택 확정. 목록 항목과 최고 단계 버튼이 같은 경로를 지난다.
+    private void Select(int dungeonIndex) {
+        _onSelect?.Invoke(dungeonIndex);
+        CloseAsync().Forget();
+    }
+
+    // 지금 도전할 수 있는 가장 높은 던전을 고른다. 그룹 필터와 무관하게 전체 던전에서 찾는다
+    // (해금 범위는 진행도 + 1 이지만 데이터가 그보다 짧을 수 있어 실제로 있는 던전 중에서 고른다).
+    private void SelectBest() {
+        if (_ctx == null || _ctx.DungeonDb == null) return;
+
+        int highestCleared = _ctx.Store.HighestClearedDungeonIndex.Value;
+        int best = 0;
+        foreach (var dungeon in _ctx.DungeonDb.All) {
+            if (dungeon == null || dungeon.DungeonIndex <= best) continue;
+            if (DungeonUnlockRule.IsUnlocked(dungeon.DungeonIndex, highestCleared)) best = dungeon.DungeonIndex;
+        }
+        if (best > 0) Select(best);
     }
 
     // 잠금/선택 오버레이 갱신. 잠금 판정은 서버가 내려준 진행도 + 공용 규칙(DungeonUnlockRule)으로 한다.

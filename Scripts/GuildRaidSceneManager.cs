@@ -127,6 +127,9 @@ public sealed class GuildRaidSceneManager : MonoBehaviour {
         if (_leaving) return;
 
         var report = await ReportDamageAsync(dealtDamage, ct);
+        // 제한 시간 종료/보스 처치 = 끝까지 치른 판이다(도중 나가기는 ExitWithReportAsync 로 가서 여기를 지나지 않는다).
+        // 서버는 입장 성공을 완주 허용의 근거로 쓰므로 피해량 보고 성공 여부와 무관하게 보낸다.
+        _guild.ReportRaidFinished();
 
         try {
             var reference = _popups.GuildRaidResultPopup;
@@ -146,12 +149,14 @@ public sealed class GuildRaidSceneManager : MonoBehaviour {
     /// <summary>
     /// 깎은 피해량을 서버에 보고한다. 실패해도 그 판의 기여가 사라지는 것이라 유저에게 알린다.
     /// 중복 보고를 막기 위해 한 번만 보낸다(결과 팝업 경로와 뒤로가기 경로가 같은 함수를 쓴다).
+    ///
+    /// 피해가 0 이어도 보낸다(V1.13). 한 번에 한 명만 도전할 수 있어서, 이 보고가 서버의 "도전 중" 자리를 비우는 신호다.
+    /// 보내지 않으면 다른 길드원이 시간 초과까지 기다려야 한다. 서버는 피해 0 보고에 보상을 주지 않는다.
     /// </summary>
     private async UniTask<GuildRaidDamageDto> ReportDamageAsync(long dealtDamage, CancellationToken ct) {
         if (_reported) return null;
         _reported = true;
 
-        if (dealtDamage <= 0) return null;
         try {
             var res = await _guild.ReportRaidDamageAsync(dealtDamage, ct);
             if (!res.IsSuccess) _ui.ShowToast("기여도 반영에 실패했습니다.");

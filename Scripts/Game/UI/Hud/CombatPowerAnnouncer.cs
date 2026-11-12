@@ -25,10 +25,10 @@ public sealed class CombatPowerAnnouncer : IDisposable {
     private readonly MainHudContext _ctx;
     private readonly CancellationToken _ct;
 
-    private int _last;            // 마지막으로 확인한 총 전투력(기준값)
+    private long _last;           // 마지막으로 확인한 총 전투력(기준값). 21억을 넘을 수 있어 long
     private bool _hasBaseline;    // 기준값이 실제 데이터로 채워졌는지(최초 로드의 0 -> N 을 상승으로 보지 않기 위함)
 
-    private int _pendingFrom;     // 이번 상승 구간의 시작 전투력
+    private long _pendingFrom;    // 이번 상승 구간의 시작 전투력
     private bool _hasPending;
     private float _lastGainAt;    // 마지막 상승 시각(unscaled)
     private bool _flushing;
@@ -45,7 +45,7 @@ public sealed class CombatPowerAnnouncer : IDisposable {
         _ctx.Store.DeckChanged += OnDeckChanged;
     }
 
-    private int Current => Mathf.RoundToInt(AccountStats.TotalDeckCombatPower(_ctx));
+    private long Current => (long)Math.Round(AccountStats.TotalDeckCombatPower(_ctx));
 
     private static bool IsAnnounced(CharacterChangeReason reason) =>
         reason == CharacterChangeReason.Growth || reason == CharacterChangeReason.Roster;
@@ -56,8 +56,8 @@ public sealed class CombatPowerAnnouncer : IDisposable {
 
     // 알리지 않는 변경에서도 기준값은 반드시 따라간다. 안 그러면 다음 상승분에 그 변화까지 얹혀 나온다.
     private void Evaluate(bool announce) {
-        int before = _last;
-        int now = Current;
+        long before = _last;
+        long now = Current;
         _last = now;
 
         // 씬 진입 초기 로딩 구간: 계정 스냅샷 -> 인벤토리 -> 각인 -> 본부가 순차로 도착하며 전투력이 계단식으로 채워진다.
@@ -108,8 +108,8 @@ public sealed class CombatPowerAnnouncer : IDisposable {
         if (!_hasPending) return;
         _hasPending = false;
 
-        int from = _pendingFrom;
-        int now = Current;
+        long from = _pendingFrom;
+        long now = Current;
         if (now > from) _ctx.Ui.ShowCombatPowerGain(from, now);
     }
 

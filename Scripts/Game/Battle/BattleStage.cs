@@ -6,6 +6,14 @@ using UnityEngine;
 using static Enums;
 // 주의: UniRx 의 Unit 타입이 전투 Unit 과 이름 충돌하므로 using UniRx 를 생략하고 ReactiveProperty 를 정규화한다.
 
+/// <summary>로스터에 있지만 지금 전장에 서지 않은 소녀의 상태(BattleStage.RosterStateOf).</summary>
+public enum BattleRosterState {
+    /// <summary>차례를 기다리는 중.</summary>
+    Waiting,
+    /// <summary>쓰러져 이번 전투에 다시 나서지 않는다.</summary>
+    Down,
+}
+
 /// <summary>
 /// 전투 "무대"(호스트) 공통부. 파티/몬스터 생성과 배치, 연출 풀, 카메라, 겹침 해소, 스킬 런타임 등
 /// 어떤 전투 컨텐츠에서도 동일한 부분을 모두 여기서 담당하고 IBattleContext / IBattleRuntime 을 구현한다.
@@ -79,12 +87,38 @@ public abstract class BattleStage : MonoBehaviour, IBattleContext, IBattleRuntim
     /// <summary>파티가 재구성될 때 발생(HUD 슬롯 재바인딩용).</summary>
     public event Action PartyChanged;
 
+    /// <summary>
+    /// 하단 캐릭터 패널이 나열할 소녀들(순서 그대로). 기본은 null 이라 패널이 지금 전장에 선 파티만 보여 준다.
+    /// 편성원이 교대로 나서는 컨텐츠(무한 타워 릴레이)는 전장 밖에서 대기 중인 소녀까지 넘긴다.
+    /// 목록에 있지만 파티에 없는 소녀의 상태는 RosterStateOf / RosterHpRatioOf 가 알려 준다.
+    /// </summary>
+    public virtual IReadOnlyList<int> RosterCharIds => null;
+
+    /// <summary>전장에 서지 않은 로스터 소녀의 상태. 파티 변경 시점(PartyChanged)에 확정되어 있어야 한다.</summary>
+    public virtual BattleRosterState RosterStateOf(int charId) => BattleRosterState.Waiting;
+
+    /// <summary>전장에 서지 않은 로스터 소녀의 체력 비율(0~1). 패널의 체력 게이지가 읽는다.</summary>
+    public virtual float RosterHpRatioOf(int charId) => 1f;
+
     /// <summary>파티 전원이 쓰러졌는지(부활 대기 중인 유닛도 사망으로 본다). 부활 없는 컨텐츠의 실패 판정에 쓴다.</summary>
     public bool IsPartyWiped {
         get {
             if (_party.Count == 0) return false;
             for (int i = 0; i < _party.Count; i++)
                 if (_party[i] != null && _party[i].IsAlive) return false;
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// 아군 전체(내 파티 + 함께 선 아군 유닛)가 쓰러졌는지. 다른 유저 캐릭터와 함께 싸우는 컨텐츠(원정대)의 전멸 판정에 쓴다.
+    /// 내 파티만 보는 IsPartyWiped 로 판정하면 파티원이 남아 싸우는 중에 판이 끝난다.
+    /// </summary>
+    public bool IsAllyTeamWiped {
+        get {
+            if (_playerUnits.Count == 0) return false;
+            for (int i = 0; i < _playerUnits.Count; i++)
+                if (_playerUnits[i] != null && _playerUnits[i].IsAlive) return false;
             return true;
         }
     }
@@ -127,6 +161,10 @@ public abstract class BattleStage : MonoBehaviour, IBattleContext, IBattleRuntim
     // 전투를 끊지 않고 살아있는 파티 유닛의 스탯(과 외형)만 최신 값으로 교체한다.
     // 파티는 최대 5명이고 계산은 순수 산술이라 대상 판별 없이 전원 갱신해도 부담이 없다.
     protected void RefreshPartyStats() {
+        // 아웃핏은 유닛 프리팹 자체가 바뀌는 것이라 스탯/그림 교체로는 반영되지 않는다.
+        // 아웃핏이 달라진 파티원이 있으면 파티를 새로 세운다(아웃핏 장착은 편성 화면에서만 일어나 드물다).
+        if (Appearance != null && HasUnitSkinMismatch()) { RebuildParty(); return; }
+
         for (int i = 0; i < _party.Count; i++) {
             var unit = _party[i];
             if (unit == null || unit.Data == null) continue;
@@ -134,6 +172,8 @@ public abstract class BattleStage : MonoBehaviour, IBattleContext, IBattleRuntim
             var progress = Store.GetProgress(unit.Data.Id);
             if (progress == null) continue;
 
+            // 한계돌파로 스킬이 바뀌었을 수 있다. 스킬 주기는 아래 ApplyStats 가 새 스킬로 다시 계산하므로 먼저 넣는다.
+            unit.SetLimitBroken(progress.LimitBroken);
             // 각인은 "항상 적용분"이 기준 스탯에, "조건부"가 유닛 상태로 들어가므로 둘 다 함께 갱신한다.
             unit.SetEngravings(Store.EngravingLoadoutFor(unit.Data.Id));
             unit.ApplyStats(BuildCharacterStats(unit.Data, progress));
@@ -142,11 +182,21 @@ public abstract class BattleStage : MonoBehaviour, IBattleContext, IBattleRuntim
         }
     }
 
+    // 지금 서 있는 파티원 중 장착 아웃핏이 바뀐 소녀가 있는지.
+    private bool HasUnitSkinMismatch() {
+        for (int i = 0; i < _party.Count; i++) {
+            var unit = _party[i];
+            if (unit == null || unit.Data == null) continue;
+            if (unit.Appearance.UnitSkinId != Store.EquippedUnitSkinId(unit.Data.Id)) return true;
+        }
+        return false;
+    }
+
     /// <summary>
     /// 캐릭터 1명의 최종 전투 스탯. 성장 + 장비 + 각인이 합쳐지는 단일 관문이라 여기만 고치면
     /// 파티 생성/즉시 갱신/전투력 표시가 모두 같은 값을 쓴다.
     /// </summary>
-    protected CombatStats BuildCharacterStats(CharacterData data, CharacterProgress progress) =>
+    protected virtual CombatStats BuildCharacterStats(CharacterData data, CharacterProgress progress) =>
         new CharacterRuntime(data, progress, Settings, Store.TotalBonusFor(data.Id, EquipDb)).FinalStats;
 
     /// <summary>이번 전투의 원형 배치를 바꾼다(파티 생성 전에 호출해야 그 배치로 스폰된다).</summary>
@@ -156,6 +206,12 @@ public abstract class BattleStage : MonoBehaviour, IBattleContext, IBattleRuntim
 
     // ── 파티 / 유닛 생성 ───────────────────────────────
     /// <summary>현재 덱으로 파티를 새로 만든다(기존 파티는 파괴). 대표 캐릭터를 카메라 타깃으로 잡는다.</summary>
+    /// <summary>
+    /// 이번 전투에 나설 소녀들. 기본은 편성한 덱이다.
+    /// 덱이 아니라 다른 기준으로 참전하는 화면(멸망전은 보유 전원)이 이 자리만 바꿔 끼운다.
+    /// </summary>
+    protected virtual IReadOnlyList<int> PartyCharIds => Store.Deck.SelectedCharIds;
+
     protected void RebuildParty() {
         // 유닛을 파괴하기 전에 이전 전투의 예약 스킬 콜백을 끊는다(파괴된 시전자 참조로 인한 MissingReferenceException 방지).
         ResetScheduleToken();
@@ -174,31 +230,13 @@ public abstract class BattleStage : MonoBehaviour, IBattleContext, IBattleRuntim
         _party.Clear();
 
         var deck = Store.Deck;
-        var ids = deck.SelectedCharIds;
+        var ids = PartyCharIds;
         int repId = deck.RepresentativeCharId;
+        // 자리는 매 전투 섞는다. 편성 순서를 그대로 자리 번호로 쓰면 대표(첫 편성원)가 늘 같은 자리에서 시작한다.
+        var places = ShuffledPlaces(ids.Count);
 
-        for (int i = 0; i < ids.Count; i++) {
-            int charId = ids[i];
-            var data = CharDb.Get(charId);
-            var progress = Store.GetProgress(charId);
-            if (data == null || progress == null) continue;
-
-            int slot = _party.Count;   // 살아있는 유닛 사이에서 유일한 슬롯(마스크 격리/배치용)
-            Vector3 spawn = CharacterRingPos(i, ids.Count);
-            var unit = Instantiate(characterUnitPrefab, spawn, Quaternion.identity, transform);
-
-            bool isRep = charId == repId;
-            // 외형은 내 장착 코스튬을 반영한다(코스튬이 없으면 기본 일러스트가 그대로 나온다).
-            var appearance = Appearance != null ? Appearance.Mine(data) : CharacterAppearance.Default(data);
-            unit.Init(appearance, BuildCharacterStats(data, progress), isRep, spawn, slot, this, this, Settings);
-            unit.SetEngravings(Store.EngravingLoadoutFor(charId));
-            // 투자(선제 스킬 게이지). 각인/스탯이 다 얹힌 뒤라야 스킬 주기가 확정되므로 마지막에 채운다.
-            unit.PrimeSkillGauge(InvestmentRules.ToRatio(Store.InvestmentPermille(InvestmentEffect.SkillGaugeStart)));
-
-            _party.Add(unit);
-            _playerUnits.Add(unit);
-            barOverlay?.Register(unit);
-        }
+        for (int i = 0; i < ids.Count; i++)
+            SpawnPartyUnit(ids[i], CharacterRingPos(places[i], ids.Count), ids[i] == repId);
 
         // 이전 판의 유닛은 파괴되었으므로 버리고, 저장된 선택(없으면 대표)으로 카메라 대상을 다시 잡는다.
         // 고른 캐릭터가 이번 덱에 없으면 여기서 대표로 초기화된다.
@@ -206,6 +244,47 @@ public abstract class BattleStage : MonoBehaviour, IBattleContext, IBattleRuntim
         UpdateCameraFocus();
 
         RaisePartyChanged();
+    }
+
+    /// <summary>
+    /// 진행 중인 전투에 파티원 1명을 더 세운다(이미 선 파티원은 그대로 둔다). 무한 타워처럼 소녀가 시간차로 합류하는
+    /// 전투가 쓴다. 이미 파티에 있는 소녀거나 데이터가 없으면 아무것도 하지 않고 null 을 돌려준다.
+    /// place/total 은 원형 배치의 자리 번호와 전체 자리 수다(합류해도 다른 파티원 자리가 바뀌지 않게 전체 수로 잡는다).
+    /// </summary>
+    protected CharacterUnit AddPartyMember(int charId, int place, int total) {
+        if (FindPartyMember(charId) != null) return null;   // 같은 소녀가 두 번 서지 않게 한다.
+
+        var unit = SpawnPartyUnit(charId, CharacterRingPos(place, Mathf.Max(1, total)), charId == Store.Deck.RepresentativeCharId);
+        if (unit == null) return null;
+
+        // 카메라가 아직 아무도 비추지 않거나(첫 합류) 비추던 소녀가 쓰러졌으면 다시 잡는다.
+        if (_cameraFocus == null || !_cameraFocus.IsAlive) _cameraFocus = null;
+        UpdateCameraFocus();
+        RaisePartyChanged();
+        return unit;
+    }
+
+    // 파티원 1명을 세워 파티/아군 목록과 체력바에 등록한다. 슬롯은 지금 파티 수라 살아 있는 유닛끼리 겹치지 않는다.
+    private CharacterUnit SpawnPartyUnit(int charId, Vector3 spawn, bool isRep) {
+        var data = CharDb.Get(charId);
+        var progress = Store.GetProgress(charId);
+        if (data == null || progress == null) return null;
+
+        int slot = _party.Count;   // 살아있는 유닛 사이에서 유일한 슬롯(마스크 격리/배치용)
+
+        // 외형은 내 장착 코스튬과 아웃핏을 반영한다(없으면 기본 일러스트/기본 유닛이 그대로 나온다).
+        var appearance = Appearance != null ? Appearance.Mine(data) : CharacterAppearance.Default(data);
+        var unit = Instantiate(UnitPrefabFor(appearance), spawn, Quaternion.identity, transform);
+        unit.Init(appearance, BuildCharacterStats(data, progress), progress.LimitBroken, isRep, spawn, slot, this, this, Settings);
+        unit.ShowTeamMarker(ShowsTeamMarkers);
+        unit.SetEngravings(Store.EngravingLoadoutFor(charId));
+        // 투자(선제 스킬 게이지). 각인/스탯이 다 얹힌 뒤라야 스킬 주기가 확정되므로 마지막에 채운다.
+        unit.PrimeSkillGauge(InvestmentRules.ToRatio(Store.InvestmentPermille(InvestmentEffect.SkillGaugeStart)));
+
+        _party.Add(unit);
+        _playerUnits.Add(unit);
+        barOverlay?.Register(unit);
+        return unit;
     }
 
     /// <summary>
@@ -225,6 +304,33 @@ public abstract class BattleStage : MonoBehaviour, IBattleContext, IBattleRuntim
         barOverlay?.Register(unit);
     }
 
+    /// <summary>
+    /// 내 파티가 아닌 아군 캐릭터(원정대의 다른 유저 캐릭터 등)를 세운다. 파티와 같은 프리팹을 쓰고 아군 목록에 등록하므로
+    /// 타게팅/체력바/딜량 집계가 파티원과 똑같이 동작한다. 스탯/외형은 호출부가 조립해 넘긴다.
+    /// maskSlot 은 파티(0~)와 몬스터(MonsterMaskSlotBase~) 대역과 겹치지 않는 값을 써야 한다.
+    /// 정리는 ClearExtraPlayerUnits 가 한다.
+    /// </summary>
+    protected CharacterUnit SpawnAllyCharacter(CharacterAppearance appearance, CombatStats stats, bool limitBroken,
+                                               Vector3 spawn, int maskSlot) {
+        var unit = Instantiate(UnitPrefabFor(appearance), spawn, Quaternion.identity, transform);
+        unit.Init(appearance, stats, limitBroken, isRepresentative: false, spawn, maskSlot, this, this, Settings);
+        unit.ShowTeamMarker(ShowsTeamMarkers);
+        RegisterPlayerUnit(unit);
+        return unit;
+    }
+
+    /// <summary>
+    /// 이 외형으로 세울 유닛 프리팹. 아웃핏을 끼고 있으면 그 아웃핏의 프리팹, 아니면 이 씬의 기본 캐릭터 유닛 프리팹이다.
+    /// 아군/적 구분은 프리팹이 아니라 유닛 안의 팀 표시 그룹(CharacterUnit.SetTeam)이 맡으므로 양 팀이 같은 프리팹을 쓴다.
+    /// </summary>
+    protected CharacterUnit UnitPrefabFor(CharacterAppearance appearance) =>
+        appearance.UnitPrefab != null ? appearance.UnitPrefab : characterUnitPrefab;
+
+    /// <summary>
+    /// 캐릭터 유닛의 아군/적 표시 그룹을 켤지. 양 팀이 모두 캐릭터라 구분이 필요한 전투(유저 대 유저)만 켠다.
+    /// </summary>
+    protected virtual bool ShowsTeamMarkers => false;
+
     /// <summary>등록 해제 + 파괴. 파티 유닛에는 쓰지 않는다(RebuildParty 가 관리).</summary>
     protected void DestroyPlayerUnit(BattleUnit unit) {
         if (unit == null) return;
@@ -234,13 +340,14 @@ public abstract class BattleStage : MonoBehaviour, IBattleContext, IBattleRuntim
     }
 
     /// <summary>
-    /// 파티가 아닌 아군 유닛(호위 대상 등)을 전부 정리한다. 전투를 다시 시작할 때 반드시 호출해야
+    /// 파티가 아닌 아군 유닛(호위 대상, 원정대의 다른 유저 캐릭터 등)을 전부 정리한다. 전투를 다시 시작할 때 반드시 호출해야
     /// 이전 판의 유닛이 아군 목록에 남아 적의 타게팅 대상이 되거나 파괴된 참조로 남지 않는다.
     /// </summary>
     protected void ClearExtraPlayerUnits() {
         for (int i = _playerUnits.Count - 1; i >= 0; i--) {
             var unit = _playerUnits[i];
-            if (unit is CharacterUnit) continue;   // 파티 유닛은 RebuildParty 가 관리한다.
+            // 내 파티 유닛은 RebuildParty 가 관리한다. 같은 캐릭터 유닛이라도 파티 밖에서 등록한 것은 여기서 정리한다.
+            if (unit is CharacterUnit c && _party.Contains(c)) continue;
 
             _playerUnits.RemoveAt(i);
             if (unit == null) continue;            // 이미 파괴된 항목은 목록에서 빼는 것으로 충분.
@@ -300,6 +407,20 @@ public abstract class BattleStage : MonoBehaviour, IBattleContext, IBattleRuntim
             float x = (i - (_party.Count - 1) * 0.5f) * Settings.PartyFormationSpacing;
             u.transform.position = new Vector3(center.x + x, center.y, 0f);
         }
+    }
+
+    /// <summary>
+    /// 0 ~ count-1 자리 번호를 무작위 순서로 섞은 배열. 배치 함수(CharacterRingPos 등)에 넘길 자리 번호를
+    /// 편성 순서 대신 이 값으로 고르면, 자리 모양은 그대로이고 누가 어디에 서는지만 매번 달라진다.
+    /// </summary>
+    protected static int[] ShuffledPlaces(int count) {
+        var places = new int[Mathf.Max(0, count)];
+        for (int i = 0; i < places.Length; i++) places[i] = i;
+        for (int i = places.Length - 1; i > 0; i--) {
+            int j = UnityEngine.Random.Range(0, i + 1);
+            (places[i], places[j]) = (places[j], places[i]);
+        }
+        return places;
     }
 
     // 캐릭터를 중심점 둘레의 작은 원 위에 균등 배치하고 지터를 준다(PLANNING 2). 1명이면 정중앙.
@@ -429,6 +550,14 @@ public abstract class BattleStage : MonoBehaviour, IBattleContext, IBattleRuntim
     void IBattleRuntime.PlayVfx(GameObject prefab, Vector2 at, float angleDeg) => vfxPool.Play(prefab, at, angleDeg);
     void IBattleRuntime.PlaySfx(SfxKey key) => Sound.PlaySfx(key);
     void IBattleRuntime.PlaySfx(AudioClip clip) => Sound.PlaySfx(clip);
+
+    float IBattleRuntime.HealByMaxHp(ICombatUnit unit, float ratio) {
+        if (!(unit is BattleUnit u) || !u.IsAlive || ratio <= 0f) return 0f;
+        float healed = u.Heal(u.MaxHp * ratio);
+        // 이미 가득 차 있으면 표시하지 않는다(0 이 뜨면 고장으로 보인다. 분대 재생과 같은 규칙).
+        if (healed > 0f) ((IBattleContext)this).ShowDamage(u.HitPoint, healed, DamagePopupStyle.Heal);
+        return healed;
+    }
 
     void IBattleRuntime.LaunchProjectile(ProjectileSpec spec, Vector2 from, ICombatUnit source, ICombatUnit target) {
         if (projectilePool != null) {

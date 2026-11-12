@@ -19,6 +19,7 @@ public static class ChatNoticeFormat {
             ChatNoticeKind.TrainingMax => TrainingText(message),
             ChatNoticeKind.StarMaxChar => CharacterStarText(message, hud),
             ChatNoticeKind.StarMaxEquip => EquipStarText(message, hud),
+            ChatNoticeKind.LimitBreakChar => LimitBreakText(message, hud),
             _ => ""
         };
     }
@@ -57,6 +58,12 @@ public static class ChatNoticeFormat {
     // 별레벨은 서버가 함께 보내 준 값을 그대로 쓴다(클라가 최대치 상수를 따로 들고 있지 않도록).
     private static string StarText(ChatMessageDto message, string displayName) =>
         $"{message.Nickname}님이 {displayName}을(를) {message.RefValue}성으로 각성했습니다.";
+
+    // "[닉네임]님이 [캐릭터]을(를) 한계돌파했습니다."
+    private static string LimitBreakText(ChatMessageDto message, BattleHudContext hud) {
+        var data = hud != null && hud.CharDb != null ? hud.CharDb.Get(message.RefId) : null;
+        return data == null ? "" : $"{message.Nickname}님이 {data.DisplayName}을(를) 한계돌파했습니다.";
+    }
 
     // "[닉네임]님이 [효과 수치] 수련에 성공했습니다."
     private static string TrainingText(ChatMessageDto message) {

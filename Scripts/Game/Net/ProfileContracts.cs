@@ -16,6 +16,8 @@ public sealed class ProfileDto {
     /// <summary>업적 랭킹 순위. 0 이면 순위권 밖이거나 아직 집계 전이다.</summary>
     public int AchievementRank;
     public List<int> ProfileFrameIds = new();
+    /// <summary>기간제 테두리의 만료 시각(UTC epoch). 영구 테두리는 여기 없다(쟁탈전 주간 순위 테두리 등).</summary>
+    public Dictionary<int, long> ProfileFrameExpires = new();
 }
 
 public sealed class EquipProfileFrameResult {
@@ -28,7 +30,7 @@ public sealed class ChangeNicknameResult {
     public bool IsSuccess;
     public int FailReason;          // 0성공,1형식오류,2중복,3재화부족,5지갑없음
     public string Nickname = "";
-    public int NewDiamond;
+    public int NewCertificate;
     public int NewTicketQty;
 }
 

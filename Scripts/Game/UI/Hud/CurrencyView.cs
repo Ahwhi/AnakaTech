@@ -29,13 +29,20 @@ public sealed class CurrencyView : MonoBehaviour {
              "보통 아이콘 Image 에 Button 을 붙여 연결한다. 비우면 설명 팝업 진입이 없다.")]
     [SerializeField] private Button infoButton;
 
+    // 메인 HUD 일 때만 채워진다(+버튼/설명 팝업 전용). 값 표시는 _battleCtx 로 한다.
     private MainHudContext _ctx;
+    private BattleHudContext _battleCtx;
     private readonly CompositeDisposable _disposables = new();
 
     public CurrencyType Type => type;
 
-    public void Initialize(MainHudContext ctx) {
-        _ctx = ctx;
+    /// <summary>
+    /// 값/아이콘은 어느 화면에서든 같다. +버튼(상점)과 설명 팝업은 메인 HUD 의 팝업들이라 메인 화면(MainHudContext)에서만 연결하고,
+    /// 전투 씬(전선 등)에서는 +버튼을 숨기고 아이콘 클릭을 끈다.
+    /// </summary>
+    public void Initialize(BattleHudContext ctx) {
+        _ctx = ctx as MainHudContext;
+        _battleCtx = ctx;
         _disposables.Clear();
 
         // 아이콘: 카탈로그에서 타입으로 조회(있을 때만 갱신, 없으면 프리팹 아이콘 유지).
@@ -50,7 +57,7 @@ public sealed class CurrencyView : MonoBehaviour {
 
         // +버튼: 팝업이 할당된 경우만 노출/연결.
         if (plusButton != null) {
-            bool hasPopup = plusPopup != null && plusPopup.RuntimeKeyIsValid();
+            bool hasPopup = _ctx != null && plusPopup != null && plusPopup.RuntimeKeyIsValid();
             plusButton.gameObject.SetActive(hasPopup);
             if (hasPopup) {
                 plusButton.onClick.RemoveListener(OnPlusClicked);
@@ -60,7 +67,7 @@ public sealed class CurrencyView : MonoBehaviour {
 
         // 아이콘 클릭: 이 재화의 설명 팝업. 카탈로그에 설명이 없는 재화는 띄울 내용이 없으므로 연결하지 않는다.
         if (infoButton != null) {
-            bool hasDescription = ctx.Currencies != null && !string.IsNullOrEmpty(ctx.Currencies.Description(type));
+            bool hasDescription = _ctx != null && ctx.Currencies != null && !string.IsNullOrEmpty(ctx.Currencies.Description(type));
             infoButton.interactable = hasDescription;
             infoButton.onClick.RemoveListener(OnInfoClicked);
             if (hasDescription) infoButton.onClick.AddListener(OnInfoClicked);
@@ -84,8 +91,8 @@ public sealed class CurrencyView : MonoBehaviour {
         // 상한이 있는 재화(기력/의뢰해결권)는 "현재/최대" 형식으로 보여준다(최대치는 스토어 권위).
         // 그 외는 천 단위 구분만 적용한다.
         valueText.text = type switch {
-            CurrencyType.Stamina => $"{value} / {_ctx.Store.StaminaMax}",
-            CurrencyType.CommissionTicket => $"{value} / {_ctx.Store.CommissionTicketMax}",
+            CurrencyType.Stamina => $"{value} / {_battleCtx.Store.StaminaMax}",
+            CurrencyType.CommissionTicket => $"{value} / {_battleCtx.Store.CommissionTicketMax}",
             _ => value.ToString("N0")
         };
     }

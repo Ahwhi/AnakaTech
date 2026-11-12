@@ -11,10 +11,19 @@ using UnityEngine;
 /// 그래서 어떤 화면도 "미발견 시너지 목록"을 그리지 않으며, 활성화된 것만 이름과 효과를 보여 준다.
 ///
 /// 구성 인원은 2~5명으로 자유롭게 둘 수 있다(덱 정원이 5명이므로 5명이 상한이다).
+/// 예외로 등급 시너지(Condition = GradeCount)는 특정 캐릭터가 아니라 "그 등급 캐릭터 N 명 이상"을 조건으로 한다.
 /// 효과는 코스튬과 같은 축(스탯 + 값)이라 장비/각인/코스튬과 같은 경로로 합산된다.
 /// </summary>
 [CreateAssetMenu(fileName = "SynergyData", menuName = "Anaka/Data/Synergy")]
 public sealed class SynergyData : ScriptableObject {
+    /// <summary>활성화 조건 종류. 값이 직렬화되므로 순서를 바꾸지 말고 새 종류는 아래에 추가한다.</summary>
+    public enum ConditionKind {
+        /// <summary>정해진 캐릭터들(Members)이 덱에 전부 있어야 한다(기본).</summary>
+        Members = 0,
+        /// <summary>정해진 등급(Grade) 캐릭터가 덱에 Grade Count 명 이상 있어야 한다. 같은 등급끼리는 가장 높은 단계만 걸린다.</summary>
+        GradeCount = 1,
+    }
+
     /// <summary>시너지 효과 1줄(스탯 1종 + 값). 코스튬 효과와 같은 규약이다.</summary>
     [Serializable]
     public struct Effect {
@@ -30,10 +39,20 @@ public sealed class SynergyData : ScriptableObject {
     [Tooltip("시너지 이름. 활성화되면 편성 화면과 토스트에 이 이름이 나온다.")]
     [SerializeField] private string displayName;
 
-    [Header("Members")]
+    [Header("Condition")]
+    [Tooltip("Members = 아래 캐릭터들이 전부 있어야 활성화(기본). GradeCount = 정해진 등급 캐릭터가 정해진 수 이상이면 활성화.")]
+    [SerializeField] private ConditionKind condition = ConditionKind.Members;
+
+    [Header("Members (Condition = Members)")]
     [Tooltip("이 시너지를 이루는 캐릭터들. 여기 있는 캐릭터가 덱에 전부 있어야 활성화된다. " +
              "2~5명으로 자유롭게 구성한다(덱 정원이 5명이라 5가 상한). 중복/빈 칸은 무시된다.")]
     [SerializeField] private CharacterData[] members = Array.Empty<CharacterData>();
+
+    [Header("Grade (Condition = GradeCount)")]
+    [Tooltip("세는 등급. 이 등급과 정확히 같은 캐릭터만 센다(상위 등급은 세지 않는다).")]
+    [SerializeField] private Grade grade;
+    [Tooltip("필요 인원(2~5). 이 수 이상이면 활성화된다. 같은 등급의 더 높은 단계가 함께 걸리면 이 시너지는 빠진다.")]
+    [SerializeField, Range(2, 5)] private int gradeCount = 3;
 
     [Header("Effect")]
     [Tooltip("활성화 시 편성 전원이 받는 스탯 보정(조건을 이룬 캐릭터만이 아니다).")]
@@ -68,14 +87,22 @@ public sealed class SynergyData : ScriptableObject {
         }
     }
 
-    /// <summary>구성 인원 수(2 미만이면 시너지로 성립하지 않는다).</summary>
-    public int MemberCount => MemberIds.Count;
+    public ConditionKind Condition => condition;
+    public bool IsGradeCount => condition == ConditionKind.GradeCount;
+    public Grade Grade => grade;
+    public int GradeCount => Mathf.Clamp(gradeCount, 2, 5);
+
+    /// <summary>구성 인원 수(2 미만이면 시너지로 성립하지 않는다). 등급 시너지는 필요 인원이다.</summary>
+    public int MemberCount => IsGradeCount ? GradeCount : MemberIds.Count;
 
     /// <summary>
-    /// 이 덱에서 활성화되는지. 구성원이 전부 편성돼 있어야 한다.
-    /// 구성원이 2명 미만인 에셋은 조건이 사실상 없는 것과 같아 활성화시키지 않는다(설정 실수 방어).
+    /// 이 덱에서 조건을 채우는지(같은 등급 시너지끼리 가장 높은 단계만 남기는 정리는 SynergyDatabase 가 한다).
+    ///   Members    구성원이 전부 편성돼 있어야 한다. 구성원이 2명 미만인 에셋은 활성화시키지 않는다(설정 실수 방어).
+    ///   GradeCount 그 등급 캐릭터가 필요 인원 이상이어야 한다. 등급은 charDb 로 찾는다(없으면 활성화하지 않는다).
     /// </summary>
-    public bool IsActiveIn(IReadOnlyList<int> deckCharIds) {
+    public bool IsActiveIn(IReadOnlyList<int> deckCharIds, CharacterDatabase charDb) {
+        if (IsGradeCount) return CountGrade(deckCharIds, charDb) >= GradeCount;
+
         var ids = MemberIds;
         if (ids.Count < 2 || deckCharIds == null || deckCharIds.Count < ids.Count) return false;
 
@@ -89,6 +116,22 @@ public sealed class SynergyData : ScriptableObject {
             if (!found) return false;
         }
         return true;
+    }
+
+    // 덱에서 이 등급 캐릭터 수(중복 id 는 한 번만 센다).
+    private int CountGrade(IReadOnlyList<int> deckCharIds, CharacterDatabase charDb) {
+        if (deckCharIds == null || charDb == null) return 0;
+        int count = 0;
+        for (int i = 0; i < deckCharIds.Count; i++) {
+            int id = deckCharIds[i];
+            if (id == 0) continue;
+            bool dup = false;
+            for (int j = 0; j < i; j++) if (deckCharIds[j] == id) { dup = true; break; }
+            if (dup) continue;
+            var data = charDb.Get(id);
+            if (data != null && data.Grade == grade) count++;
+        }
+        return count;
     }
 
     /// <summary>편성 전원이 받는 보정 합계. 장비/각인/코스튬과 같은 축이라 그대로 더해진다.</summary>

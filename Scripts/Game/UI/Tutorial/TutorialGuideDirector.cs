@@ -85,8 +85,11 @@ public sealed class TutorialGuideDirector : HudInjectedBehaviour {
             return;
         }
 
-        // 완료된 퀘스트는 다음 행동이 "보상 수령" 하나뿐이므로 경로를 보지 않는다.
+        // 완료된 퀘스트는 보상 수령으로 돌아오게 한다. 경로가 "돌아오는 길"(completedSteps)을 적어 두었으면
+        // 그 지점이 보이는 동안은 그쪽이 먼저다(예: 모집 결과와 가챠 메뉴를 닫기 전까지 다른 곳으로 새지 않게).
         if (_quest.IsCompleted) {
+            if (TryShowDeepest(_route != null ? _route.completedSteps : null)) return;
+
             var completed = routes.CompletedStep;
             var claim = completed != null ? TutorialAnchorRegistry.Find(completed.anchor) : null;
             if (claim != null) Show(completed, claim);
@@ -129,6 +132,25 @@ public sealed class TutorialGuideDirector : HudInjectedBehaviour {
             if (gate == null || gate.IsSatisfied) continue;
 
             Show(_route.steps[j], gate);
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// 지점 목록에서 지금 보이는 것 중 가장 뒤 지점을 가리킨다(가리켰으면 true). 목록이 비었거나 보이는 것이 없으면 false.
+    /// 완료 후 돌아오는 길에만 쓴다. 관문 보정은 하지 않는다(닫기 버튼들은 화면 깊이로 순서가 이미 정해진다).
+    /// </summary>
+    private bool TryShowDeepest(TutorialGuideRoutes.Step[] steps) {
+        if (steps == null) return false;
+
+        for (int i = steps.Length - 1; i >= 0; i--) {
+            var step = steps[i];
+            if (step == null) continue;
+            var anchor = TutorialAnchorRegistry.Find(step.anchor);
+            if (anchor == null) continue;
+
+            Show(step, anchor);
             return true;
         }
         return false;

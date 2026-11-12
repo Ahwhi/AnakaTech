@@ -16,7 +16,7 @@ public sealed class EncyclopediaRewardPopup : UIView, IHudPopup {
     [Header("Collection (수집)")]
     [SerializeField] private ScrollRect collectionScroll;
     [SerializeField] private Transform collectionContent;
-    [Tooltip("수집 진행도 공통 텍스트(예: '12 / 50'). 각 셀에는 목표만 표기.")]
+    [Tooltip("수집 진행도 공통 텍스트(예: '12 / 40'). 각 셀에는 목표만 표기.")]
     [SerializeField] private TMP_Text collectionProgressText;
     [Header("Star (별레벨)")]
     [SerializeField] private ScrollRect starScroll;
@@ -57,27 +57,32 @@ public sealed class EncyclopediaRewardPopup : UIView, IHudPopup {
             return;
         }
 
-        int collectionTarget = BuildCollection(status);
-        int starTarget = BuildStar(status);
+        // 단계 수는 캐릭터 수에서 정해진다(서버와 같은 규칙). 캐릭터가 추가되면 단계도 함께 늘어난다.
+        int characterCount = _hud.CharDb != null ? _hud.CharDb.All.Count : 0;
+        int collectionSteps = EncyclopediaRewardRules.CollectionSteps(characterCount);
+        int starSteps = EncyclopediaRewardRules.StarSteps(characterCount);
+
+        int collectionTarget = BuildCollection(status, collectionSteps);
+        int starTarget = BuildStar(status, starSteps);
 
         // 레이아웃 확정 후 현재 보상 단계로 자동 스크롤.
         await UniTask.NextFrame(_ct);
         Canvas.ForceUpdateCanvases();
-        ScrollTo(collectionScroll, collectionTarget, EncyclopediaRewardRules.CollectionSteps);
-        ScrollTo(starScroll, starTarget, EncyclopediaRewardRules.StarSteps);
+        ScrollTo(collectionScroll, collectionTarget, collectionSteps);
+        ScrollTo(starScroll, starTarget, starSteps);
     }
 
     // 반환: 자동 스크롤 목표 단계(안 받은 것 중 가장 낮은 단계, 없으면 마지막).
-    private int BuildCollection(EncyclopediaRewardStatusDto status) {
+    private int BuildCollection(EncyclopediaRewardStatusDto status, int steps) {
         // 진행도는 공통 텍스트 하나로만 표기(각 셀에는 목표만).
         if (collectionProgressText != null) {
-            int max = EncyclopediaRewardRules.CollectionThreshold(EncyclopediaRewardRules.CollectionSteps);
+            int max = EncyclopediaRewardRules.CollectionThreshold(steps);
             collectionProgressText.text = $"{status.CollectionCount} / {max}";
         }
 
-        int target = EncyclopediaRewardRules.CollectionSteps;
+        int target = steps;
         bool targetFound = false;
-        for (int step = 1; step <= EncyclopediaRewardRules.CollectionSteps; step++) {
+        for (int step = 1; step <= steps; step++) {
             int threshold = EncyclopediaRewardRules.CollectionThreshold(step);
             bool claimed = status.ClaimedCollectionSteps.Contains(step);
             bool unlocked = status.CollectionCount >= threshold;
@@ -98,15 +103,15 @@ public sealed class EncyclopediaRewardPopup : UIView, IHudPopup {
         return target;
     }
 
-    private int BuildStar(EncyclopediaRewardStatusDto status) {
+    private int BuildStar(EncyclopediaRewardStatusDto status, int steps) {
         if (starProgressText != null) {
-            int max = EncyclopediaRewardRules.StarThreshold(EncyclopediaRewardRules.StarSteps);
+            int max = EncyclopediaRewardRules.StarThreshold(steps);
             starProgressText.text = $"{status.TotalStar} / {max}";
         }
 
-        int target = EncyclopediaRewardRules.StarSteps;
+        int target = steps;
         bool targetFound = false;
-        for (int step = 1; step <= EncyclopediaRewardRules.StarSteps; step++) {
+        for (int step = 1; step <= steps; step++) {
             int threshold = EncyclopediaRewardRules.StarThreshold(step);
             bool claimed = status.ClaimedStarSteps.Contains(step);
             bool unlocked = status.TotalStar >= threshold;

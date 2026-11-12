@@ -22,4 +22,13 @@ public static class BoostRules {
     /// <summary>지금 부스트로 클리어를 정산할 수 있는지(기력과 부스트권을 모두 갖췄는지).</summary>
     public static bool CanBoost(int stamina, int boostTickets) =>
         stamina >= StaminaPerBoostClear && boostTickets >= TicketPerBoostClear;
+
+    /// <summary>
+    /// 클리어 1회 정산에서 실제로 쓰인 기력. 서버 ClearDungeon 규약의 미러다.
+    /// 일반 클리어는 회분당 StaminaPerClear, 부스트는 clearCount 가 ClearMultiplier 라 StaminaPerBoostClear 와 같다.
+    /// 기력이 모자란 클리어(staminaShort)는 일반 클리어에서만 생기며 남은 기력이 1 미만이라 0 이 쓰인다.
+    /// "이전 기력 - 남은 기력"으로 재면 그 사이 자연 충전분이 섞이므로 이 규칙으로 센다.
+    /// </summary>
+    public static int StaminaSpent(int clearCount, bool staminaShort) =>
+        staminaShort ? 0 : System.Math.Max(0, clearCount) * StaminaPerClear;
 }

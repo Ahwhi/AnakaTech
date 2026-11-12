@@ -27,6 +27,11 @@ public abstract class UnitSkill : ScriptableObject {
              "광역/다단 스킬이면 맞은 대상마다 각각 판정한다.")]
     [SerializeField] private StatusEffectSpec[] statusEffects = System.Array.Empty<StatusEffectSpec>();
 
+    [Header("Self Heal (선택)")]
+    [Tooltip("스킬을 쓸 때 시전자가 최대 체력의 이 비율(%)만큼 회복한다. 10 = 최대 체력의 10%. 0 이면 회복하지 않는다. " +
+             "스킬 종류와 무관하게 시전 순간 한 번 적용된다(예: C4402 미스즈).")]
+    [SerializeField] [Min(0f)] private float selfHealMaxHpPercent;
+
     [Header("Cast (시전자 연출, 선택)")]
     [Tooltip("스킬 발동 순간 시전자 기준점(HitPoint)에 재생하는 VFX(차지/오라/휘두름 등). 비우면 재생 안 함.")]
     [SerializeField] private GameObject castVfxPrefab;
@@ -45,8 +50,21 @@ public abstract class UnitSkill : ScriptableObject {
     public IReadOnlyList<StatusEffectSpec> StatusEffects => statusEffects;
 
     /// <summary>
+    /// 이 스킬로 인해 대상이 걸릴 수 있는 상태이상 전부(표시용). 기본은 적중 시 상태이상이며,
+    /// 다른 경로로 상태이상을 거는 스킬(변신 중 기본공격 등)은 오버라이드해 함께 알린다.
+    /// UI 는 이 목록만 보므로 스킬 종류를 알 필요가 없다. 설정이 비어 있는(지속시간 0) 항목은 빠진다.
+    /// </summary>
+    public virtual IEnumerable<StatusEffectSpec> InflictedStatusEffects {
+        get {
+            foreach (var s in statusEffects)
+                if (s.IsValid) yield return s;
+        }
+    }
+
+    /// <summary>
     /// 전투력 산출용 화력 신고(SkillPowerProfile). 자기 직렬화 필드만으로 "1회 발동이 내는 배율/타격/대상 수"를 알린다.
-    /// 데미지를 주지 않는 스킬(버프/변신 등)은 오버라이드하지 않고 기본값 None 을 그대로 둔다.
+    /// 직접 피해가 없는 버프형 스킬도 "버프가 늘려 주는 피해"를 배율로 환산해 반드시 구현한다.
+    /// None 으로 두면 그 캐릭터는 스킬 가속/쿨타임 감소 성장이 전투력에 반영되지 않는다(CombatPowerFormula 의 단조성 규칙).
     ///
     /// 이 프로퍼티 덕분에 전투력 계산기가 스킬 종류를 알 필요가 없다. 새 아키타입을 추가할 때
     /// OnExecute 와 함께 이것만 구현하면 전투력에 자동 반영되며, 전투/전투력 코드는 수정하지 않는다.
@@ -56,6 +74,7 @@ public abstract class UnitSkill : ScriptableObject {
     /// <summary>스킬 실행 진입점. 시전자 공통 연출을 먼저 재생하고 파생 고유 로직(OnExecute)을 호출한다.</summary>
     public void Execute(SkillContext ctx) {
         PlayCast(ctx);
+        if (selfHealMaxHpPercent > 0f) ctx.Runtime.HealByMaxHp(ctx.Caster, selfHealMaxHpPercent / 100f);
         OnExecute(ctx);
     }
 

@@ -3,7 +3,7 @@ using UnityEngine;
 
 /// <summary>
 /// 각인 효과의 발동 조건. 조건 판정은 전투 중 CharacterUnit 이 하고, 여기서는 "무슨 조건인지"만 표현한다.
-/// 새 조건을 추가할 때는 이 열거형 + CharacterUnit 의 조건 갱신부 한 곳만 손보면 된다.
+/// 새 조건을 추가할 때는 이 열거형 + CharacterUnit 의 조건 판정 + CombatPowerFormula 의 가동률 규칙을 손본다.
 /// </summary>
 public enum EngravingTrigger {
     /// <summary>항상 적용. 전투 밖(전투력 표시/상세 스탯)에도 그대로 반영된다.</summary>
@@ -27,7 +27,7 @@ public enum EngravingCategory {
 ///
 /// 효과 값은 레벨에 따라 선형으로 오른다: 레벨 L 의 값 = ValueAtLevel1 + ValuePerLevel * (L - 1).
 /// 조건이 Always 인 효과는 성장 스탯처럼 합산되어 전투력/상세 스탯에도 보이고,
-/// 조건부 효과는 전투 중에만 붙었다 떨어진다(표시에는 설명 문구로만 나온다).
+/// 조건부 효과는 전투 중에만 붙었다 떨어지며, 전투력에는 가동률만큼 환산되어 반영된다.
 /// </summary>
 [CreateAssetMenu(fileName = "EngravingData", menuName = "Anaka/Data/Engraving")]
 public sealed class EngravingData : ScriptableObject {

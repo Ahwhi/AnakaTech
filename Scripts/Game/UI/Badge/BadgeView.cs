@@ -62,7 +62,16 @@ public sealed class BadgeView : MonoBehaviour {
         AchievementReward,    // 19 업적 팝업의 보상 탭(수령 가능한 업적 점수 보상)
         Training,             // 20 수련 버튼(완료 버튼을 누르지 않은 수련이 있음)
         Arena,                // 21 쟁탈전 버튼(오늘 무료 매칭이 남아 있음)
-        Dispatch              // 22 파견 버튼(완료 버튼을 누르지 않은 파견이 있음)
+        Dispatch,             // 22 파견 버튼(완료 버튼을 누르지 않은 파견이 있음)
+        Doom,                 // 23 멸망전 버튼(도달한 구간 중 받지 않은 보상이 있음)
+        Story,                // 24 스토리 버튼(읽을 수 있는 편 또는 미수령 완독 보상)
+        Pass,                 // 25 패스 버튼(도달한 칸 중 받지 않은 보상이 있음)
+        Expedition,           // 26 원정대 버튼(이번 주 파티가 있고 오늘 아직 출격하지 않음)
+        Tower,                // 27 무한 타워 버튼(오늘 아직 한 층을 오르지 않음)
+        StageSweep,           // 28 스테이지 소탕 버튼(스테이지 소탕권 보유)
+        Investment,           // 29 투자 버튼(새로 개방된 슬롯을 아직 확인하지 않음, NEW)
+        Heroes,               // 30 영웅전 버튼(오늘 도전 횟수가 남아 있음)
+        Frontline             // 31 전선 버튼(보유 기력과 오늘 남은 전선 기력이 모두 1회 참여분 이상)
     }
 
     /// <summary>생성한 배지 프리팹을 슬롯에 어떻게 맞출지.</summary>
@@ -213,6 +222,15 @@ public sealed class BadgeView : MonoBehaviour {
         BadgeId.Training => _center.TrainingBadge,
         BadgeId.Arena => _center.ArenaBadge,
         BadgeId.Dispatch => _center.DispatchBadge,
+        BadgeId.Doom => _center.DoomBadge,
+        BadgeId.Story => _center.StoryBadge,
+        BadgeId.Pass => _center.PassBadge,
+        BadgeId.Expedition => _center.ExpeditionBadge,
+        BadgeId.Tower => _center.TowerBadge,
+        BadgeId.StageSweep => _center.StageSweepBadge,
+        BadgeId.Investment => _center.InvestmentBadge,
+        BadgeId.Heroes => _center.HeroesBadge,
+        BadgeId.Frontline => _center.FrontlineBadge,
         _ => EventBadge.None
     };
 

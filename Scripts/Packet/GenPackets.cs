@@ -44,189 +44,269 @@ public enum PacketID
 	S_SetAutoStatResult = 36,
 	C_UpgradeStar = 37,
 	S_UpgradeStarResult = 38,
-	C_RequestShop = 39,
-	S_ShopCatalog = 40,
-	C_BuyOffer = 41,
-	C_PurchaseGate = 42,
-	C_CanBuyOffer = 43,
-	S_CanBuyOffer = 44,
-	C_GachaRates = 45,
-	S_GachaRates = 46,
-	C_RotationInfo = 47,
-	S_RotationInfo = 48,
-	S_BuyResult = 49,
-	C_RequestInventory = 50,
-	S_Inventory = 51,
-	C_EquipItem = 52,
-	S_EquipResult = 53,
-	C_UnequipItem = 54,
-	S_UnequipResult = 55,
-	C_AwakenEquip = 56,
-	S_AwakenResult = 57,
-	C_ConvertUniversalShard = 58,
-	S_ConvertUniversalShardResult = 59,
-	C_RequestMail = 60,
-	S_MailList = 61,
-	C_ClaimMail = 62,
-	S_ClaimMailResult = 63,
-	S_MailNotify = 64,
-	C_Profile = 65,
-	S_Profile = 66,
-	C_EquipProfileFrame = 67,
-	S_EquipProfileFrameResult = 68,
-	C_CheckNickname = 69,
-	S_CheckNicknameResult = 70,
-	C_ChangeNickname = 71,
-	S_ChangeNicknameResult = 72,
-	C_EncyclopediaRewards = 73,
-	S_EncyclopediaRewards = 74,
-	C_ClaimEncyclopediaReward = 75,
-	S_ClaimEncyclopediaRewardResult = 76,
-	C_ChargeRewards = 77,
-	S_ChargeRewards = 78,
-	C_ClaimChargeReward = 79,
-	S_ClaimChargeRewardResult = 80,
-	C_EventMissions = 81,
-	S_EventMissions = 82,
-	C_Heartbeat = 83,
-	S_HeartbeatResult = 84,
-	C_ClaimEventMission = 85,
-	S_ClaimEventMissionResult = 86,
-	C_LevelUpEquip = 87,
-	S_LevelUpEquipResult = 88,
-	C_CommissionInfo = 89,
-	S_CommissionInfo = 90,
-	C_StartCommission = 91,
-	S_StartCommissionResult = 92,
-	C_ClearCommission = 93,
-	S_ClearCommissionResult = 94,
-	C_SweepCommission = 95,
-	S_SweepCommissionResult = 96,
-	C_EngravingInfo = 97,
-	S_EngravingInfo = 98,
-	C_UpgradeEngraving = 99,
-	S_UpgradeEngravingResult = 100,
-	C_EquipEngraving = 101,
-	S_EquipEngravingResult = 102,
-	C_CostumeInfo = 103,
-	S_CostumeInfo = 104,
-	C_EquipCostume = 105,
-	S_EquipCostumeResult = 106,
-	C_FlashSaleInfo = 107,
-	S_FlashSaleInfo = 108,
-	S_FlashSaleNotify = 109,
-	C_ChatSend = 110,
-	S_ChatSendResult = 111,
-	S_ChatMessage = 112,
-	C_DeleteWhisper = 113,
-	S_DeleteWhisperResult = 114,
-	C_ReportChat = 115,
-	S_ReportChatResult = 116,
-	C_ChatHistory = 117,
-	S_ChatHistory = 118,
-	C_HeadquartersInfo = 119,
-	S_HeadquartersInfo = 120,
-	C_UpgradeHqNode = 121,
-	S_UpgradeHqNodeResult = 122,
-	C_ItemInfo = 123,
-	S_ItemInfo = 124,
-	C_UseItem = 125,
-	S_UseItemResult = 126,
-	C_DeckPresets = 127,
-	S_DeckPresets = 128,
-	C_SaveDeckPreset = 129,
-	C_ApplyDeckPreset = 130,
-	C_RenameDeckPreset = 131,
-	S_DeckPresetResult = 132,
-	C_GuildHome = 133,
-	S_GuildHome = 134,
-	C_GuildList = 135,
-	S_GuildList = 136,
-	C_GuildNameCheck = 137,
-	S_GuildNameCheck = 138,
-	C_CreateGuild = 139,
-	C_GuildAction = 140,
-	S_GuildActionResult = 141,
-	C_GuildApplications = 142,
-	S_GuildApplications = 143,
-	C_ReportCombatPower = 144,
-	C_UserProfile = 145,
-	S_UserProfile = 146,
-	C_Achievements = 147,
-	S_Achievements = 148,
-	C_ClaimAchievementReward = 149,
-	S_ClaimAchievementRewardResult = 150,
-	C_Ranking = 151,
-	S_Ranking = 152,
-	C_FriendHome = 153,
-	S_FriendHome = 154,
-	C_SearchFriend = 155,
-	S_SearchFriendResult = 156,
-	C_FriendAction = 157,
-	S_FriendActionResult = 158,
-	S_FriendNotify = 159,
-	C_GuildRaidState = 160,
-	S_GuildRaidState = 161,
-	C_EnterGuildRaid = 162,
-	S_EnterGuildRaidResult = 163,
-	C_ReportGuildRaidDamage = 164,
-	S_GuildRaidDamageResult = 165,
-	C_GuildWarState = 166,
-	S_GuildWarState = 167,
-	C_BeginGuildWarAttack = 168,
-	S_BeginGuildWarAttackResult = 169,
-	C_ReportGuildWarAttack = 170,
-	S_GuildWarAttackResult = 171,
-	C_GuildWarLog = 172,
-	S_GuildWarLog = 173,
-	C_UserDeck = 174,
-	S_UserDeck = 175,
-	C_RedeemCoupon = 176,
-	S_RedeemCouponResult = 177,
-	C_ArenaHome = 178,
-	S_ArenaHome = 179,
-	C_ArenaMatch = 180,
-	S_ArenaMatchResult = 181,
-	C_ArenaReport = 182,
-	S_ArenaReportResult = 183,
-	C_ArenaLog = 184,
-	S_ArenaLog = 185,
-	C_TrainingInfo = 186,
-	S_TrainingInfo = 187,
-	C_TrainingAction = 188,
-	S_TrainingActionResult = 189,
-	C_DevTool = 190,
-	S_DevTool = 191,
-	C_OfflineReward = 192,
-	S_OfflineReward = 193,
-	C_DiamondDetail = 194,
-	S_DiamondDetail = 195,
-	C_RegisterPushToken = 196,
-	C_UnregisterPushToken = 197,
-	S_PushTokenResult = 198,
-	C_CommissionAttempt = 199,
-	C_StoryProgress = 200,
-	S_StoryProgress = 201,
-	C_CompleteStory = 202,
-	S_CompleteStoryResult = 203,
-	C_Investment = 204,
-	S_Investment = 205,
-	C_UpgradeInvestment = 206,
-	S_UpgradeInvestmentResult = 207,
-	C_MainQuest = 208,
-	C_MainQuestAction = 209,
-	S_MainQuest = 210,
-	S_MainQuestNotify = 211,
-	C_ClaimMainQuest = 212,
-	S_ClaimMainQuestResult = 213,
-	C_DispatchInfo = 214,
-	S_DispatchInfo = 215,
-	C_DispatchAction = 216,
-	S_DispatchActionResult = 217,
-	S_DispatchNotify = 218,
-	C_SocialSettings = 219,
-	S_SocialSettings = 220,
-	C_Test = 221,
+	C_LimitBreak = 39,
+	S_LimitBreakResult = 40,
+	C_RequestShop = 41,
+	S_ShopCatalog = 42,
+	C_BuyOffer = 43,
+	C_PurchaseGate = 44,
+	C_CanBuyOffer = 45,
+	S_CanBuyOffer = 46,
+	C_GachaMileagePick = 47,
+	S_GachaMileagePickResult = 48,
+	C_GachaRates = 49,
+	S_GachaRates = 50,
+	C_RotationInfo = 51,
+	S_RotationInfo = 52,
+	S_BuyResult = 53,
+	C_RequestInventory = 54,
+	S_Inventory = 55,
+	C_EquipItem = 56,
+	S_EquipResult = 57,
+	C_UnequipItem = 58,
+	S_UnequipResult = 59,
+	C_AwakenEquip = 60,
+	S_AwakenResult = 61,
+	C_EquipLimitBreak = 62,
+	S_EquipLimitBreakResult = 63,
+	C_DisassembleEquip = 64,
+	C_DisassembleEquipByGrade = 65,
+	S_DisassembleEquipResult = 66,
+	C_ConvertUniversalShard = 67,
+	S_ConvertUniversalShardResult = 68,
+	C_RequestMail = 69,
+	S_MailList = 70,
+	C_ClaimMail = 71,
+	S_ClaimMailResult = 72,
+	S_MailNotify = 73,
+	C_Profile = 74,
+	S_Profile = 75,
+	C_EquipProfileFrame = 76,
+	S_EquipProfileFrameResult = 77,
+	C_CheckNickname = 78,
+	S_CheckNicknameResult = 79,
+	C_ChangeNickname = 80,
+	S_ChangeNicknameResult = 81,
+	C_EncyclopediaRewards = 82,
+	S_EncyclopediaRewards = 83,
+	C_ClaimEncyclopediaReward = 84,
+	S_ClaimEncyclopediaRewardResult = 85,
+	C_ChargeRewards = 86,
+	S_ChargeRewards = 87,
+	C_ClaimChargeReward = 88,
+	S_ClaimChargeRewardResult = 89,
+	C_EventMissions = 90,
+	S_EventMissions = 91,
+	C_Heartbeat = 92,
+	S_HeartbeatResult = 93,
+	C_ClaimEventMission = 94,
+	S_ClaimEventMissionResult = 95,
+	C_LevelUpEquip = 96,
+	S_LevelUpEquipResult = 97,
+	C_CommissionInfo = 98,
+	S_CommissionInfo = 99,
+	C_StartCommission = 100,
+	S_StartCommissionResult = 101,
+	C_ClearCommission = 102,
+	S_ClearCommissionResult = 103,
+	C_SweepCommission = 104,
+	S_SweepCommissionResult = 105,
+	C_EngravingInfo = 106,
+	S_EngravingInfo = 107,
+	C_UpgradeEngraving = 108,
+	S_UpgradeEngravingResult = 109,
+	C_EquipEngraving = 110,
+	S_EquipEngravingResult = 111,
+	C_CostumeInfo = 112,
+	S_CostumeInfo = 113,
+	C_EquipUnitSkin = 114,
+	S_EquipUnitSkinResult = 115,
+	C_EquipCostume = 116,
+	S_EquipCostumeResult = 117,
+	C_FlashSaleInfo = 118,
+	S_FlashSaleInfo = 119,
+	S_FlashSaleNotify = 120,
+	C_ChatSend = 121,
+	S_ChatSendResult = 122,
+	S_ChatMessage = 123,
+	C_DeleteWhisper = 124,
+	S_DeleteWhisperResult = 125,
+	C_ReportChat = 126,
+	S_ReportChatResult = 127,
+	C_ChatHistory = 128,
+	S_ChatHistory = 129,
+	C_HeadquartersInfo = 130,
+	S_HeadquartersInfo = 131,
+	C_UpgradeHqNode = 132,
+	S_UpgradeHqNodeResult = 133,
+	C_ItemInfo = 134,
+	S_ItemInfo = 135,
+	C_UseItem = 136,
+	S_UseItemResult = 137,
+	C_ItemUsePreview = 138,
+	S_ItemUsePreview = 139,
+	C_DeckPresets = 140,
+	S_DeckPresets = 141,
+	C_SaveDeckPreset = 142,
+	C_ApplyDeckPreset = 143,
+	C_RenameDeckPreset = 144,
+	S_DeckPresetResult = 145,
+	C_GuildHome = 146,
+	S_GuildHome = 147,
+	C_GuildList = 148,
+	S_GuildList = 149,
+	C_GuildNameCheck = 150,
+	S_GuildNameCheck = 151,
+	C_CreateGuild = 152,
+	C_GuildAction = 153,
+	S_GuildActionResult = 154,
+	C_GuildApplications = 155,
+	S_GuildApplications = 156,
+	C_ReportCombatPower = 157,
+	C_UserProfile = 158,
+	S_UserProfile = 159,
+	C_Achievements = 160,
+	S_Achievements = 161,
+	C_ClaimAchievementReward = 162,
+	S_ClaimAchievementRewardResult = 163,
+	C_Ranking = 164,
+	S_Ranking = 165,
+	C_FriendHome = 166,
+	S_FriendHome = 167,
+	C_SearchFriend = 168,
+	S_SearchFriendResult = 169,
+	C_FriendAction = 170,
+	S_FriendActionResult = 171,
+	S_FriendNotify = 172,
+	C_FriendStaminaSend = 173,
+	S_FriendStaminaSendResult = 174,
+	C_FriendStaminaClaim = 175,
+	S_FriendStaminaClaimResult = 176,
+	C_GuildRaidState = 177,
+	S_GuildRaidState = 178,
+	C_EnterGuildRaid = 179,
+	S_EnterGuildRaidResult = 180,
+	C_ReportGuildRaidDamage = 181,
+	S_GuildRaidDamageResult = 182,
+	C_GuildWarState = 183,
+	S_GuildWarState = 184,
+	C_BeginGuildWarAttack = 185,
+	S_BeginGuildWarAttackResult = 186,
+	C_ReportGuildWarAttack = 187,
+	S_GuildWarAttackResult = 188,
+	C_GuildWarLog = 189,
+	S_GuildWarLog = 190,
+	C_UserDeck = 191,
+	S_UserDeck = 192,
+	C_RedeemCoupon = 193,
+	S_RedeemCouponResult = 194,
+	C_ArenaHome = 195,
+	S_ArenaHome = 196,
+	C_ArenaSetRunes = 197,
+	S_ArenaSetRunesResult = 198,
+	C_ArenaHistory = 199,
+	S_ArenaHistory = 200,
+	C_ArenaMatch = 201,
+	S_ArenaMatchResult = 202,
+	C_ArenaReport = 203,
+	S_ArenaReportResult = 204,
+	C_ArenaLog = 205,
+	S_ArenaLog = 206,
+	C_TrainingInfo = 207,
+	S_TrainingInfo = 208,
+	C_TrainingAction = 209,
+	S_TrainingActionResult = 210,
+	C_DevTool = 211,
+	S_DevTool = 212,
+	C_OfflineReward = 213,
+	S_OfflineReward = 214,
+	C_DiamondDetail = 215,
+	S_DiamondDetail = 216,
+	C_RegisterPushToken = 217,
+	C_UnregisterPushToken = 218,
+	S_PushTokenResult = 219,
+	C_CommissionAttempt = 220,
+	C_StoryProgress = 221,
+	S_StoryProgress = 222,
+	C_CompleteStory = 223,
+	S_CompleteStoryResult = 224,
+	C_ClaimStoryReward = 225,
+	S_ClaimStoryRewardResult = 226,
+	C_Investment = 227,
+	S_Investment = 228,
+	C_UpgradeInvestment = 229,
+	S_UpgradeInvestmentResult = 230,
+	C_MainQuest = 231,
+	C_MainQuestAction = 232,
+	S_MainQuest = 233,
+	S_MainQuestNotify = 234,
+	C_ClaimMainQuest = 235,
+	S_ClaimMainQuestResult = 236,
+	C_DispatchInfo = 237,
+	S_DispatchInfo = 238,
+	C_DispatchAction = 239,
+	S_DispatchActionResult = 240,
+	S_DispatchNotify = 241,
+	C_SocialSettings = 242,
+	S_SocialSettings = 243,
+	C_Test = 244,
+	C_DoomInfo = 245,
+	S_DoomInfo = 246,
+	C_DoomResult = 247,
+	S_DoomResult = 248,
+	C_DoomClaim = 249,
+	S_DoomClaimResult = 250,
+	C_BattleFinished = 251,
+	C_PassInfo = 252,
+	S_PassInfo = 253,
+	C_PassClaim = 254,
+	S_PassClaimResult = 255,
+	C_EventRouletteInfo = 256,
+	S_EventRouletteInfo = 257,
+	C_EventRouletteSpin = 258,
+	S_EventRouletteSpinResult = 259,
+	C_ReportCharacterPower = 260,
+	C_ExpeditionHome = 261,
+	S_ExpeditionHome = 262,
+	C_EnterExpedition = 263,
+	S_EnterExpeditionResult = 264,
+	C_ExpeditionMemberDeck = 265,
+	C_ReportExpeditionDamage = 266,
+	S_ExpeditionDamageResult = 267,
+	C_ExpeditionLog = 268,
+	S_ExpeditionLog = 269,
+	C_DoomEntryInfo = 270,
+	S_DoomEntryInfo = 271,
+	C_DoomEnter = 272,
+	S_DoomEnterResult = 273,
+	C_DoomFinish = 274,
+	S_DoomFinishResult = 275,
+	C_TowerInfo = 276,
+	S_TowerInfo = 277,
+	C_TowerEnter = 278,
+	S_TowerEnterResult = 279,
+	C_TowerClear = 280,
+	S_TowerClearResult = 281,
+	C_AttendanceEventInfo = 282,
+	S_AttendanceEventInfo = 283,
+	C_ClaimAttendanceEvent = 284,
+	S_ClaimAttendanceEventResult = 285,
+	C_FrontlineInfo = 286,
+	S_FrontlineInfo = 287,
+	C_FrontlineSetMembers = 288,
+	S_FrontlineSetMembersResult = 289,
+	C_FrontlineReset = 290,
+	S_FrontlineResetResult = 291,
+	C_FrontlineEnter = 292,
+	S_FrontlineEnterResult = 293,
+	C_FrontlineFinish = 294,
+	S_FrontlineFinishResult = 295,
+	C_HeroesInfo = 296,
+	S_HeroesInfo = 297,
+	C_HeroesEnter = 298,
+	S_HeroesEnterResult = 299,
+	C_HeroesClear = 300,
+	S_HeroesClearResult = 301,
 	
 }
 
@@ -1340,6 +1420,7 @@ public class S_MainData : IPacket
 		public int invAttackSpeed;
 		public int invMoveSpeed;
 		public int autoStatType;
+		public bool limitBroken;
 	
 		public void Read(ArraySegment<byte> segment, ref ushort count)
 		{
@@ -1371,6 +1452,8 @@ public class S_MainData : IPacket
 			count += sizeof(int);
 			this.autoStatType = BitConverter.ToInt32(segment.Array, segment.Offset + count);
 			count += sizeof(int);
+			this.limitBroken = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+			count += sizeof(bool);
 		}
 	
 		public bool Write(ArraySegment<byte> segment, ref ushort count)
@@ -1404,6 +1487,8 @@ public class S_MainData : IPacket
 			count += sizeof(int);
 			Array.Copy(BitConverter.GetBytes(this.autoStatType), 0, segment.Array, segment.Offset + count, sizeof(int));
 			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.limitBroken), 0, segment.Array, segment.Offset + count, sizeof(bool));
+			count += sizeof(bool);
 			return success;
 		}	
 	}
@@ -2249,6 +2334,7 @@ public class S_AllocateStatResult : IPacket
 	public int invAttackSpeed;
 	public int invMoveSpeed;
 	public int autoStatType;
+	public bool limitBroken;
 
 	public ushort Protocol { get { return (ushort)PacketID.S_AllocateStatResult; } }
 
@@ -2289,6 +2375,8 @@ public class S_AllocateStatResult : IPacket
 		count += sizeof(int);
 		this.autoStatType = BitConverter.ToInt32(segment.Array, segment.Offset + count);
 		count += sizeof(int);
+		this.limitBroken = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
 	}
 
 	public ArraySegment<byte> Write()
@@ -2331,6 +2419,8 @@ public class S_AllocateStatResult : IPacket
 		count += sizeof(int);
 		Array.Copy(BitConverter.GetBytes(this.autoStatType), 0, segment.Array, segment.Offset + count, sizeof(int));
 		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.limitBroken), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
 
 		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
 
@@ -2389,6 +2479,7 @@ public class S_ResetStatsResult : IPacket
 	public int invAttackSpeed;
 	public int invMoveSpeed;
 	public int autoStatType;
+	public bool limitBroken;
 
 	public ushort Protocol { get { return (ushort)PacketID.S_ResetStatsResult; } }
 
@@ -2431,6 +2522,8 @@ public class S_ResetStatsResult : IPacket
 		count += sizeof(int);
 		this.autoStatType = BitConverter.ToInt32(segment.Array, segment.Offset + count);
 		count += sizeof(int);
+		this.limitBroken = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
 	}
 
 	public ArraySegment<byte> Write()
@@ -2475,6 +2568,8 @@ public class S_ResetStatsResult : IPacket
 		count += sizeof(int);
 		Array.Copy(BitConverter.GetBytes(this.autoStatType), 0, segment.Array, segment.Offset + count, sizeof(int));
 		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.limitBroken), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
 
 		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
 
@@ -2617,6 +2712,7 @@ public class S_UpgradeStarResult : IPacket
 	public int invAttackSpeed;
 	public int invMoveSpeed;
 	public int autoStatType;
+	public bool limitBroken;
 
 	public ushort Protocol { get { return (ushort)PacketID.S_UpgradeStarResult; } }
 
@@ -2659,6 +2755,8 @@ public class S_UpgradeStarResult : IPacket
 		count += sizeof(int);
 		this.autoStatType = BitConverter.ToInt32(segment.Array, segment.Offset + count);
 		count += sizeof(int);
+		this.limitBroken = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
 	}
 
 	public ArraySegment<byte> Write()
@@ -2703,6 +2801,157 @@ public class S_UpgradeStarResult : IPacket
 		count += sizeof(int);
 		Array.Copy(BitConverter.GetBytes(this.autoStatType), 0, segment.Array, segment.Offset + count, sizeof(int));
 		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.limitBroken), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_LimitBreak : IPacket
+{
+	public int charDataId;
+
+	public ushort Protocol { get { return (ushort)PacketID.C_LimitBreak; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.charDataId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_LimitBreak), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.charDataId), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_LimitBreakResult : IPacket
+{
+	public bool isSuccess;
+	public int failReason;
+	public int newLimitBreakTicket;
+	public int charDataId;
+	public int level;
+	public int exp;
+	public int maxExp;
+	public int starLevel;
+	public int statPoints;
+	public int shards;
+	public int invAttack;
+	public int invDefense;
+	public int invHealth;
+	public int invSkillAccel;
+	public int invAttackSpeed;
+	public int invMoveSpeed;
+	public int autoStatType;
+	public bool limitBroken;
+
+	public ushort Protocol { get { return (ushort)PacketID.S_LimitBreakResult; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.isSuccess = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.failReason = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.newLimitBreakTicket = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.charDataId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.level = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.exp = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.maxExp = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.starLevel = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.statPoints = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.shards = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.invAttack = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.invDefense = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.invHealth = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.invSkillAccel = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.invAttackSpeed = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.invMoveSpeed = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.autoStatType = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.limitBroken = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_LimitBreakResult), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.isSuccess), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.failReason), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.newLimitBreakTicket), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.charDataId), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.level), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.exp), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.maxExp), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.starLevel), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.statPoints), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.shards), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.invAttack), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.invDefense), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.invHealth), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.invSkillAccel), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.invAttackSpeed), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.invMoveSpeed), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.autoStatType), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.limitBroken), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
 
 		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
 
@@ -2849,6 +3098,8 @@ public class S_ShopCatalog : IPacket
 		public long saleEndUnix;
 		public bool hot;
 		public bool flash;
+		public bool nonConsumable;
+		public int requiredGuildLevel;
 	
 		public void Read(ArraySegment<byte> segment, ref ushort count)
 		{
@@ -2932,6 +3183,10 @@ public class S_ShopCatalog : IPacket
 			count += sizeof(bool);
 			this.flash = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
 			count += sizeof(bool);
+			this.nonConsumable = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+			count += sizeof(bool);
+			this.requiredGuildLevel = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
 		}
 	
 		public bool Write(ArraySegment<byte> segment, ref ushort count)
@@ -3028,6 +3283,10 @@ public class S_ShopCatalog : IPacket
 			count += sizeof(bool);
 			Array.Copy(BitConverter.GetBytes(this.flash), 0, segment.Array, segment.Offset + count, sizeof(bool));
 			count += sizeof(bool);
+			Array.Copy(BitConverter.GetBytes(this.nonConsumable), 0, segment.Array, segment.Offset + count, sizeof(bool));
+			count += sizeof(bool);
+			Array.Copy(BitConverter.GetBytes(this.requiredGuildLevel), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
 			return success;
 		}	
 	}
@@ -3459,6 +3718,100 @@ public class S_CanBuyOffer : IPacket
 		Array.Copy(BitConverter.GetBytes(this.ok), 0, segment.Array, segment.Offset + count, sizeof(bool));
 		count += sizeof(bool);
 		Array.Copy(BitConverter.GetBytes(this.failReason), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_GachaMileagePick : IPacket
+{
+	public int charDataId;
+
+	public ushort Protocol { get { return (ushort)PacketID.C_GachaMileagePick; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.charDataId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_GachaMileagePick), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.charDataId), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_GachaMileagePickResult : IPacket
+{
+	public bool isSuccess;
+	public int failReason;
+	public int newMileage;
+	public int charDataId;
+	public bool isNew;
+	public int shardsGained;
+	public int maxExp;
+
+	public ushort Protocol { get { return (ushort)PacketID.S_GachaMileagePickResult; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.isSuccess = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.failReason = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.newMileage = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.charDataId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.isNew = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.shardsGained = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.maxExp = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_GachaMileagePickResult), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.isSuccess), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.failReason), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.newMileage), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.charDataId), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.isNew), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.shardsGained), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.maxExp), 0, segment.Array, segment.Offset + count, sizeof(int));
 		count += sizeof(int);
 
 		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
@@ -3969,6 +4322,7 @@ public class S_Inventory : IPacket
 		public int opt3Points;
 		public int opt4Points;
 		public int equippedCharDataId;
+		public bool limitBroken;
 	
 		public void Read(ArraySegment<byte> segment, ref ushort count)
 		{
@@ -3992,6 +4346,8 @@ public class S_Inventory : IPacket
 			count += sizeof(int);
 			this.equippedCharDataId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
 			count += sizeof(int);
+			this.limitBroken = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+			count += sizeof(bool);
 		}
 	
 		public bool Write(ArraySegment<byte> segment, ref ushort count)
@@ -4017,6 +4373,8 @@ public class S_Inventory : IPacket
 			count += sizeof(int);
 			Array.Copy(BitConverter.GetBytes(this.equippedCharDataId), 0, segment.Array, segment.Offset + count, sizeof(int));
 			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.limitBroken), 0, segment.Array, segment.Offset + count, sizeof(bool));
+			count += sizeof(bool);
 			return success;
 		}	
 	}
@@ -4342,6 +4700,255 @@ public class S_AwakenResult : IPacket
 		Array.Copy(BitConverter.GetBytes(this.newStarLevel), 0, segment.Array, segment.Offset + count, sizeof(int));
 		count += sizeof(int);
 		Array.Copy(BitConverter.GetBytes(this.newDiamond), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_EquipLimitBreak : IPacket
+{
+	public long instanceId;
+
+	public ushort Protocol { get { return (ushort)PacketID.C_EquipLimitBreak; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.instanceId = BitConverter.ToInt64(segment.Array, segment.Offset + count);
+		count += sizeof(long);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_EquipLimitBreak), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.instanceId), 0, segment.Array, segment.Offset + count, sizeof(long));
+		count += sizeof(long);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_EquipLimitBreakResult : IPacket
+{
+	public bool isSuccess;
+	public int failReason;
+	public long instanceId;
+	public int newLimitBreakTicket;
+
+	public ushort Protocol { get { return (ushort)PacketID.S_EquipLimitBreakResult; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.isSuccess = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.failReason = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.instanceId = BitConverter.ToInt64(segment.Array, segment.Offset + count);
+		count += sizeof(long);
+		this.newLimitBreakTicket = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_EquipLimitBreakResult), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.isSuccess), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.failReason), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.instanceId), 0, segment.Array, segment.Offset + count, sizeof(long));
+		count += sizeof(long);
+		Array.Copy(BitConverter.GetBytes(this.newLimitBreakTicket), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_DisassembleEquip : IPacket
+{
+	public class Target
+	{
+		public long instanceId;
+	
+		public void Read(ArraySegment<byte> segment, ref ushort count)
+		{
+			this.instanceId = BitConverter.ToInt64(segment.Array, segment.Offset + count);
+			count += sizeof(long);
+		}
+	
+		public bool Write(ArraySegment<byte> segment, ref ushort count)
+		{
+			bool success = true;
+			Array.Copy(BitConverter.GetBytes(this.instanceId), 0, segment.Array, segment.Offset + count, sizeof(long));
+			count += sizeof(long);
+			return success;
+		}	
+	}
+	public List<Target> targets = new List<Target>();
+
+	public ushort Protocol { get { return (ushort)PacketID.C_DisassembleEquip; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.targets.Clear();
+		ushort targetLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		for (int i = 0; i < targetLen; i++)
+		{
+			Target target = new Target();
+			target.Read(segment, ref count);
+			targets.Add(target);
+		}
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_DisassembleEquip), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)this.targets.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		foreach (Target target in this.targets)
+			target.Write(segment, ref count);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_DisassembleEquipByGrade : IPacket
+{
+	public class Target
+	{
+		public int grade;
+	
+		public void Read(ArraySegment<byte> segment, ref ushort count)
+		{
+			this.grade = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+		}
+	
+		public bool Write(ArraySegment<byte> segment, ref ushort count)
+		{
+			bool success = true;
+			Array.Copy(BitConverter.GetBytes(this.grade), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			return success;
+		}	
+	}
+	public List<Target> targets = new List<Target>();
+
+	public ushort Protocol { get { return (ushort)PacketID.C_DisassembleEquipByGrade; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.targets.Clear();
+		ushort targetLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		for (int i = 0; i < targetLen; i++)
+		{
+			Target target = new Target();
+			target.Read(segment, ref count);
+			targets.Add(target);
+		}
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_DisassembleEquipByGrade), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)this.targets.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		foreach (Target target in this.targets)
+			target.Write(segment, ref count);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_DisassembleEquipResult : IPacket
+{
+	public bool isSuccess;
+	public int failReason;
+	public int count;
+	public int gainedGold;
+	public int newGold;
+
+	public ushort Protocol { get { return (ushort)PacketID.S_DisassembleEquipResult; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.isSuccess = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.failReason = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.count = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.gainedGold = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.newGold = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_DisassembleEquipResult), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.isSuccess), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.failReason), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.count), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.gainedGold), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.newGold), 0, segment.Array, segment.Offset + count, sizeof(int));
 		count += sizeof(int);
 
 		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
@@ -4867,11 +5474,14 @@ public class S_Profile : IPacket
 	public class ProfileFrame
 	{
 		public int profileFrameId;
+		public long expiresUnix;
 	
 		public void Read(ArraySegment<byte> segment, ref ushort count)
 		{
 			this.profileFrameId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
 			count += sizeof(int);
+			this.expiresUnix = BitConverter.ToInt64(segment.Array, segment.Offset + count);
+			count += sizeof(long);
 		}
 	
 		public bool Write(ArraySegment<byte> segment, ref ushort count)
@@ -4879,6 +5489,8 @@ public class S_Profile : IPacket
 			bool success = true;
 			Array.Copy(BitConverter.GetBytes(this.profileFrameId), 0, segment.Array, segment.Offset + count, sizeof(int));
 			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.expiresUnix), 0, segment.Array, segment.Offset + count, sizeof(long));
+			count += sizeof(long);
 			return success;
 		}	
 	}
@@ -5154,7 +5766,7 @@ public class S_ChangeNicknameResult : IPacket
 	public bool isSuccess;
 	public int failReason;
 	public string nickname;
-	public int newDiamond;
+	public int newCertificate;
 	public int newTicketQty;
 
 	public ushort Protocol { get { return (ushort)PacketID.S_ChangeNicknameResult; } }
@@ -5172,7 +5784,7 @@ public class S_ChangeNicknameResult : IPacket
 		count += sizeof(ushort);
 		this.nickname = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, nicknameLen);
 		count += nicknameLen;
-		this.newDiamond = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		this.newCertificate = BitConverter.ToInt32(segment.Array, segment.Offset + count);
 		count += sizeof(int);
 		this.newTicketQty = BitConverter.ToInt32(segment.Array, segment.Offset + count);
 		count += sizeof(int);
@@ -5195,7 +5807,7 @@ public class S_ChangeNicknameResult : IPacket
 		Array.Copy(BitConverter.GetBytes(nicknameLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
 		count += sizeof(ushort);
 		count += nicknameLen;
-		Array.Copy(BitConverter.GetBytes(this.newDiamond), 0, segment.Array, segment.Offset + count, sizeof(int));
+		Array.Copy(BitConverter.GetBytes(this.newCertificate), 0, segment.Array, segment.Offset + count, sizeof(int));
 		count += sizeof(int);
 		Array.Copy(BitConverter.GetBytes(this.newTicketQty), 0, segment.Array, segment.Offset + count, sizeof(int));
 		count += sizeof(int);
@@ -7115,6 +7727,54 @@ public class S_CostumeInfo : IPacket
 		}	
 	}
 	public List<EquippedCostume> equippedCostumes = new List<EquippedCostume>();
+	public class OwnedUnitSkin
+	{
+		public int unitSkinId;
+		public int count;
+	
+		public void Read(ArraySegment<byte> segment, ref ushort count)
+		{
+			this.unitSkinId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.count = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+		}
+	
+		public bool Write(ArraySegment<byte> segment, ref ushort count)
+		{
+			bool success = true;
+			Array.Copy(BitConverter.GetBytes(this.unitSkinId), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.count), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			return success;
+		}	
+	}
+	public List<OwnedUnitSkin> ownedUnitSkins = new List<OwnedUnitSkin>();
+	public class EquippedUnitSkin
+	{
+		public int charDataId;
+		public int unitSkinId;
+	
+		public void Read(ArraySegment<byte> segment, ref ushort count)
+		{
+			this.charDataId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.unitSkinId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+		}
+	
+		public bool Write(ArraySegment<byte> segment, ref ushort count)
+		{
+			bool success = true;
+			Array.Copy(BitConverter.GetBytes(this.charDataId), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.unitSkinId), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			return success;
+		}	
+	}
+	public List<EquippedUnitSkin> equippedUnitSkins = new List<EquippedUnitSkin>();
 
 	public ushort Protocol { get { return (ushort)PacketID.S_CostumeInfo; } }
 
@@ -7141,6 +7801,24 @@ public class S_CostumeInfo : IPacket
 			equippedCostume.Read(segment, ref count);
 			equippedCostumes.Add(equippedCostume);
 		}
+		this.ownedUnitSkins.Clear();
+		ushort ownedUnitSkinLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		for (int i = 0; i < ownedUnitSkinLen; i++)
+		{
+			OwnedUnitSkin ownedUnitSkin = new OwnedUnitSkin();
+			ownedUnitSkin.Read(segment, ref count);
+			ownedUnitSkins.Add(ownedUnitSkin);
+		}
+		this.equippedUnitSkins.Clear();
+		ushort equippedUnitSkinLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		for (int i = 0; i < equippedUnitSkinLen; i++)
+		{
+			EquippedUnitSkin equippedUnitSkin = new EquippedUnitSkin();
+			equippedUnitSkin.Read(segment, ref count);
+			equippedUnitSkins.Add(equippedUnitSkin);
+		}
 	}
 
 	public ArraySegment<byte> Write()
@@ -7159,6 +7837,98 @@ public class S_CostumeInfo : IPacket
 		count += sizeof(ushort);
 		foreach (EquippedCostume equippedCostume in this.equippedCostumes)
 			equippedCostume.Write(segment, ref count);
+		Array.Copy(BitConverter.GetBytes((ushort)this.ownedUnitSkins.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		foreach (OwnedUnitSkin ownedUnitSkin in this.ownedUnitSkins)
+			ownedUnitSkin.Write(segment, ref count);
+		Array.Copy(BitConverter.GetBytes((ushort)this.equippedUnitSkins.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		foreach (EquippedUnitSkin equippedUnitSkin in this.equippedUnitSkins)
+			equippedUnitSkin.Write(segment, ref count);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_EquipUnitSkin : IPacket
+{
+	public int charDataId;
+	public int unitSkinId;
+
+	public ushort Protocol { get { return (ushort)PacketID.C_EquipUnitSkin; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.charDataId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.unitSkinId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_EquipUnitSkin), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.charDataId), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.unitSkinId), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_EquipUnitSkinResult : IPacket
+{
+	public bool isSuccess;
+	public int failReason;
+	public int charDataId;
+	public int unitSkinId;
+
+	public ushort Protocol { get { return (ushort)PacketID.S_EquipUnitSkinResult; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.isSuccess = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.failReason = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.charDataId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.unitSkinId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_EquipUnitSkinResult), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.isSuccess), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.failReason), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.charDataId), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.unitSkinId), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
 
 		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
 
@@ -8297,11 +9067,53 @@ public class S_UseItemResult : IPacket
 	public int itemId;
 	public int newCount;
 	public int charDataId;
-	public int gainedExp;
+	public long gainedExp;
 	public int newLevel;
 	public int newExp;
 	public int maxExp;
 	public int gainedStatPoints;
+	public bool hasCharacter;
+	public int starLevel;
+	public int statPoints;
+	public int shards;
+	public int invAttack;
+	public int invDefense;
+	public int invHealth;
+	public int invSkillAccel;
+	public int invAttackSpeed;
+	public int invMoveSpeed;
+	public int autoStatType;
+	public bool limitBroken;
+	public long extractedExp;
+	public class GrantedItem
+	{
+		public int itemId;
+		public int count;
+	
+		public void Read(ArraySegment<byte> segment, ref ushort count)
+		{
+			this.itemId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.count = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+		}
+	
+		public bool Write(ArraySegment<byte> segment, ref ushort count)
+		{
+			bool success = true;
+			Array.Copy(BitConverter.GetBytes(this.itemId), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.count), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			return success;
+		}	
+	}
+	public List<GrantedItem> grantedItems = new List<GrantedItem>();
+	public int refundShards;
+	public int refundDiamond;
+	public int refundLimitBreakTicket;
+	public int newDiamond;
+	public int newLimitBreakTicket;
 
 	public ushort Protocol { get { return (ushort)PacketID.S_UseItemResult; } }
 
@@ -8320,8 +9132,8 @@ public class S_UseItemResult : IPacket
 		count += sizeof(int);
 		this.charDataId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
 		count += sizeof(int);
-		this.gainedExp = BitConverter.ToInt32(segment.Array, segment.Offset + count);
-		count += sizeof(int);
+		this.gainedExp = BitConverter.ToInt64(segment.Array, segment.Offset + count);
+		count += sizeof(long);
 		this.newLevel = BitConverter.ToInt32(segment.Array, segment.Offset + count);
 		count += sizeof(int);
 		this.newExp = BitConverter.ToInt32(segment.Array, segment.Offset + count);
@@ -8329,6 +9141,51 @@ public class S_UseItemResult : IPacket
 		this.maxExp = BitConverter.ToInt32(segment.Array, segment.Offset + count);
 		count += sizeof(int);
 		this.gainedStatPoints = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.hasCharacter = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.starLevel = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.statPoints = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.shards = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.invAttack = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.invDefense = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.invHealth = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.invSkillAccel = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.invAttackSpeed = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.invMoveSpeed = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.autoStatType = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.limitBroken = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.extractedExp = BitConverter.ToInt64(segment.Array, segment.Offset + count);
+		count += sizeof(long);
+		this.grantedItems.Clear();
+		ushort grantedItemLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		for (int i = 0; i < grantedItemLen; i++)
+		{
+			GrantedItem grantedItem = new GrantedItem();
+			grantedItem.Read(segment, ref count);
+			grantedItems.Add(grantedItem);
+		}
+		this.refundShards = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.refundDiamond = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.refundLimitBreakTicket = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.newDiamond = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.newLimitBreakTicket = BitConverter.ToInt32(segment.Array, segment.Offset + count);
 		count += sizeof(int);
 	}
 
@@ -8350,8 +9207,8 @@ public class S_UseItemResult : IPacket
 		count += sizeof(int);
 		Array.Copy(BitConverter.GetBytes(this.charDataId), 0, segment.Array, segment.Offset + count, sizeof(int));
 		count += sizeof(int);
-		Array.Copy(BitConverter.GetBytes(this.gainedExp), 0, segment.Array, segment.Offset + count, sizeof(int));
-		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.gainedExp), 0, segment.Array, segment.Offset + count, sizeof(long));
+		count += sizeof(long);
 		Array.Copy(BitConverter.GetBytes(this.newLevel), 0, segment.Array, segment.Offset + count, sizeof(int));
 		count += sizeof(int);
 		Array.Copy(BitConverter.GetBytes(this.newExp), 0, segment.Array, segment.Offset + count, sizeof(int));
@@ -8359,6 +9216,197 @@ public class S_UseItemResult : IPacket
 		Array.Copy(BitConverter.GetBytes(this.maxExp), 0, segment.Array, segment.Offset + count, sizeof(int));
 		count += sizeof(int);
 		Array.Copy(BitConverter.GetBytes(this.gainedStatPoints), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.hasCharacter), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.starLevel), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.statPoints), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.shards), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.invAttack), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.invDefense), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.invHealth), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.invSkillAccel), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.invAttackSpeed), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.invMoveSpeed), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.autoStatType), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.limitBroken), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.extractedExp), 0, segment.Array, segment.Offset + count, sizeof(long));
+		count += sizeof(long);
+		Array.Copy(BitConverter.GetBytes((ushort)this.grantedItems.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		foreach (GrantedItem grantedItem in this.grantedItems)
+			grantedItem.Write(segment, ref count);
+		Array.Copy(BitConverter.GetBytes(this.refundShards), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.refundDiamond), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.refundLimitBreakTicket), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.newDiamond), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.newLimitBreakTicket), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_ItemUsePreview : IPacket
+{
+	public int itemId;
+	public int charDataId;
+
+	public ushort Protocol { get { return (ushort)PacketID.C_ItemUsePreview; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.itemId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.charDataId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_ItemUsePreview), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.itemId), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.charDataId), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_ItemUsePreview : IPacket
+{
+	public int failReason;
+	public int itemId;
+	public int charDataId;
+	public long value;
+	public int currentLevel;
+	public int resultLevel;
+	public class GrantItem
+	{
+		public int itemId;
+		public int count;
+	
+		public void Read(ArraySegment<byte> segment, ref ushort count)
+		{
+			this.itemId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.count = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+		}
+	
+		public bool Write(ArraySegment<byte> segment, ref ushort count)
+		{
+			bool success = true;
+			Array.Copy(BitConverter.GetBytes(this.itemId), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.count), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			return success;
+		}	
+	}
+	public List<GrantItem> grantItems = new List<GrantItem>();
+	public int refundShards;
+	public int refundDiamond;
+	public int refundLimitBreakTicket;
+	public int currentStar;
+
+	public ushort Protocol { get { return (ushort)PacketID.S_ItemUsePreview; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.failReason = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.itemId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.charDataId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.value = BitConverter.ToInt64(segment.Array, segment.Offset + count);
+		count += sizeof(long);
+		this.currentLevel = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.resultLevel = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.grantItems.Clear();
+		ushort grantItemLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		for (int i = 0; i < grantItemLen; i++)
+		{
+			GrantItem grantItem = new GrantItem();
+			grantItem.Read(segment, ref count);
+			grantItems.Add(grantItem);
+		}
+		this.refundShards = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.refundDiamond = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.refundLimitBreakTicket = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.currentStar = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_ItemUsePreview), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.failReason), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.itemId), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.charDataId), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.value), 0, segment.Array, segment.Offset + count, sizeof(long));
+		count += sizeof(long);
+		Array.Copy(BitConverter.GetBytes(this.currentLevel), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.resultLevel), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes((ushort)this.grantItems.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		foreach (GrantItem grantItem in this.grantItems)
+			grantItem.Write(segment, ref count);
+		Array.Copy(BitConverter.GetBytes(this.refundShards), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.refundDiamond), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.refundLimitBreakTicket), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.currentStar), 0, segment.Array, segment.Offset + count, sizeof(int));
 		count += sizeof(int);
 
 		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
@@ -10235,6 +11283,7 @@ public class S_Ranking : IPacket
 		public int subIconId;
 		public int representativeCharId;
 		public int representativeCostumeId;
+		public int subValue;
 	
 		public void Read(ArraySegment<byte> segment, ref ushort count)
 		{
@@ -10259,6 +11308,8 @@ public class S_Ranking : IPacket
 			this.representativeCharId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
 			count += sizeof(int);
 			this.representativeCostumeId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.subValue = BitConverter.ToInt32(segment.Array, segment.Offset + count);
 			count += sizeof(int);
 		}
 	
@@ -10289,10 +11340,20 @@ public class S_Ranking : IPacket
 			count += sizeof(int);
 			Array.Copy(BitConverter.GetBytes(this.representativeCostumeId), 0, segment.Array, segment.Offset + count, sizeof(int));
 			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.subValue), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
 			return success;
 		}	
 	}
 	public List<Entry> entrys = new List<Entry>();
+	public bool hasMine;
+	public string myName;
+	public string mySubName;
+	public int myIconId;
+	public int mySubIconId;
+	public int myRepresentativeCharId;
+	public int myRepresentativeCostumeId;
+	public int mySubValue;
 
 	public ushort Protocol { get { return (ushort)PacketID.S_Ranking; } }
 
@@ -10318,6 +11379,26 @@ public class S_Ranking : IPacket
 			entry.Read(segment, ref count);
 			entrys.Add(entry);
 		}
+		this.hasMine = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		ushort myNameLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		this.myName = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, myNameLen);
+		count += myNameLen;
+		ushort mySubNameLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		this.mySubName = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, mySubNameLen);
+		count += mySubNameLen;
+		this.myIconId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.mySubIconId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.myRepresentativeCharId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.myRepresentativeCostumeId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.mySubValue = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
 	}
 
 	public ArraySegment<byte> Write()
@@ -10340,6 +11421,28 @@ public class S_Ranking : IPacket
 		count += sizeof(ushort);
 		foreach (Entry entry in this.entrys)
 			entry.Write(segment, ref count);
+		Array.Copy(BitConverter.GetBytes(this.hasMine), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		string myNameValue = this.myName ?? string.Empty;
+		ushort myNameLen = (ushort)Encoding.Unicode.GetBytes(myNameValue, 0, myNameValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+		Array.Copy(BitConverter.GetBytes(myNameLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		count += myNameLen;
+		string mySubNameValue = this.mySubName ?? string.Empty;
+		ushort mySubNameLen = (ushort)Encoding.Unicode.GetBytes(mySubNameValue, 0, mySubNameValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+		Array.Copy(BitConverter.GetBytes(mySubNameLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		count += mySubNameLen;
+		Array.Copy(BitConverter.GetBytes(this.myIconId), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.mySubIconId), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.myRepresentativeCharId), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.myRepresentativeCostumeId), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.mySubValue), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
 
 		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
 
@@ -10380,6 +11483,8 @@ public class C_FriendHome : IPacket
 public class S_FriendHome : IPacket
 {
 	public int maxFriends;
+	public int staminaSendable;
+	public int staminaClaimable;
 	public class Friend
 	{
 		public int accountId;
@@ -10389,6 +11494,7 @@ public class S_FriendHome : IPacket
 		public int representativeCostumeId;
 		public long combatPower;
 		public bool online;
+		public bool staminaSentToMe;
 	
 		public void Read(ArraySegment<byte> segment, ref ushort count)
 		{
@@ -10407,6 +11513,8 @@ public class S_FriendHome : IPacket
 			this.combatPower = BitConverter.ToInt64(segment.Array, segment.Offset + count);
 			count += sizeof(long);
 			this.online = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+			count += sizeof(bool);
+			this.staminaSentToMe = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
 			count += sizeof(bool);
 		}
 	
@@ -10429,6 +11537,8 @@ public class S_FriendHome : IPacket
 			Array.Copy(BitConverter.GetBytes(this.combatPower), 0, segment.Array, segment.Offset + count, sizeof(long));
 			count += sizeof(long);
 			Array.Copy(BitConverter.GetBytes(this.online), 0, segment.Array, segment.Offset + count, sizeof(bool));
+			count += sizeof(bool);
+			Array.Copy(BitConverter.GetBytes(this.staminaSentToMe), 0, segment.Array, segment.Offset + count, sizeof(bool));
 			count += sizeof(bool);
 			return success;
 		}	
@@ -10552,6 +11662,10 @@ public class S_FriendHome : IPacket
 		count += sizeof(ushort);
 		this.maxFriends = BitConverter.ToInt32(segment.Array, segment.Offset + count);
 		count += sizeof(int);
+		this.staminaSendable = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.staminaClaimable = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
 		this.friends.Clear();
 		ushort friendLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
 		count += sizeof(ushort);
@@ -10590,6 +11704,10 @@ public class S_FriendHome : IPacket
 		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_FriendHome), 0, segment.Array, segment.Offset + count, sizeof(ushort));
 		count += sizeof(ushort);
 		Array.Copy(BitConverter.GetBytes(this.maxFriends), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.staminaSendable), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.staminaClaimable), 0, segment.Array, segment.Offset + count, sizeof(int));
 		count += sizeof(int);
 		Array.Copy(BitConverter.GetBytes((ushort)this.friends.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
 		count += sizeof(ushort);
@@ -10858,6 +11976,8 @@ public class S_FriendActionResult : IPacket
 public class S_FriendNotify : IPacket
 {
 	public int pendingRequests;
+	public int staminaSendable;
+	public int staminaClaimable;
 
 	public ushort Protocol { get { return (ushort)PacketID.S_FriendNotify; } }
 
@@ -10867,6 +11987,10 @@ public class S_FriendNotify : IPacket
 		count += sizeof(ushort);
 		count += sizeof(ushort);
 		this.pendingRequests = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.staminaSendable = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.staminaClaimable = BitConverter.ToInt32(segment.Array, segment.Offset + count);
 		count += sizeof(int);
 	}
 
@@ -10879,6 +12003,179 @@ public class S_FriendNotify : IPacket
 		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_FriendNotify), 0, segment.Array, segment.Offset + count, sizeof(ushort));
 		count += sizeof(ushort);
 		Array.Copy(BitConverter.GetBytes(this.pendingRequests), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.staminaSendable), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.staminaClaimable), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_FriendStaminaSend : IPacket
+{
+	
+
+	public ushort Protocol { get { return (ushort)PacketID.C_FriendStaminaSend; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_FriendStaminaSend), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_FriendStaminaSendResult : IPacket
+{
+	public bool isSuccess;
+	public int failReason;
+	public int sentCount;
+	public int staminaSendable;
+	public int staminaClaimable;
+
+	public ushort Protocol { get { return (ushort)PacketID.S_FriendStaminaSendResult; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.isSuccess = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.failReason = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.sentCount = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.staminaSendable = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.staminaClaimable = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_FriendStaminaSendResult), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.isSuccess), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.failReason), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.sentCount), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.staminaSendable), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.staminaClaimable), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_FriendStaminaClaim : IPacket
+{
+	
+
+	public ushort Protocol { get { return (ushort)PacketID.C_FriendStaminaClaim; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_FriendStaminaClaim), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_FriendStaminaClaimResult : IPacket
+{
+	public bool isSuccess;
+	public int failReason;
+	public int claimedStamina;
+	public int newStamina;
+	public int staminaSendable;
+	public int staminaClaimable;
+
+	public ushort Protocol { get { return (ushort)PacketID.S_FriendStaminaClaimResult; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.isSuccess = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.failReason = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.claimedStamina = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.newStamina = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.staminaSendable = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.staminaClaimable = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_FriendStaminaClaimResult), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.isSuccess), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.failReason), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.claimedStamina), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.newStamina), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.staminaSendable), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.staminaClaimable), 0, segment.Array, segment.Offset + count, sizeof(int));
 		count += sizeof(int);
 
 		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
@@ -10982,6 +12279,7 @@ public class S_GuildRaidState : IPacket
 		}	
 	}
 	public List<Contribution> contributions = new List<Contribution>();
+	public string occupantNickname;
 
 	public ushort Protocol { get { return (ushort)PacketID.S_GuildRaidState; } }
 
@@ -11017,6 +12315,10 @@ public class S_GuildRaidState : IPacket
 			contribution.Read(segment, ref count);
 			contributions.Add(contribution);
 		}
+		ushort occupantNicknameLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		this.occupantNickname = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, occupantNicknameLen);
+		count += occupantNicknameLen;
 	}
 
 	public ArraySegment<byte> Write()
@@ -11049,6 +12351,11 @@ public class S_GuildRaidState : IPacket
 		count += sizeof(ushort);
 		foreach (Contribution contribution in this.contributions)
 			contribution.Write(segment, ref count);
+		string occupantNicknameValue = this.occupantNickname ?? string.Empty;
+		ushort occupantNicknameLen = (ushort)Encoding.Unicode.GetBytes(occupantNicknameValue, 0, occupantNicknameValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+		Array.Copy(BitConverter.GetBytes(occupantNicknameLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		count += occupantNicknameLen;
 
 		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
 
@@ -11094,6 +12401,7 @@ public class S_EnterGuildRaidResult : IPacket
 	public long bossHp;
 	public long bossMaxHp;
 	public int newDiamond;
+	public string occupantNickname;
 
 	public ushort Protocol { get { return (ushort)PacketID.S_EnterGuildRaidResult; } }
 
@@ -11114,6 +12422,10 @@ public class S_EnterGuildRaidResult : IPacket
 		count += sizeof(long);
 		this.newDiamond = BitConverter.ToInt32(segment.Array, segment.Offset + count);
 		count += sizeof(int);
+		ushort occupantNicknameLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		this.occupantNickname = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, occupantNicknameLen);
+		count += occupantNicknameLen;
 	}
 
 	public ArraySegment<byte> Write()
@@ -11136,6 +12448,11 @@ public class S_EnterGuildRaidResult : IPacket
 		count += sizeof(long);
 		Array.Copy(BitConverter.GetBytes(this.newDiamond), 0, segment.Array, segment.Offset + count, sizeof(int));
 		count += sizeof(int);
+		string occupantNicknameValue = this.occupantNickname ?? string.Empty;
+		ushort occupantNicknameLen = (ushort)Encoding.Unicode.GetBytes(occupantNicknameValue, 0, occupantNicknameValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+		Array.Copy(BitConverter.GetBytes(occupantNicknameLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		count += occupantNicknameLen;
 
 		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
 
@@ -11222,6 +12539,7 @@ public class S_GuildRaidDamageResult : IPacket
 		}	
 	}
 	public List<GrantedReward> grantedRewards = new List<GrantedReward>();
+	public int defeatedCount;
 
 	public ushort Protocol { get { return (ushort)PacketID.S_GuildRaidDamageResult; } }
 
@@ -11251,6 +12569,8 @@ public class S_GuildRaidDamageResult : IPacket
 			grantedReward.Read(segment, ref count);
 			grantedRewards.Add(grantedReward);
 		}
+		this.defeatedCount = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
 	}
 
 	public ArraySegment<byte> Write()
@@ -11277,6 +12597,8 @@ public class S_GuildRaidDamageResult : IPacket
 		count += sizeof(ushort);
 		foreach (GrantedReward grantedReward in this.grantedRewards)
 			grantedReward.Write(segment, ref count);
+		Array.Copy(BitConverter.GetBytes(this.defeatedCount), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
 
 		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
 
@@ -11938,6 +13260,9 @@ public class S_UserDeck : IPacket
 		public int invMoveSpeed;
 		public int invSkillAccel;
 		public int costumeId;
+		public int unitSkinId;
+		public bool limitBroken;
+		public int shards;
 	
 		public void Read(ArraySegment<byte> segment, ref ushort count)
 		{
@@ -11960,6 +13285,12 @@ public class S_UserDeck : IPacket
 			this.invSkillAccel = BitConverter.ToInt32(segment.Array, segment.Offset + count);
 			count += sizeof(int);
 			this.costumeId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.unitSkinId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.limitBroken = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+			count += sizeof(bool);
+			this.shards = BitConverter.ToInt32(segment.Array, segment.Offset + count);
 			count += sizeof(int);
 		}
 	
@@ -11986,6 +13317,12 @@ public class S_UserDeck : IPacket
 			count += sizeof(int);
 			Array.Copy(BitConverter.GetBytes(this.costumeId), 0, segment.Array, segment.Offset + count, sizeof(int));
 			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.unitSkinId), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.limitBroken), 0, segment.Array, segment.Offset + count, sizeof(bool));
+			count += sizeof(bool);
+			Array.Copy(BitConverter.GetBytes(this.shards), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
 			return success;
 		}	
 	}
@@ -12001,6 +13338,7 @@ public class S_UserDeck : IPacket
 		public int opt2Points;
 		public int opt3Points;
 		public int opt4Points;
+		public bool limitBroken;
 	
 		public void Read(ArraySegment<byte> segment, ref ushort count)
 		{
@@ -12022,6 +13360,8 @@ public class S_UserDeck : IPacket
 			count += sizeof(int);
 			this.opt4Points = BitConverter.ToInt32(segment.Array, segment.Offset + count);
 			count += sizeof(int);
+			this.limitBroken = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+			count += sizeof(bool);
 		}
 	
 		public bool Write(ArraySegment<byte> segment, ref ushort count)
@@ -12045,6 +13385,8 @@ public class S_UserDeck : IPacket
 			count += sizeof(int);
 			Array.Copy(BitConverter.GetBytes(this.opt4Points), 0, segment.Array, segment.Offset + count, sizeof(int));
 			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.limitBroken), 0, segment.Array, segment.Offset + count, sizeof(bool));
+			count += sizeof(bool);
 			return success;
 		}	
 	}
@@ -12499,6 +13841,7 @@ public class S_ArenaHome : IPacket
 	public int nextEntryCost;
 	public long seasonEndUnix;
 	public long lastDefenseLogId;
+	public string runesCsv;
 
 	public ushort Protocol { get { return (ushort)PacketID.S_ArenaHome; } }
 
@@ -12529,6 +13872,10 @@ public class S_ArenaHome : IPacket
 		count += sizeof(long);
 		this.lastDefenseLogId = BitConverter.ToInt64(segment.Array, segment.Offset + count);
 		count += sizeof(long);
+		ushort runesCsvLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		this.runesCsv = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, runesCsvLen);
+		count += runesCsvLen;
 	}
 
 	public ArraySegment<byte> Write()
@@ -12561,6 +13908,214 @@ public class S_ArenaHome : IPacket
 		count += sizeof(long);
 		Array.Copy(BitConverter.GetBytes(this.lastDefenseLogId), 0, segment.Array, segment.Offset + count, sizeof(long));
 		count += sizeof(long);
+		string runesCsvValue = this.runesCsv ?? string.Empty;
+		ushort runesCsvLen = (ushort)Encoding.Unicode.GetBytes(runesCsvValue, 0, runesCsvValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+		Array.Copy(BitConverter.GetBytes(runesCsvLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		count += runesCsvLen;
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_ArenaSetRunes : IPacket
+{
+	public string runesCsv;
+
+	public ushort Protocol { get { return (ushort)PacketID.C_ArenaSetRunes; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		ushort runesCsvLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		this.runesCsv = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, runesCsvLen);
+		count += runesCsvLen;
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_ArenaSetRunes), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		string runesCsvValue = this.runesCsv ?? string.Empty;
+		ushort runesCsvLen = (ushort)Encoding.Unicode.GetBytes(runesCsvValue, 0, runesCsvValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+		Array.Copy(BitConverter.GetBytes(runesCsvLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		count += runesCsvLen;
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_ArenaSetRunesResult : IPacket
+{
+	public bool isSuccess;
+	public int failReason;
+	public string runesCsv;
+
+	public ushort Protocol { get { return (ushort)PacketID.S_ArenaSetRunesResult; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.isSuccess = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.failReason = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		ushort runesCsvLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		this.runesCsv = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, runesCsvLen);
+		count += runesCsvLen;
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_ArenaSetRunesResult), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.isSuccess), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.failReason), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		string runesCsvValue = this.runesCsv ?? string.Empty;
+		ushort runesCsvLen = (ushort)Encoding.Unicode.GetBytes(runesCsvValue, 0, runesCsvValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+		Array.Copy(BitConverter.GetBytes(runesCsvLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		count += runesCsvLen;
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_ArenaHistory : IPacket
+{
+	
+
+	public ushort Protocol { get { return (ushort)PacketID.C_ArenaHistory; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_ArenaHistory), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_ArenaHistory : IPacket
+{
+	public class Season
+	{
+		public string seasonKey;
+		public int score;
+		public int wins;
+		public int losses;
+		public int rank;
+		public bool isCurrent;
+	
+		public void Read(ArraySegment<byte> segment, ref ushort count)
+		{
+			ushort seasonKeyLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+			count += sizeof(ushort);
+			this.seasonKey = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, seasonKeyLen);
+			count += seasonKeyLen;
+			this.score = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.wins = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.losses = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.rank = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.isCurrent = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+			count += sizeof(bool);
+		}
+	
+		public bool Write(ArraySegment<byte> segment, ref ushort count)
+		{
+			bool success = true;
+			string seasonKeyValue = this.seasonKey ?? string.Empty;
+			ushort seasonKeyLen = (ushort)Encoding.Unicode.GetBytes(seasonKeyValue, 0, seasonKeyValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+			Array.Copy(BitConverter.GetBytes(seasonKeyLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+			count += sizeof(ushort);
+			count += seasonKeyLen;
+			Array.Copy(BitConverter.GetBytes(this.score), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.wins), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.losses), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.rank), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.isCurrent), 0, segment.Array, segment.Offset + count, sizeof(bool));
+			count += sizeof(bool);
+			return success;
+		}	
+	}
+	public List<Season> seasons = new List<Season>();
+
+	public ushort Protocol { get { return (ushort)PacketID.S_ArenaHistory; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.seasons.Clear();
+		ushort seasonLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		for (int i = 0; i < seasonLen; i++)
+		{
+			Season season = new Season();
+			season.Read(segment, ref count);
+			seasons.Add(season);
+		}
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_ArenaHistory), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)this.seasons.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		foreach (Season season in this.seasons)
+			season.Write(segment, ref count);
 
 		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
 
@@ -12612,6 +14167,8 @@ public class S_ArenaMatchResult : IPacket
 	public int newDiamond;
 	public int usedEntries;
 	public int nextEntryCost;
+	public string myRunesCsv;
+	public string opponentRunesCsv;
 
 	public ushort Protocol { get { return (ushort)PacketID.S_ArenaMatchResult; } }
 
@@ -12646,6 +14203,14 @@ public class S_ArenaMatchResult : IPacket
 		count += sizeof(int);
 		this.nextEntryCost = BitConverter.ToInt32(segment.Array, segment.Offset + count);
 		count += sizeof(int);
+		ushort myRunesCsvLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		this.myRunesCsv = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, myRunesCsvLen);
+		count += myRunesCsvLen;
+		ushort opponentRunesCsvLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		this.opponentRunesCsv = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, opponentRunesCsvLen);
+		count += opponentRunesCsvLen;
 	}
 
 	public ArraySegment<byte> Write()
@@ -12683,6 +14248,16 @@ public class S_ArenaMatchResult : IPacket
 		count += sizeof(int);
 		Array.Copy(BitConverter.GetBytes(this.nextEntryCost), 0, segment.Array, segment.Offset + count, sizeof(int));
 		count += sizeof(int);
+		string myRunesCsvValue = this.myRunesCsv ?? string.Empty;
+		ushort myRunesCsvLen = (ushort)Encoding.Unicode.GetBytes(myRunesCsvValue, 0, myRunesCsvValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+		Array.Copy(BitConverter.GetBytes(myRunesCsvLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		count += myRunesCsvLen;
+		string opponentRunesCsvValue = this.opponentRunesCsv ?? string.Empty;
+		ushort opponentRunesCsvLen = (ushort)Encoding.Unicode.GetBytes(opponentRunesCsvValue, 0, opponentRunesCsvValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+		Array.Copy(BitConverter.GetBytes(opponentRunesCsvLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		count += opponentRunesCsvLen;
 
 		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
 
@@ -13906,6 +15481,45 @@ public class S_StoryProgress : IPacket
 		}	
 	}
 	public List<Story> storys = new List<Story>();
+	public class Chapter
+	{
+		public string storyKey;
+		public bool completed;
+		public bool rewardClaimed;
+		public bool unlocked;
+	
+		public void Read(ArraySegment<byte> segment, ref ushort count)
+		{
+			ushort storyKeyLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+			count += sizeof(ushort);
+			this.storyKey = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, storyKeyLen);
+			count += storyKeyLen;
+			this.completed = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+			count += sizeof(bool);
+			this.rewardClaimed = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+			count += sizeof(bool);
+			this.unlocked = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+			count += sizeof(bool);
+		}
+	
+		public bool Write(ArraySegment<byte> segment, ref ushort count)
+		{
+			bool success = true;
+			string storyKeyValue = this.storyKey ?? string.Empty;
+			ushort storyKeyLen = (ushort)Encoding.Unicode.GetBytes(storyKeyValue, 0, storyKeyValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+			Array.Copy(BitConverter.GetBytes(storyKeyLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+			count += sizeof(ushort);
+			count += storyKeyLen;
+			Array.Copy(BitConverter.GetBytes(this.completed), 0, segment.Array, segment.Offset + count, sizeof(bool));
+			count += sizeof(bool);
+			Array.Copy(BitConverter.GetBytes(this.rewardClaimed), 0, segment.Array, segment.Offset + count, sizeof(bool));
+			count += sizeof(bool);
+			Array.Copy(BitConverter.GetBytes(this.unlocked), 0, segment.Array, segment.Offset + count, sizeof(bool));
+			count += sizeof(bool);
+			return success;
+		}	
+	}
+	public List<Chapter> chapters = new List<Chapter>();
 
 	public ushort Protocol { get { return (ushort)PacketID.S_StoryProgress; } }
 
@@ -13923,6 +15537,15 @@ public class S_StoryProgress : IPacket
 			story.Read(segment, ref count);
 			storys.Add(story);
 		}
+		this.chapters.Clear();
+		ushort chapterLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		for (int i = 0; i < chapterLen; i++)
+		{
+			Chapter chapter = new Chapter();
+			chapter.Read(segment, ref count);
+			chapters.Add(chapter);
+		}
 	}
 
 	public ArraySegment<byte> Write()
@@ -13937,6 +15560,10 @@ public class S_StoryProgress : IPacket
 		count += sizeof(ushort);
 		foreach (Story story in this.storys)
 			story.Write(segment, ref count);
+		Array.Copy(BitConverter.GetBytes((ushort)this.chapters.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		foreach (Chapter chapter in this.chapters)
+			chapter.Write(segment, ref count);
 
 		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
 
@@ -14016,6 +15643,100 @@ public class S_CompleteStoryResult : IPacket
 		Array.Copy(BitConverter.GetBytes(storyKeyLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
 		count += sizeof(ushort);
 		count += storyKeyLen;
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_ClaimStoryReward : IPacket
+{
+	public string storyKey;
+
+	public ushort Protocol { get { return (ushort)PacketID.C_ClaimStoryReward; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		ushort storyKeyLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		this.storyKey = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, storyKeyLen);
+		count += storyKeyLen;
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_ClaimStoryReward), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		string storyKeyValue = this.storyKey ?? string.Empty;
+		ushort storyKeyLen = (ushort)Encoding.Unicode.GetBytes(storyKeyValue, 0, storyKeyValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+		Array.Copy(BitConverter.GetBytes(storyKeyLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		count += storyKeyLen;
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_ClaimStoryRewardResult : IPacket
+{
+	public bool isSuccess;
+	public int failReason;
+	public string storyKey;
+	public int diamond;
+	public int newDiamond;
+
+	public ushort Protocol { get { return (ushort)PacketID.S_ClaimStoryRewardResult; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.isSuccess = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.failReason = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		ushort storyKeyLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		this.storyKey = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, storyKeyLen);
+		count += storyKeyLen;
+		this.diamond = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.newDiamond = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_ClaimStoryRewardResult), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.isSuccess), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.failReason), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		string storyKeyValue = this.storyKey ?? string.Empty;
+		ushort storyKeyLen = (ushort)Encoding.Unicode.GetBytes(storyKeyValue, 0, storyKeyValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+		Array.Copy(BitConverter.GetBytes(storyKeyLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		count += storyKeyLen;
+		Array.Copy(BitConverter.GetBytes(this.diamond), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.newDiamond), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
 
 		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
 
@@ -14130,6 +15851,7 @@ public class S_Investment : IPacket
 public class C_UpgradeInvestment : IPacket
 {
 	public int slotIndex;
+	public int expectedLevel;
 
 	public ushort Protocol { get { return (ushort)PacketID.C_UpgradeInvestment; } }
 
@@ -14139,6 +15861,8 @@ public class C_UpgradeInvestment : IPacket
 		count += sizeof(ushort);
 		count += sizeof(ushort);
 		this.slotIndex = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.expectedLevel = BitConverter.ToInt32(segment.Array, segment.Offset + count);
 		count += sizeof(int);
 	}
 
@@ -14151,6 +15875,8 @@ public class C_UpgradeInvestment : IPacket
 		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_UpgradeInvestment), 0, segment.Array, segment.Offset + count, sizeof(ushort));
 		count += sizeof(ushort);
 		Array.Copy(BitConverter.GetBytes(this.slotIndex), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.expectedLevel), 0, segment.Array, segment.Offset + count, sizeof(int));
 		count += sizeof(int);
 
 		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
@@ -14168,6 +15894,8 @@ public class S_UpgradeInvestmentResult : IPacket
 	public int spentGold;
 	public int newGold;
 	public int starTotal;
+	public int spentDiamond;
+	public int newDiamond;
 
 	public ushort Protocol { get { return (ushort)PacketID.S_UpgradeInvestmentResult; } }
 
@@ -14189,6 +15917,10 @@ public class S_UpgradeInvestmentResult : IPacket
 		this.newGold = BitConverter.ToInt32(segment.Array, segment.Offset + count);
 		count += sizeof(int);
 		this.starTotal = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.spentDiamond = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.newDiamond = BitConverter.ToInt32(segment.Array, segment.Offset + count);
 		count += sizeof(int);
 	}
 
@@ -14213,6 +15945,10 @@ public class S_UpgradeInvestmentResult : IPacket
 		Array.Copy(BitConverter.GetBytes(this.newGold), 0, segment.Array, segment.Offset + count, sizeof(int));
 		count += sizeof(int);
 		Array.Copy(BitConverter.GetBytes(this.starTotal), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.spentDiamond), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.newDiamond), 0, segment.Array, segment.Offset + count, sizeof(int));
 		count += sizeof(int);
 
 		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
@@ -15197,6 +16933,3435 @@ public class C_Test : IPacket
 		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_Test), 0, segment.Array, segment.Offset + count, sizeof(ushort));
 		count += sizeof(ushort);
 		
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_DoomInfo : IPacket
+{
+	
+
+	public ushort Protocol { get { return (ushort)PacketID.C_DoomInfo; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_DoomInfo), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_DoomInfo : IPacket
+{
+	public int bestScore;
+	public int claimedScore;
+	public bool canClaim;
+
+	public ushort Protocol { get { return (ushort)PacketID.S_DoomInfo; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.bestScore = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.claimedScore = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.canClaim = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_DoomInfo), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.bestScore), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.claimedScore), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.canClaim), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_DoomResult : IPacket
+{
+	public int score;
+
+	public ushort Protocol { get { return (ushort)PacketID.C_DoomResult; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.score = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_DoomResult), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.score), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_DoomResult : IPacket
+{
+	public bool isSuccess;
+	public int failReason;
+	public int bestScore;
+	public bool isBest;
+	public bool canClaim;
+
+	public ushort Protocol { get { return (ushort)PacketID.S_DoomResult; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.isSuccess = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.failReason = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.bestScore = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.isBest = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.canClaim = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_DoomResult), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.isSuccess), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.failReason), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.bestScore), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.isBest), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.canClaim), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_DoomClaim : IPacket
+{
+	
+
+	public ushort Protocol { get { return (ushort)PacketID.C_DoomClaim; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_DoomClaim), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_DoomClaimResult : IPacket
+{
+	public bool isSuccess;
+	public int failReason;
+	public int claimedScore;
+	public int bestScore;
+	public int newGold;
+	public int newDiamond;
+	public class Granted
+	{
+		public int kind;
+		public int value;
+		public int qty;
+		public string currencyKey;
+	
+		public void Read(ArraySegment<byte> segment, ref ushort count)
+		{
+			this.kind = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.value = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.qty = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			ushort currencyKeyLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+			count += sizeof(ushort);
+			this.currencyKey = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, currencyKeyLen);
+			count += currencyKeyLen;
+		}
+	
+		public bool Write(ArraySegment<byte> segment, ref ushort count)
+		{
+			bool success = true;
+			Array.Copy(BitConverter.GetBytes(this.kind), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.value), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.qty), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			string currencyKeyValue = this.currencyKey ?? string.Empty;
+			ushort currencyKeyLen = (ushort)Encoding.Unicode.GetBytes(currencyKeyValue, 0, currencyKeyValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+			Array.Copy(BitConverter.GetBytes(currencyKeyLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+			count += sizeof(ushort);
+			count += currencyKeyLen;
+			return success;
+		}	
+	}
+	public List<Granted> granteds = new List<Granted>();
+
+	public ushort Protocol { get { return (ushort)PacketID.S_DoomClaimResult; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.isSuccess = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.failReason = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.claimedScore = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.bestScore = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.newGold = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.newDiamond = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.granteds.Clear();
+		ushort grantedLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		for (int i = 0; i < grantedLen; i++)
+		{
+			Granted granted = new Granted();
+			granted.Read(segment, ref count);
+			granteds.Add(granted);
+		}
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_DoomClaimResult), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.isSuccess), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.failReason), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.claimedScore), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.bestScore), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.newGold), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.newDiamond), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes((ushort)this.granteds.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		foreach (Granted granted in this.granteds)
+			granted.Write(segment, ref count);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_BattleFinished : IPacket
+{
+	public int content;
+
+	public ushort Protocol { get { return (ushort)PacketID.C_BattleFinished; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.content = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_BattleFinished), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.content), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_PassInfo : IPacket
+{
+	
+
+	public ushort Protocol { get { return (ushort)PacketID.C_PassInfo; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_PassInfo), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_PassInfo : IPacket
+{
+	public long staminaSpent;
+	public int level;
+	public int freeClaimedCount;
+	public int passClaimedCount;
+	public bool hasPass;
+	public bool canClaim;
+
+	public ushort Protocol { get { return (ushort)PacketID.S_PassInfo; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.staminaSpent = BitConverter.ToInt64(segment.Array, segment.Offset + count);
+		count += sizeof(long);
+		this.level = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.freeClaimedCount = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.passClaimedCount = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.hasPass = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.canClaim = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_PassInfo), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.staminaSpent), 0, segment.Array, segment.Offset + count, sizeof(long));
+		count += sizeof(long);
+		Array.Copy(BitConverter.GetBytes(this.level), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.freeClaimedCount), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.passClaimedCount), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.hasPass), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.canClaim), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_PassClaim : IPacket
+{
+	
+
+	public ushort Protocol { get { return (ushort)PacketID.C_PassClaim; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_PassClaim), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_PassClaimResult : IPacket
+{
+	public bool isSuccess;
+	public int failReason;
+	public long staminaSpent;
+	public int level;
+	public int freeClaimedCount;
+	public int passClaimedCount;
+	public bool hasPass;
+	public bool canClaim;
+	public int newGold;
+	public int newDiamond;
+	public int newStamina;
+	public class Granted
+	{
+		public int kind;
+		public int value;
+		public int qty;
+		public string currencyKey;
+	
+		public void Read(ArraySegment<byte> segment, ref ushort count)
+		{
+			this.kind = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.value = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.qty = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			ushort currencyKeyLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+			count += sizeof(ushort);
+			this.currencyKey = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, currencyKeyLen);
+			count += currencyKeyLen;
+		}
+	
+		public bool Write(ArraySegment<byte> segment, ref ushort count)
+		{
+			bool success = true;
+			Array.Copy(BitConverter.GetBytes(this.kind), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.value), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.qty), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			string currencyKeyValue = this.currencyKey ?? string.Empty;
+			ushort currencyKeyLen = (ushort)Encoding.Unicode.GetBytes(currencyKeyValue, 0, currencyKeyValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+			Array.Copy(BitConverter.GetBytes(currencyKeyLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+			count += sizeof(ushort);
+			count += currencyKeyLen;
+			return success;
+		}	
+	}
+	public List<Granted> granteds = new List<Granted>();
+	public class EquipRoll
+	{
+		public long instanceId;
+		public int equipDataId;
+		public int starLevel;
+		public int level;
+		public int mainPoints;
+		public int opt1Points;
+		public int opt2Points;
+		public int opt3Points;
+		public int opt4Points;
+	
+		public void Read(ArraySegment<byte> segment, ref ushort count)
+		{
+			this.instanceId = BitConverter.ToInt64(segment.Array, segment.Offset + count);
+			count += sizeof(long);
+			this.equipDataId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.starLevel = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.level = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.mainPoints = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.opt1Points = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.opt2Points = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.opt3Points = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.opt4Points = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+		}
+	
+		public bool Write(ArraySegment<byte> segment, ref ushort count)
+		{
+			bool success = true;
+			Array.Copy(BitConverter.GetBytes(this.instanceId), 0, segment.Array, segment.Offset + count, sizeof(long));
+			count += sizeof(long);
+			Array.Copy(BitConverter.GetBytes(this.equipDataId), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.starLevel), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.level), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.mainPoints), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.opt1Points), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.opt2Points), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.opt3Points), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.opt4Points), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			return success;
+		}	
+	}
+	public List<EquipRoll> equipRolls = new List<EquipRoll>();
+
+	public ushort Protocol { get { return (ushort)PacketID.S_PassClaimResult; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.isSuccess = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.failReason = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.staminaSpent = BitConverter.ToInt64(segment.Array, segment.Offset + count);
+		count += sizeof(long);
+		this.level = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.freeClaimedCount = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.passClaimedCount = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.hasPass = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.canClaim = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.newGold = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.newDiamond = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.newStamina = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.granteds.Clear();
+		ushort grantedLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		for (int i = 0; i < grantedLen; i++)
+		{
+			Granted granted = new Granted();
+			granted.Read(segment, ref count);
+			granteds.Add(granted);
+		}
+		this.equipRolls.Clear();
+		ushort equipRollLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		for (int i = 0; i < equipRollLen; i++)
+		{
+			EquipRoll equipRoll = new EquipRoll();
+			equipRoll.Read(segment, ref count);
+			equipRolls.Add(equipRoll);
+		}
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_PassClaimResult), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.isSuccess), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.failReason), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.staminaSpent), 0, segment.Array, segment.Offset + count, sizeof(long));
+		count += sizeof(long);
+		Array.Copy(BitConverter.GetBytes(this.level), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.freeClaimedCount), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.passClaimedCount), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.hasPass), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.canClaim), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.newGold), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.newDiamond), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.newStamina), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes((ushort)this.granteds.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		foreach (Granted granted in this.granteds)
+			granted.Write(segment, ref count);
+		Array.Copy(BitConverter.GetBytes((ushort)this.equipRolls.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		foreach (EquipRoll equipRoll in this.equipRolls)
+			equipRoll.Write(segment, ref count);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_EventRouletteInfo : IPacket
+{
+	public string eventKey;
+
+	public ushort Protocol { get { return (ushort)PacketID.C_EventRouletteInfo; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		ushort eventKeyLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		this.eventKey = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, eventKeyLen);
+		count += eventKeyLen;
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_EventRouletteInfo), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		string eventKeyValue = this.eventKey ?? string.Empty;
+		ushort eventKeyLen = (ushort)Encoding.Unicode.GetBytes(eventKeyValue, 0, eventKeyValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+		Array.Copy(BitConverter.GetBytes(eventKeyLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		count += eventKeyLen;
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_EventRouletteInfo : IPacket
+{
+	public string eventKey;
+	public int tokens;
+	public class Slot
+	{
+		public int kind;
+		public int value;
+		public int qty;
+		public string currencyKey;
+	
+		public void Read(ArraySegment<byte> segment, ref ushort count)
+		{
+			this.kind = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.value = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.qty = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			ushort currencyKeyLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+			count += sizeof(ushort);
+			this.currencyKey = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, currencyKeyLen);
+			count += currencyKeyLen;
+		}
+	
+		public bool Write(ArraySegment<byte> segment, ref ushort count)
+		{
+			bool success = true;
+			Array.Copy(BitConverter.GetBytes(this.kind), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.value), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.qty), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			string currencyKeyValue = this.currencyKey ?? string.Empty;
+			ushort currencyKeyLen = (ushort)Encoding.Unicode.GetBytes(currencyKeyValue, 0, currencyKeyValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+			Array.Copy(BitConverter.GetBytes(currencyKeyLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+			count += sizeof(ushort);
+			count += currencyKeyLen;
+			return success;
+		}	
+	}
+	public List<Slot> slots = new List<Slot>();
+
+	public ushort Protocol { get { return (ushort)PacketID.S_EventRouletteInfo; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		ushort eventKeyLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		this.eventKey = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, eventKeyLen);
+		count += eventKeyLen;
+		this.tokens = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.slots.Clear();
+		ushort slotLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		for (int i = 0; i < slotLen; i++)
+		{
+			Slot slot = new Slot();
+			slot.Read(segment, ref count);
+			slots.Add(slot);
+		}
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_EventRouletteInfo), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		string eventKeyValue = this.eventKey ?? string.Empty;
+		ushort eventKeyLen = (ushort)Encoding.Unicode.GetBytes(eventKeyValue, 0, eventKeyValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+		Array.Copy(BitConverter.GetBytes(eventKeyLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		count += eventKeyLen;
+		Array.Copy(BitConverter.GetBytes(this.tokens), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes((ushort)this.slots.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		foreach (Slot slot in this.slots)
+			slot.Write(segment, ref count);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_EventRouletteSpin : IPacket
+{
+	public string eventKey;
+
+	public ushort Protocol { get { return (ushort)PacketID.C_EventRouletteSpin; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		ushort eventKeyLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		this.eventKey = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, eventKeyLen);
+		count += eventKeyLen;
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_EventRouletteSpin), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		string eventKeyValue = this.eventKey ?? string.Empty;
+		ushort eventKeyLen = (ushort)Encoding.Unicode.GetBytes(eventKeyValue, 0, eventKeyValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+		Array.Copy(BitConverter.GetBytes(eventKeyLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		count += eventKeyLen;
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_EventRouletteSpinResult : IPacket
+{
+	public string eventKey;
+	public bool isSuccess;
+	public int failReason;
+	public int slotIndex;
+	public int tokens;
+	public int newGold;
+	public int newDiamond;
+	public int newStamina;
+	public class Granted
+	{
+		public int kind;
+		public int value;
+		public int qty;
+		public string currencyKey;
+	
+		public void Read(ArraySegment<byte> segment, ref ushort count)
+		{
+			this.kind = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.value = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.qty = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			ushort currencyKeyLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+			count += sizeof(ushort);
+			this.currencyKey = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, currencyKeyLen);
+			count += currencyKeyLen;
+		}
+	
+		public bool Write(ArraySegment<byte> segment, ref ushort count)
+		{
+			bool success = true;
+			Array.Copy(BitConverter.GetBytes(this.kind), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.value), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.qty), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			string currencyKeyValue = this.currencyKey ?? string.Empty;
+			ushort currencyKeyLen = (ushort)Encoding.Unicode.GetBytes(currencyKeyValue, 0, currencyKeyValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+			Array.Copy(BitConverter.GetBytes(currencyKeyLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+			count += sizeof(ushort);
+			count += currencyKeyLen;
+			return success;
+		}	
+	}
+	public List<Granted> granteds = new List<Granted>();
+
+	public ushort Protocol { get { return (ushort)PacketID.S_EventRouletteSpinResult; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		ushort eventKeyLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		this.eventKey = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, eventKeyLen);
+		count += eventKeyLen;
+		this.isSuccess = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.failReason = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.slotIndex = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.tokens = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.newGold = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.newDiamond = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.newStamina = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.granteds.Clear();
+		ushort grantedLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		for (int i = 0; i < grantedLen; i++)
+		{
+			Granted granted = new Granted();
+			granted.Read(segment, ref count);
+			granteds.Add(granted);
+		}
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_EventRouletteSpinResult), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		string eventKeyValue = this.eventKey ?? string.Empty;
+		ushort eventKeyLen = (ushort)Encoding.Unicode.GetBytes(eventKeyValue, 0, eventKeyValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+		Array.Copy(BitConverter.GetBytes(eventKeyLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		count += eventKeyLen;
+		Array.Copy(BitConverter.GetBytes(this.isSuccess), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.failReason), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.slotIndex), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.tokens), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.newGold), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.newDiamond), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.newStamina), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes((ushort)this.granteds.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		foreach (Granted granted in this.granteds)
+			granted.Write(segment, ref count);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_ReportCharacterPower : IPacket
+{
+	public int charDataId;
+	public long combatPower;
+
+	public ushort Protocol { get { return (ushort)PacketID.C_ReportCharacterPower; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.charDataId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.combatPower = BitConverter.ToInt64(segment.Array, segment.Offset + count);
+		count += sizeof(long);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_ReportCharacterPower), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.charDataId), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.combatPower), 0, segment.Array, segment.Offset + count, sizeof(long));
+		count += sizeof(long);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_ExpeditionHome : IPacket
+{
+	
+
+	public ushort Protocol { get { return (ushort)PacketID.C_ExpeditionHome; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_ExpeditionHome), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_ExpeditionHome : IPacket
+{
+	public bool matched;
+	public long nextMatchUnix;
+	public long dayResetUnix;
+	public int myAccountId;
+	public bool enteredToday;
+	public class Member
+	{
+		public int slot;
+		public int accountId;
+		public string nickname;
+		public int profileFrameId;
+		public int charDataId;
+		public int costumeId;
+		public int level;
+		public int starLevel;
+		public bool limitBroken;
+		public long combatPower;
+		public bool mercenary;
+		public bool enteredToday;
+	
+		public void Read(ArraySegment<byte> segment, ref ushort count)
+		{
+			this.slot = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.accountId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			ushort nicknameLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+			count += sizeof(ushort);
+			this.nickname = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, nicknameLen);
+			count += nicknameLen;
+			this.profileFrameId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.charDataId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.costumeId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.level = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.starLevel = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.limitBroken = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+			count += sizeof(bool);
+			this.combatPower = BitConverter.ToInt64(segment.Array, segment.Offset + count);
+			count += sizeof(long);
+			this.mercenary = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+			count += sizeof(bool);
+			this.enteredToday = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+			count += sizeof(bool);
+		}
+	
+		public bool Write(ArraySegment<byte> segment, ref ushort count)
+		{
+			bool success = true;
+			Array.Copy(BitConverter.GetBytes(this.slot), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.accountId), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			string nicknameValue = this.nickname ?? string.Empty;
+			ushort nicknameLen = (ushort)Encoding.Unicode.GetBytes(nicknameValue, 0, nicknameValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+			Array.Copy(BitConverter.GetBytes(nicknameLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+			count += sizeof(ushort);
+			count += nicknameLen;
+			Array.Copy(BitConverter.GetBytes(this.profileFrameId), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.charDataId), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.costumeId), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.level), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.starLevel), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.limitBroken), 0, segment.Array, segment.Offset + count, sizeof(bool));
+			count += sizeof(bool);
+			Array.Copy(BitConverter.GetBytes(this.combatPower), 0, segment.Array, segment.Offset + count, sizeof(long));
+			count += sizeof(long);
+			Array.Copy(BitConverter.GetBytes(this.mercenary), 0, segment.Array, segment.Offset + count, sizeof(bool));
+			count += sizeof(bool);
+			Array.Copy(BitConverter.GetBytes(this.enteredToday), 0, segment.Array, segment.Offset + count, sizeof(bool));
+			count += sizeof(bool);
+			return success;
+		}	
+	}
+	public List<Member> members = new List<Member>();
+	public class Location
+	{
+		public int location;
+		public int level;
+		public long hp;
+		public long maxHp;
+		public int busyAccountId;
+		public string busyNickname;
+	
+		public void Read(ArraySegment<byte> segment, ref ushort count)
+		{
+			this.location = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.level = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.hp = BitConverter.ToInt64(segment.Array, segment.Offset + count);
+			count += sizeof(long);
+			this.maxHp = BitConverter.ToInt64(segment.Array, segment.Offset + count);
+			count += sizeof(long);
+			this.busyAccountId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			ushort busyNicknameLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+			count += sizeof(ushort);
+			this.busyNickname = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, busyNicknameLen);
+			count += busyNicknameLen;
+		}
+	
+		public bool Write(ArraySegment<byte> segment, ref ushort count)
+		{
+			bool success = true;
+			Array.Copy(BitConverter.GetBytes(this.location), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.level), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.hp), 0, segment.Array, segment.Offset + count, sizeof(long));
+			count += sizeof(long);
+			Array.Copy(BitConverter.GetBytes(this.maxHp), 0, segment.Array, segment.Offset + count, sizeof(long));
+			count += sizeof(long);
+			Array.Copy(BitConverter.GetBytes(this.busyAccountId), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			string busyNicknameValue = this.busyNickname ?? string.Empty;
+			ushort busyNicknameLen = (ushort)Encoding.Unicode.GetBytes(busyNicknameValue, 0, busyNicknameValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+			Array.Copy(BitConverter.GetBytes(busyNicknameLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+			count += sizeof(ushort);
+			count += busyNicknameLen;
+			return success;
+		}	
+	}
+	public List<Location> locations = new List<Location>();
+
+	public ushort Protocol { get { return (ushort)PacketID.S_ExpeditionHome; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.matched = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.nextMatchUnix = BitConverter.ToInt64(segment.Array, segment.Offset + count);
+		count += sizeof(long);
+		this.dayResetUnix = BitConverter.ToInt64(segment.Array, segment.Offset + count);
+		count += sizeof(long);
+		this.myAccountId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.enteredToday = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.members.Clear();
+		ushort memberLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		for (int i = 0; i < memberLen; i++)
+		{
+			Member member = new Member();
+			member.Read(segment, ref count);
+			members.Add(member);
+		}
+		this.locations.Clear();
+		ushort locationLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		for (int i = 0; i < locationLen; i++)
+		{
+			Location location = new Location();
+			location.Read(segment, ref count);
+			locations.Add(location);
+		}
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_ExpeditionHome), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.matched), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.nextMatchUnix), 0, segment.Array, segment.Offset + count, sizeof(long));
+		count += sizeof(long);
+		Array.Copy(BitConverter.GetBytes(this.dayResetUnix), 0, segment.Array, segment.Offset + count, sizeof(long));
+		count += sizeof(long);
+		Array.Copy(BitConverter.GetBytes(this.myAccountId), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.enteredToday), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes((ushort)this.members.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		foreach (Member member in this.members)
+			member.Write(segment, ref count);
+		Array.Copy(BitConverter.GetBytes((ushort)this.locations.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		foreach (Location location in this.locations)
+			location.Write(segment, ref count);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_EnterExpedition : IPacket
+{
+	public int location;
+
+	public ushort Protocol { get { return (ushort)PacketID.C_EnterExpedition; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.location = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_EnterExpedition), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.location), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_EnterExpeditionResult : IPacket
+{
+	public bool isSuccess;
+	public int failReason;
+	public int location;
+	public int level;
+	public long hp;
+	public long maxHp;
+	public string busyNickname;
+
+	public ushort Protocol { get { return (ushort)PacketID.S_EnterExpeditionResult; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.isSuccess = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.failReason = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.location = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.level = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.hp = BitConverter.ToInt64(segment.Array, segment.Offset + count);
+		count += sizeof(long);
+		this.maxHp = BitConverter.ToInt64(segment.Array, segment.Offset + count);
+		count += sizeof(long);
+		ushort busyNicknameLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		this.busyNickname = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, busyNicknameLen);
+		count += busyNicknameLen;
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_EnterExpeditionResult), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.isSuccess), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.failReason), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.location), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.level), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.hp), 0, segment.Array, segment.Offset + count, sizeof(long));
+		count += sizeof(long);
+		Array.Copy(BitConverter.GetBytes(this.maxHp), 0, segment.Array, segment.Offset + count, sizeof(long));
+		count += sizeof(long);
+		string busyNicknameValue = this.busyNickname ?? string.Empty;
+		ushort busyNicknameLen = (ushort)Encoding.Unicode.GetBytes(busyNicknameValue, 0, busyNicknameValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+		Array.Copy(BitConverter.GetBytes(busyNicknameLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		count += busyNicknameLen;
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_ExpeditionMemberDeck : IPacket
+{
+	public int slot;
+
+	public ushort Protocol { get { return (ushort)PacketID.C_ExpeditionMemberDeck; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.slot = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_ExpeditionMemberDeck), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.slot), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_ReportExpeditionDamage : IPacket
+{
+	public int location;
+	public long damage;
+
+	public ushort Protocol { get { return (ushort)PacketID.C_ReportExpeditionDamage; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.location = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.damage = BitConverter.ToInt64(segment.Array, segment.Offset + count);
+		count += sizeof(long);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_ReportExpeditionDamage), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.location), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.damage), 0, segment.Array, segment.Offset + count, sizeof(long));
+		count += sizeof(long);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_ExpeditionDamageResult : IPacket
+{
+	public bool isSuccess;
+	public int failReason;
+	public int location;
+	public int level;
+	public long hp;
+	public long maxHp;
+	public bool levelUp;
+	public class GrantedReward
+	{
+		public int kind;
+		public int value;
+		public int qty;
+		public string currencyKey;
+	
+		public void Read(ArraySegment<byte> segment, ref ushort count)
+		{
+			this.kind = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.value = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.qty = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			ushort currencyKeyLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+			count += sizeof(ushort);
+			this.currencyKey = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, currencyKeyLen);
+			count += currencyKeyLen;
+		}
+	
+		public bool Write(ArraySegment<byte> segment, ref ushort count)
+		{
+			bool success = true;
+			Array.Copy(BitConverter.GetBytes(this.kind), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.value), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.qty), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			string currencyKeyValue = this.currencyKey ?? string.Empty;
+			ushort currencyKeyLen = (ushort)Encoding.Unicode.GetBytes(currencyKeyValue, 0, currencyKeyValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+			Array.Copy(BitConverter.GetBytes(currencyKeyLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+			count += sizeof(ushort);
+			count += currencyKeyLen;
+			return success;
+		}	
+	}
+	public List<GrantedReward> grantedRewards = new List<GrantedReward>();
+
+	public ushort Protocol { get { return (ushort)PacketID.S_ExpeditionDamageResult; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.isSuccess = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.failReason = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.location = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.level = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.hp = BitConverter.ToInt64(segment.Array, segment.Offset + count);
+		count += sizeof(long);
+		this.maxHp = BitConverter.ToInt64(segment.Array, segment.Offset + count);
+		count += sizeof(long);
+		this.levelUp = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.grantedRewards.Clear();
+		ushort grantedRewardLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		for (int i = 0; i < grantedRewardLen; i++)
+		{
+			GrantedReward grantedReward = new GrantedReward();
+			grantedReward.Read(segment, ref count);
+			grantedRewards.Add(grantedReward);
+		}
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_ExpeditionDamageResult), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.isSuccess), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.failReason), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.location), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.level), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.hp), 0, segment.Array, segment.Offset + count, sizeof(long));
+		count += sizeof(long);
+		Array.Copy(BitConverter.GetBytes(this.maxHp), 0, segment.Array, segment.Offset + count, sizeof(long));
+		count += sizeof(long);
+		Array.Copy(BitConverter.GetBytes(this.levelUp), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes((ushort)this.grantedRewards.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		foreach (GrantedReward grantedReward in this.grantedRewards)
+			grantedReward.Write(segment, ref count);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_ExpeditionLog : IPacket
+{
+	
+
+	public ushort Protocol { get { return (ushort)PacketID.C_ExpeditionLog; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_ExpeditionLog), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_ExpeditionLog : IPacket
+{
+	public int myAccountId;
+	public class Entry
+	{
+		public int accountId;
+		public string nickname;
+		public int location;
+		public int level;
+		public long damage;
+		public bool levelUp;
+		public long createdUnix;
+	
+		public void Read(ArraySegment<byte> segment, ref ushort count)
+		{
+			this.accountId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			ushort nicknameLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+			count += sizeof(ushort);
+			this.nickname = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, nicknameLen);
+			count += nicknameLen;
+			this.location = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.level = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.damage = BitConverter.ToInt64(segment.Array, segment.Offset + count);
+			count += sizeof(long);
+			this.levelUp = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+			count += sizeof(bool);
+			this.createdUnix = BitConverter.ToInt64(segment.Array, segment.Offset + count);
+			count += sizeof(long);
+		}
+	
+		public bool Write(ArraySegment<byte> segment, ref ushort count)
+		{
+			bool success = true;
+			Array.Copy(BitConverter.GetBytes(this.accountId), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			string nicknameValue = this.nickname ?? string.Empty;
+			ushort nicknameLen = (ushort)Encoding.Unicode.GetBytes(nicknameValue, 0, nicknameValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+			Array.Copy(BitConverter.GetBytes(nicknameLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+			count += sizeof(ushort);
+			count += nicknameLen;
+			Array.Copy(BitConverter.GetBytes(this.location), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.level), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.damage), 0, segment.Array, segment.Offset + count, sizeof(long));
+			count += sizeof(long);
+			Array.Copy(BitConverter.GetBytes(this.levelUp), 0, segment.Array, segment.Offset + count, sizeof(bool));
+			count += sizeof(bool);
+			Array.Copy(BitConverter.GetBytes(this.createdUnix), 0, segment.Array, segment.Offset + count, sizeof(long));
+			count += sizeof(long);
+			return success;
+		}	
+	}
+	public List<Entry> entrys = new List<Entry>();
+
+	public ushort Protocol { get { return (ushort)PacketID.S_ExpeditionLog; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.myAccountId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.entrys.Clear();
+		ushort entryLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		for (int i = 0; i < entryLen; i++)
+		{
+			Entry entry = new Entry();
+			entry.Read(segment, ref count);
+			entrys.Add(entry);
+		}
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_ExpeditionLog), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.myAccountId), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes((ushort)this.entrys.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		foreach (Entry entry in this.entrys)
+			entry.Write(segment, ref count);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_DoomEntryInfo : IPacket
+{
+	
+
+	public ushort Protocol { get { return (ushort)PacketID.C_DoomEntryInfo; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_DoomEntryInfo), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_DoomEntryInfo : IPacket
+{
+	public int remaining;
+	public int dailyEntries;
+	public int usedEntries;
+	public int nextEntryCost;
+
+	public ushort Protocol { get { return (ushort)PacketID.S_DoomEntryInfo; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.remaining = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.dailyEntries = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.usedEntries = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.nextEntryCost = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_DoomEntryInfo), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.remaining), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.dailyEntries), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.usedEntries), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.nextEntryCost), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_DoomEnter : IPacket
+{
+	
+
+	public ushort Protocol { get { return (ushort)PacketID.C_DoomEnter; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_DoomEnter), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_DoomEnterResult : IPacket
+{
+	public bool isSuccess;
+	public int failReason;
+	public int remaining;
+	public int dailyEntries;
+	public int usedEntries;
+	public int nextEntryCost;
+	public int newDiamond;
+
+	public ushort Protocol { get { return (ushort)PacketID.S_DoomEnterResult; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.isSuccess = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.failReason = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.remaining = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.dailyEntries = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.usedEntries = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.nextEntryCost = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.newDiamond = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_DoomEnterResult), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.isSuccess), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.failReason), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.remaining), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.dailyEntries), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.usedEntries), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.nextEntryCost), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.newDiamond), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_DoomFinish : IPacket
+{
+	public int score;
+	public int phase;
+
+	public ushort Protocol { get { return (ushort)PacketID.C_DoomFinish; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.score = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.phase = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_DoomFinish), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.score), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.phase), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_DoomFinishResult : IPacket
+{
+	public bool isSuccess;
+	public int failReason;
+	public int bestScore;
+	public bool isBest;
+	public bool canClaim;
+	public int gainedExp;
+	public class CharExp
+	{
+		public int charDataId;
+		public int gainedExp;
+		public int newLevel;
+		public int newExp;
+		public int maxExp;
+		public int gainedStatPoints;
+	
+		public void Read(ArraySegment<byte> segment, ref ushort count)
+		{
+			this.charDataId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.gainedExp = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.newLevel = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.newExp = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.maxExp = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.gainedStatPoints = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+		}
+	
+		public bool Write(ArraySegment<byte> segment, ref ushort count)
+		{
+			bool success = true;
+			Array.Copy(BitConverter.GetBytes(this.charDataId), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.gainedExp), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.newLevel), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.newExp), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.maxExp), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.gainedStatPoints), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			return success;
+		}	
+	}
+	public List<CharExp> charExps = new List<CharExp>();
+
+	public ushort Protocol { get { return (ushort)PacketID.S_DoomFinishResult; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.isSuccess = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.failReason = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.bestScore = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.isBest = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.canClaim = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.gainedExp = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.charExps.Clear();
+		ushort charExpLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		for (int i = 0; i < charExpLen; i++)
+		{
+			CharExp charExp = new CharExp();
+			charExp.Read(segment, ref count);
+			charExps.Add(charExp);
+		}
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_DoomFinishResult), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.isSuccess), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.failReason), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.bestScore), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.isBest), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.canClaim), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.gainedExp), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes((ushort)this.charExps.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		foreach (CharExp charExp in this.charExps)
+			charExp.Write(segment, ref count);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_TowerInfo : IPacket
+{
+	
+
+	public ushort Protocol { get { return (ushort)PacketID.C_TowerInfo; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_TowerInfo), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_TowerInfo : IPacket
+{
+	public int floor;
+	public int maxFloor;
+	public bool canClimb;
+	public int bonusKind;
+	public int bonusTarget;
+	public int bonusValue;
+
+	public ushort Protocol { get { return (ushort)PacketID.S_TowerInfo; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.floor = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.maxFloor = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.canClimb = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.bonusKind = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.bonusTarget = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.bonusValue = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_TowerInfo), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.floor), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.maxFloor), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.canClimb), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.bonusKind), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.bonusTarget), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.bonusValue), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_TowerEnter : IPacket
+{
+	public int floor;
+
+	public ushort Protocol { get { return (ushort)PacketID.C_TowerEnter; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.floor = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_TowerEnter), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.floor), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_TowerEnterResult : IPacket
+{
+	public bool isSuccess;
+	public int failReason;
+
+	public ushort Protocol { get { return (ushort)PacketID.S_TowerEnterResult; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.isSuccess = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.failReason = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_TowerEnterResult), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.isSuccess), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.failReason), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_TowerClear : IPacket
+{
+	public int floor;
+
+	public ushort Protocol { get { return (ushort)PacketID.C_TowerClear; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.floor = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_TowerClear), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.floor), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_TowerClearResult : IPacket
+{
+	public bool isSuccess;
+	public int failReason;
+	public int clearedFloor;
+	public int floor;
+	public bool canClimb;
+	public int bonusKind;
+	public int bonusTarget;
+	public int bonusValue;
+	public int newDiamond;
+	public class Granted
+	{
+		public int kind;
+		public int value;
+		public int qty;
+		public string currencyKey;
+	
+		public void Read(ArraySegment<byte> segment, ref ushort count)
+		{
+			this.kind = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.value = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.qty = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			ushort currencyKeyLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+			count += sizeof(ushort);
+			this.currencyKey = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, currencyKeyLen);
+			count += currencyKeyLen;
+		}
+	
+		public bool Write(ArraySegment<byte> segment, ref ushort count)
+		{
+			bool success = true;
+			Array.Copy(BitConverter.GetBytes(this.kind), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.value), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.qty), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			string currencyKeyValue = this.currencyKey ?? string.Empty;
+			ushort currencyKeyLen = (ushort)Encoding.Unicode.GetBytes(currencyKeyValue, 0, currencyKeyValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+			Array.Copy(BitConverter.GetBytes(currencyKeyLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+			count += sizeof(ushort);
+			count += currencyKeyLen;
+			return success;
+		}	
+	}
+	public List<Granted> granteds = new List<Granted>();
+
+	public ushort Protocol { get { return (ushort)PacketID.S_TowerClearResult; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.isSuccess = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.failReason = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.clearedFloor = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.floor = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.canClimb = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.bonusKind = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.bonusTarget = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.bonusValue = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.newDiamond = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.granteds.Clear();
+		ushort grantedLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		for (int i = 0; i < grantedLen; i++)
+		{
+			Granted granted = new Granted();
+			granted.Read(segment, ref count);
+			granteds.Add(granted);
+		}
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_TowerClearResult), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.isSuccess), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.failReason), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.clearedFloor), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.floor), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.canClimb), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.bonusKind), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.bonusTarget), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.bonusValue), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.newDiamond), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes((ushort)this.granteds.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		foreach (Granted granted in this.granteds)
+			granted.Write(segment, ref count);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_AttendanceEventInfo : IPacket
+{
+	public string eventKey;
+
+	public ushort Protocol { get { return (ushort)PacketID.C_AttendanceEventInfo; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		ushort eventKeyLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		this.eventKey = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, eventKeyLen);
+		count += eventKeyLen;
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_AttendanceEventInfo), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		string eventKeyValue = this.eventKey ?? string.Empty;
+		ushort eventKeyLen = (ushort)Encoding.Unicode.GetBytes(eventKeyValue, 0, eventKeyValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+		Array.Copy(BitConverter.GetBytes(eventKeyLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		count += eventKeyLen;
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_AttendanceEventInfo : IPacket
+{
+	public string eventKey;
+	public bool locked;
+	public int claimedDays;
+	public bool canClaimToday;
+	public int maxDays;
+	public class DayReward
+	{
+		public int day;
+		public int kind;
+		public int value;
+		public int qty;
+		public string currencyKey;
+	
+		public void Read(ArraySegment<byte> segment, ref ushort count)
+		{
+			this.day = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.kind = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.value = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.qty = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			ushort currencyKeyLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+			count += sizeof(ushort);
+			this.currencyKey = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, currencyKeyLen);
+			count += currencyKeyLen;
+		}
+	
+		public bool Write(ArraySegment<byte> segment, ref ushort count)
+		{
+			bool success = true;
+			Array.Copy(BitConverter.GetBytes(this.day), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.kind), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.value), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.qty), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			string currencyKeyValue = this.currencyKey ?? string.Empty;
+			ushort currencyKeyLen = (ushort)Encoding.Unicode.GetBytes(currencyKeyValue, 0, currencyKeyValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+			Array.Copy(BitConverter.GetBytes(currencyKeyLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+			count += sizeof(ushort);
+			count += currencyKeyLen;
+			return success;
+		}	
+	}
+	public List<DayReward> dayRewards = new List<DayReward>();
+
+	public ushort Protocol { get { return (ushort)PacketID.S_AttendanceEventInfo; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		ushort eventKeyLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		this.eventKey = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, eventKeyLen);
+		count += eventKeyLen;
+		this.locked = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.claimedDays = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.canClaimToday = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.maxDays = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.dayRewards.Clear();
+		ushort dayRewardLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		for (int i = 0; i < dayRewardLen; i++)
+		{
+			DayReward dayReward = new DayReward();
+			dayReward.Read(segment, ref count);
+			dayRewards.Add(dayReward);
+		}
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_AttendanceEventInfo), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		string eventKeyValue = this.eventKey ?? string.Empty;
+		ushort eventKeyLen = (ushort)Encoding.Unicode.GetBytes(eventKeyValue, 0, eventKeyValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+		Array.Copy(BitConverter.GetBytes(eventKeyLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		count += eventKeyLen;
+		Array.Copy(BitConverter.GetBytes(this.locked), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.claimedDays), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.canClaimToday), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.maxDays), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes((ushort)this.dayRewards.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		foreach (DayReward dayReward in this.dayRewards)
+			dayReward.Write(segment, ref count);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_ClaimAttendanceEvent : IPacket
+{
+	public string eventKey;
+
+	public ushort Protocol { get { return (ushort)PacketID.C_ClaimAttendanceEvent; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		ushort eventKeyLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		this.eventKey = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, eventKeyLen);
+		count += eventKeyLen;
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_ClaimAttendanceEvent), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		string eventKeyValue = this.eventKey ?? string.Empty;
+		ushort eventKeyLen = (ushort)Encoding.Unicode.GetBytes(eventKeyValue, 0, eventKeyValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+		Array.Copy(BitConverter.GetBytes(eventKeyLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		count += eventKeyLen;
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_ClaimAttendanceEventResult : IPacket
+{
+	public string eventKey;
+	public bool isSuccess;
+	public int failReason;
+	public int claimedDays;
+	public bool canClaimToday;
+	public int newGold;
+	public int newDiamond;
+	public int newStamina;
+	public class GrantedReward
+	{
+		public int kind;
+		public int value;
+		public int qty;
+		public string currencyKey;
+	
+		public void Read(ArraySegment<byte> segment, ref ushort count)
+		{
+			this.kind = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.value = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.qty = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			ushort currencyKeyLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+			count += sizeof(ushort);
+			this.currencyKey = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, currencyKeyLen);
+			count += currencyKeyLen;
+		}
+	
+		public bool Write(ArraySegment<byte> segment, ref ushort count)
+		{
+			bool success = true;
+			Array.Copy(BitConverter.GetBytes(this.kind), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.value), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.qty), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			string currencyKeyValue = this.currencyKey ?? string.Empty;
+			ushort currencyKeyLen = (ushort)Encoding.Unicode.GetBytes(currencyKeyValue, 0, currencyKeyValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+			Array.Copy(BitConverter.GetBytes(currencyKeyLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+			count += sizeof(ushort);
+			count += currencyKeyLen;
+			return success;
+		}	
+	}
+	public List<GrantedReward> grantedRewards = new List<GrantedReward>();
+
+	public ushort Protocol { get { return (ushort)PacketID.S_ClaimAttendanceEventResult; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		ushort eventKeyLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		this.eventKey = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, eventKeyLen);
+		count += eventKeyLen;
+		this.isSuccess = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.failReason = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.claimedDays = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.canClaimToday = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.newGold = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.newDiamond = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.newStamina = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.grantedRewards.Clear();
+		ushort grantedRewardLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		for (int i = 0; i < grantedRewardLen; i++)
+		{
+			GrantedReward grantedReward = new GrantedReward();
+			grantedReward.Read(segment, ref count);
+			grantedRewards.Add(grantedReward);
+		}
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_ClaimAttendanceEventResult), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		string eventKeyValue = this.eventKey ?? string.Empty;
+		ushort eventKeyLen = (ushort)Encoding.Unicode.GetBytes(eventKeyValue, 0, eventKeyValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+		Array.Copy(BitConverter.GetBytes(eventKeyLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		count += eventKeyLen;
+		Array.Copy(BitConverter.GetBytes(this.isSuccess), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.failReason), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.claimedDays), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.canClaimToday), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.newGold), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.newDiamond), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.newStamina), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes((ushort)this.grantedRewards.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		foreach (GrantedReward grantedReward in this.grantedRewards)
+			grantedReward.Write(segment, ref count);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_FrontlineInfo : IPacket
+{
+	
+
+	public ushort Protocol { get { return (ushort)PacketID.C_FrontlineInfo; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_FrontlineInfo), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_FrontlineInfo : IPacket
+{
+	public int maxStage;
+	public int staminaPerClear;
+	public int dailyStaminaLimit;
+	public int dailyStaminaUsed;
+	public class Frontline
+	{
+		public int frontlineId;
+		public int stage;
+		public string membersCsv;
+		public bool locked;
+	
+		public void Read(ArraySegment<byte> segment, ref ushort count)
+		{
+			this.frontlineId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.stage = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			ushort membersCsvLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+			count += sizeof(ushort);
+			this.membersCsv = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, membersCsvLen);
+			count += membersCsvLen;
+			this.locked = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+			count += sizeof(bool);
+		}
+	
+		public bool Write(ArraySegment<byte> segment, ref ushort count)
+		{
+			bool success = true;
+			Array.Copy(BitConverter.GetBytes(this.frontlineId), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.stage), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			string membersCsvValue = this.membersCsv ?? string.Empty;
+			ushort membersCsvLen = (ushort)Encoding.Unicode.GetBytes(membersCsvValue, 0, membersCsvValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+			Array.Copy(BitConverter.GetBytes(membersCsvLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+			count += sizeof(ushort);
+			count += membersCsvLen;
+			Array.Copy(BitConverter.GetBytes(this.locked), 0, segment.Array, segment.Offset + count, sizeof(bool));
+			count += sizeof(bool);
+			return success;
+		}	
+	}
+	public List<Frontline> frontlines = new List<Frontline>();
+
+	public ushort Protocol { get { return (ushort)PacketID.S_FrontlineInfo; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.maxStage = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.staminaPerClear = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.dailyStaminaLimit = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.dailyStaminaUsed = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.frontlines.Clear();
+		ushort frontlineLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		for (int i = 0; i < frontlineLen; i++)
+		{
+			Frontline frontline = new Frontline();
+			frontline.Read(segment, ref count);
+			frontlines.Add(frontline);
+		}
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_FrontlineInfo), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.maxStage), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.staminaPerClear), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.dailyStaminaLimit), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.dailyStaminaUsed), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes((ushort)this.frontlines.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		foreach (Frontline frontline in this.frontlines)
+			frontline.Write(segment, ref count);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_FrontlineSetMembers : IPacket
+{
+	public int frontlineId;
+	public string membersCsv;
+
+	public ushort Protocol { get { return (ushort)PacketID.C_FrontlineSetMembers; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.frontlineId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		ushort membersCsvLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		this.membersCsv = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, membersCsvLen);
+		count += membersCsvLen;
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_FrontlineSetMembers), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.frontlineId), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		string membersCsvValue = this.membersCsv ?? string.Empty;
+		ushort membersCsvLen = (ushort)Encoding.Unicode.GetBytes(membersCsvValue, 0, membersCsvValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+		Array.Copy(BitConverter.GetBytes(membersCsvLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		count += membersCsvLen;
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_FrontlineSetMembersResult : IPacket
+{
+	public bool isSuccess;
+	public int failReason;
+	public int frontlineId;
+	public string membersCsv;
+	public bool locked;
+
+	public ushort Protocol { get { return (ushort)PacketID.S_FrontlineSetMembersResult; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.isSuccess = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.failReason = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.frontlineId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		ushort membersCsvLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		this.membersCsv = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, membersCsvLen);
+		count += membersCsvLen;
+		this.locked = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_FrontlineSetMembersResult), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.isSuccess), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.failReason), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.frontlineId), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		string membersCsvValue = this.membersCsv ?? string.Empty;
+		ushort membersCsvLen = (ushort)Encoding.Unicode.GetBytes(membersCsvValue, 0, membersCsvValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+		Array.Copy(BitConverter.GetBytes(membersCsvLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		count += membersCsvLen;
+		Array.Copy(BitConverter.GetBytes(this.locked), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_FrontlineReset : IPacket
+{
+	public int frontlineId;
+
+	public ushort Protocol { get { return (ushort)PacketID.C_FrontlineReset; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.frontlineId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_FrontlineReset), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.frontlineId), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_FrontlineResetResult : IPacket
+{
+	public bool isSuccess;
+	public int failReason;
+	public int frontlineId;
+	public int stage;
+
+	public ushort Protocol { get { return (ushort)PacketID.S_FrontlineResetResult; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.isSuccess = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.failReason = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.frontlineId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.stage = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_FrontlineResetResult), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.isSuccess), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.failReason), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.frontlineId), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.stage), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_FrontlineEnter : IPacket
+{
+	public int frontlineId;
+	public int stage;
+
+	public ushort Protocol { get { return (ushort)PacketID.C_FrontlineEnter; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.frontlineId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.stage = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_FrontlineEnter), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.frontlineId), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.stage), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_FrontlineEnterResult : IPacket
+{
+	public bool isSuccess;
+	public int failReason;
+	public int newStamina;
+	public int dailyStaminaUsed;
+
+	public ushort Protocol { get { return (ushort)PacketID.S_FrontlineEnterResult; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.isSuccess = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.failReason = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.newStamina = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.dailyStaminaUsed = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_FrontlineEnterResult), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.isSuccess), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.failReason), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.newStamina), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.dailyStaminaUsed), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_FrontlineFinish : IPacket
+{
+	public int frontlineId;
+	public int stage;
+	public bool cleared;
+
+	public ushort Protocol { get { return (ushort)PacketID.C_FrontlineFinish; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.frontlineId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.stage = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.cleared = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_FrontlineFinish), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.frontlineId), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.stage), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.cleared), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_FrontlineFinishResult : IPacket
+{
+	public bool isSuccess;
+	public int failReason;
+	public int frontlineId;
+	public bool cleared;
+	public int stage;
+	public bool locked;
+	public int newStamina;
+	public int dailyStaminaUsed;
+	public int gainedExp;
+	public class CharExp
+	{
+		public int charDataId;
+		public int gainedExp;
+		public int newLevel;
+		public int newExp;
+		public int maxExp;
+		public int gainedStatPoints;
+	
+		public void Read(ArraySegment<byte> segment, ref ushort count)
+		{
+			this.charDataId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.gainedExp = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.newLevel = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.newExp = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.maxExp = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.gainedStatPoints = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+		}
+	
+		public bool Write(ArraySegment<byte> segment, ref ushort count)
+		{
+			bool success = true;
+			Array.Copy(BitConverter.GetBytes(this.charDataId), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.gainedExp), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.newLevel), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.newExp), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.maxExp), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.gainedStatPoints), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			return success;
+		}	
+	}
+	public List<CharExp> charExps = new List<CharExp>();
+
+	public ushort Protocol { get { return (ushort)PacketID.S_FrontlineFinishResult; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.isSuccess = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.failReason = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.frontlineId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.cleared = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.stage = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.locked = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.newStamina = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.dailyStaminaUsed = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.gainedExp = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.charExps.Clear();
+		ushort charExpLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		for (int i = 0; i < charExpLen; i++)
+		{
+			CharExp charExp = new CharExp();
+			charExp.Read(segment, ref count);
+			charExps.Add(charExp);
+		}
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_FrontlineFinishResult), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.isSuccess), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.failReason), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.frontlineId), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.cleared), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.stage), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.locked), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.newStamina), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.dailyStaminaUsed), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.gainedExp), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes((ushort)this.charExps.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		foreach (CharExp charExp in this.charExps)
+			charExp.Write(segment, ref count);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_HeroesInfo : IPacket
+{
+	
+
+	public ushort Protocol { get { return (ushort)PacketID.C_HeroesInfo; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_HeroesInfo), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_HeroesInfo : IPacket
+{
+	public int stage;
+	public int maxStage;
+	public int remainEntries;
+	public int dailyEntries;
+
+	public ushort Protocol { get { return (ushort)PacketID.S_HeroesInfo; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.stage = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.maxStage = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.remainEntries = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.dailyEntries = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_HeroesInfo), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.stage), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.maxStage), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.remainEntries), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.dailyEntries), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_HeroesEnter : IPacket
+{
+	public int stage;
+
+	public ushort Protocol { get { return (ushort)PacketID.C_HeroesEnter; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.stage = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_HeroesEnter), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.stage), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_HeroesEnterResult : IPacket
+{
+	public bool isSuccess;
+	public int failReason;
+	public int remainEntries;
+
+	public ushort Protocol { get { return (ushort)PacketID.S_HeroesEnterResult; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.isSuccess = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.failReason = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.remainEntries = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_HeroesEnterResult), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.isSuccess), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.failReason), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.remainEntries), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class C_HeroesClear : IPacket
+{
+	public int stage;
+
+	public ushort Protocol { get { return (ushort)PacketID.C_HeroesClear; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.stage = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_HeroesClear), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.stage), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_HeroesClearResult : IPacket
+{
+	public bool isSuccess;
+	public int failReason;
+	public int clearedStage;
+	public int stage;
+	public int remainEntries;
+	public int newGold;
+	public int newDiamond;
+	public class Granted
+	{
+		public int kind;
+		public int value;
+		public int qty;
+		public string currencyKey;
+	
+		public void Read(ArraySegment<byte> segment, ref ushort count)
+		{
+			this.kind = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.value = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			this.qty = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+			ushort currencyKeyLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+			count += sizeof(ushort);
+			this.currencyKey = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, currencyKeyLen);
+			count += currencyKeyLen;
+		}
+	
+		public bool Write(ArraySegment<byte> segment, ref ushort count)
+		{
+			bool success = true;
+			Array.Copy(BitConverter.GetBytes(this.kind), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.value), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			Array.Copy(BitConverter.GetBytes(this.qty), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			string currencyKeyValue = this.currencyKey ?? string.Empty;
+			ushort currencyKeyLen = (ushort)Encoding.Unicode.GetBytes(currencyKeyValue, 0, currencyKeyValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+			Array.Copy(BitConverter.GetBytes(currencyKeyLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+			count += sizeof(ushort);
+			count += currencyKeyLen;
+			return success;
+		}	
+	}
+	public List<Granted> granteds = new List<Granted>();
+
+	public ushort Protocol { get { return (ushort)PacketID.S_HeroesClearResult; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.isSuccess = BitConverter.ToBoolean(segment.Array, segment.Offset + count);
+		count += sizeof(bool);
+		this.failReason = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.clearedStage = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.stage = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.remainEntries = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.newGold = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.newDiamond = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.granteds.Clear();
+		ushort grantedLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		for (int i = 0; i < grantedLen; i++)
+		{
+			Granted granted = new Granted();
+			granted.Read(segment, ref count);
+			granteds.Add(granted);
+		}
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_HeroesClearResult), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.isSuccess), 0, segment.Array, segment.Offset + count, sizeof(bool));
+		count += sizeof(bool);
+		Array.Copy(BitConverter.GetBytes(this.failReason), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.clearedStage), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.stage), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.remainEntries), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.newGold), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.newDiamond), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes((ushort)this.granteds.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		foreach (Granted granted in this.granteds)
+			granted.Write(segment, ref count);
 
 		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
 

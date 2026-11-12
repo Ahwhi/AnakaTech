@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 
 /// <summary>
@@ -100,6 +102,38 @@ public static class StatusEffectRules {
         StatusEffectType.Vulnerable => "#8E44AD",   // 보라 - 받는 피해 증가
         _ => ""
     };
+
+    /// <summary>
+    /// 상태이상 설명(설명 팝업용). 수치는 스킬마다 다르므로 여기서는 효과의 성격만 적고,
+    /// 구체적인 수치는 스킬 설명 본문이 맡는다.
+    /// </summary>
+    public static string Description(StatusEffectType type) => type switch {
+        StatusEffectType.Stun => "지속시간 동안 이동도 공격도 하지 못합니다.",
+        StatusEffectType.Bleed => "지속시간 동안 일정 간격으로 시전자의 공격력에 비례한 피해를 입습니다.",
+        StatusEffectType.Chill => "지속시간 동안 스킬 쿨타임이 흐르지 않아 스킬 발동이 그만큼 늦어집니다.",
+        StatusEffectType.Vulnerable => "지속시간 동안 받는 피해가 늘어납니다.",
+        _ => ""
+    };
+
+    /// <summary>
+    /// 상태이상 목록을 설명 팝업 본문으로 만든다(색 입힌 이름 + 설명, 종류별 1회).
+    /// 같은 종류가 여러 번 걸려도(예: 스킬과 변신 공격이 둘 다 출혈) 한 번만 적는다. 없으면 빈 문자열이다.
+    /// </summary>
+    public static string DescribeAll(IEnumerable<StatusEffectSpec> effects) {
+        if (effects == null) return "";
+
+        var seen = new HashSet<StatusEffectType>();
+        var sb = new StringBuilder();
+        foreach (var e in effects) {
+            if (!seen.Add(e.Type)) continue;
+            string desc = Description(e.Type);
+            if (string.IsNullOrEmpty(desc)) continue;
+
+            if (sb.Length > 0) sb.Append("\n\n");
+            sb.Append($"<color={ColorHex(e.Type)}>[{DisplayName(e.Type)}]</color>\n{desc}");
+        }
+        return sb.ToString();
+    }
 
     /// <summary>
     /// 표시 이름으로 상태이상을 찾는다(스킬 설명의 [이름] 해석용).

@@ -11,7 +11,8 @@ using System.Collections.Generic;
 /// </summary>
 public static class CommissionRewardRules {
     public const int TypeCount = 3;
-    public const int MaxStage = 50;
+    // 서버 CommissionCatalog.MaxStage 와 값이 같아야 한다(어긋나면 한쪽에서만 도전이 막힌다).
+    public const int MaxStage = 80;
 
     /// <summary>매일 자동 충전되는 의뢰해결권 수(KST 자정). 즉시해결 전용 재화이며 도전에는 쓰이지 않는다.</summary>
     public const int TicketDailyRefill = 3;
@@ -130,6 +131,33 @@ public static class CommissionRewardRules {
         int s = Clamp(stage);
         return 100 + 200 * s * s;
     }
+
+    /// <summary>
+    /// 이 의뢰의 경험치에 걸리는 투자 증가분(1000 분율). 서버 GrantCommissionExp 와 같은 기준으로,
+    /// 레이드 의뢰에만 RaidCommissionExp 가 걸리고 나머지는 0 이다.
+    /// </summary>
+    public static int ExpBonusPermille(CommissionType type, IReadOnlyDictionary<int, int> investmentLevels) =>
+        type == CommissionType.Raid
+            ? InvestmentRules.PermilleOf(investmentLevels, InvestmentEffect.RaidCommissionExp)
+            : 0;
+
+    /// <summary>
+    /// 보상 목록의 경험치에 투자 증가분을 적용한 사본. 서버는 장수를 곱한 뒤의 총량에 증가분을 적용하므로,
+    /// 즉시해결 미리보기는 ScaleRewards 다음에 이것을 불러야 반올림까지 지급액과 같아진다.
+    /// </summary>
+    public static List<RewardItem> WithExpBonus(IReadOnlyList<RewardItem> rewards, int permille) {
+        var list = new List<RewardItem>(rewards.Count);
+        for (int i = 0; i < rewards.Count; i++) {
+            var r = rewards[i];
+            list.Add(r.Kind == RewardItemKind.Exp && permille > 0
+                ? RewardItem.Exp(InvestmentRules.ApplyPermille(r.Amount, permille))
+                : r);
+        }
+        return list;
+    }
+
+    /// <summary>투자 반영 안내 문구(예: "투자 15% 반영"). 증가분이 없으면 빈 문자열.</summary>
+    public static string ExpBonusLabel(int permille) => InvestmentRules.BonusLabel(permille);
 
     /// <summary>이 단계의 최초 클리어가 각인 도면을 주는지(서버 GrantsBlueprint 미러).</summary>
     public static bool GrantsBlueprint(CommissionType type, int stage) =>

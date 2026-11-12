@@ -46,6 +46,12 @@ public sealed class PlayerStateStore {
     public ReactiveProperty<int> ArenaCoin { get; } = new(0);
     /// <summary>파견 증명서. 파견 완료 보상으로만 쌓이며 코스튬 구매의 결제 재화다.</summary>
     public ReactiveProperty<int> DispatchCertificate { get; } = new(0);
+
+    /// <summary>모집 마일리지. 모집을 돌리면 소녀/장비를 가리지 않고 쌓이며 SSR 소녀 픽업에 쓴다.</summary>
+    public ReactiveProperty<int> GachaMileage { get; } = new(0);
+
+    /// <summary>한계돌파권. 조건을 채운 캐릭터를 한계돌파할 때 쓴다(서버 범용 재화 지갑).</summary>
+    public ReactiveProperty<int> LimitBreakTicket { get; } = new(0);
     public ReactiveProperty<int> CurrentDungeonIndex { get; } = new(0);
 
     /// <summary>클리어한 최고 던전 인덱스(0=클리어 없음, 서버 권위). 던전 해금 표시 기준(DungeonUnlockRule).
@@ -80,6 +86,8 @@ public sealed class PlayerStateStore {
             { CurrencyType.TrainingTicket, TrainingTicket },
             { CurrencyType.ArenaCoin, ArenaCoin },
             { CurrencyType.DispatchCertificate, DispatchCertificate },
+            { CurrencyType.GachaMileage, GachaMileage },
+            { CurrencyType.LimitBreakTicket, LimitBreakTicket },
         };
         return _currencyMap.TryGetValue(type, out var rp) ? rp : null;
     }
@@ -97,7 +105,7 @@ public sealed class PlayerStateStore {
 
     /// <summary>기력 부스트권 일일 자동 충전량(서버 권위). 부스트 버튼이 "N / 이 값"으로 표시한다.
     /// 상점 구매분은 이 값을 넘겨 보유할 수 있으므로 보유량의 상한이 아니라 "매일 채워지는 기준선"이다.</summary>
-    public int StaminaBoostTicketDaily { get; private set; } = 10;
+    public int StaminaBoostTicketDaily { get; private set; } = 30;
 
     public readonly Dictionary<int, CharacterProgress> Characters = new();
     public DeckState Deck { get; } = new();
@@ -139,14 +147,16 @@ public sealed class PlayerStateStore {
     }
 
     /// <summary>
-    /// 캐릭터 1명이 성장(레벨/별/투자) 밖에서 받는 모든 보정의 합: 장비 + 각인(항상 적용분) + 본부 + 수련 + 코스튬.
+    /// 캐릭터 1명이 성장(레벨/별/스탯 포인트) 밖에서 받는 모든 보정의 합:
+    /// 장비 + 각인(항상 적용분) + 본부 + 계정 투자 + 수련 + 코스튬 + 시너지.
     /// 전투와 표시(전투력/상세)가 반드시 같은 값을 쓰도록 하는 단일 관문이므로, 새 보정원이 생기면 여기만 더한다.
     /// </summary>
     /// <param name="deckOverride">시너지 판정에 쓸 편성(편성 화면의 편집 중 작업본). null 이면 확정된 편성을 쓴다.</param>
     public CombatStats TotalBonusFor(int charDataId, EquipmentDatabase equipDb,
                                      IReadOnlyList<int> deckOverride = null) =>
-        EquipmentBonusFor(charDataId, equipDb) + EngravingBonusFor(charDataId) + AccountBonus
-        + TrainingBonusFor(charDataId) + CostumeBonusFor(charDataId) + SynergyBonusFor(charDataId, deckOverride);
+        EquipmentBonusFor(charDataId, equipDb) + EngravingBonusFor(charDataId) + AccountBonus + InvestmentBonus
+        + TrainingBonusFor(charDataId) + CostumeBonusFor(charDataId) + UnitSkinBonusFor(charDataId)
+        + SynergyBonusFor(charDataId, deckOverride);
 
     /// <summary>
     /// 현재 편성에서 지정 캐릭터가 받는 시너지 보정. 편성에 없는 캐릭터는 자연히 0 이다.
@@ -172,6 +182,16 @@ public sealed class PlayerStateStore {
         return CharacterBuild.Engravings(slots, GetProgress(charDataId)?.StarLevel ?? 0, EngravingLevels, _engravingDb);
     }
 
+    /// <summary>
+    /// 표시용 캐릭터 런타임(최종 스탯 + 전투력)의 단일 관문. 보정 합계와 조건부 각인 효과를 함께 넘겨
+    /// 화면마다 전투력이 다르게 나오지 않도록 한다. 표시 화면은 CharacterRuntime 을 직접 만들지 말고 이것을 쓴다.
+    /// </summary>
+    /// <param name="deckOverride">시너지 판정에 쓸 편성(TotalBonusFor 와 같은 의미).</param>
+    public CharacterRuntime RuntimeFor(CharacterData data, CharacterProgress progress, BattleSettings settings,
+                                       EquipmentDatabase equipDb, IReadOnlyList<int> deckOverride = null) =>
+        new CharacterRuntime(data, progress, settings, TotalBonusFor(data.Id, equipDb, deckOverride),
+                             EngravingLoadoutFor(data.Id).Conditionals);
+
     // ── 코스튬(외형 교체 + 장착 효과) ─────────────────────────────
     /// <summary>보유 코스튬 id 집합(계정 단위, 서버 권위). 어떤 경로로 받았든 여기 쌓인다.</summary>
     public readonly HashSet<int> OwnedCostumes = new();
@@ -194,15 +214,61 @@ public sealed class PlayerStateStore {
         // 조립 규칙은 CharacterBuild 한 곳에만 둔다(대전의 상대 파티도 같은 함수를 쓴다).
         CharacterBuild.CostumeBonus(EquippedCostumeId(charDataId), charDataId, _costumeDb);
 
-    /// <summary>서버 스냅샷(보유 + 장착)을 통째로 반영한다.</summary>
+    /// <summary>서버 스냅샷(보유 + 장착)을 통째로 반영한다. 아웃핏도 같은 조회에 실려 오므로 함께 맞춘다.</summary>
     public void ApplyCostumes(CostumeInfoDto dto) {
         OwnedCostumes.Clear();
         EquippedCostumes.Clear();
+        OwnedUnitSkins.Clear();
+        EquippedUnitSkins.Clear();
         if (dto != null) {
             foreach (int id in dto.Owned) OwnedCostumes.Add(id);
             foreach (var e in dto.Equipped) EquippedCostumes[e.CharDataId] = e.CostumeId;
+            foreach (var kv in dto.OwnedUnitSkins) OwnedUnitSkins[kv.Key] = kv.Value;
+            foreach (var kv in dto.EquippedUnitSkins) EquippedUnitSkins[kv.Key] = kv.Value;
         }
         CostumesChanged?.Invoke();
+    }
+
+    // ── 아웃핏(V1.12) ──────────────────────────────────
+    /// <summary>아웃핏 보유 개수(아웃핏 id -> 개수, 서버 권위). 같은 아웃핏을 여러 개 가질 수 있다.</summary>
+    public readonly Dictionary<int, int> OwnedUnitSkins = new();
+
+    /// <summary>캐릭터별 장착 아웃핏(캐릭터 id -> 아웃핏 id). 항목이 없으면 기본 아웃핏이다.</summary>
+    public readonly Dictionary<int, int> EquippedUnitSkins = new();
+
+    /// <summary>지정 캐릭터가 장착 중인 아웃핏 id(0 = 기본 아웃핏).</summary>
+    public int EquippedUnitSkinId(int charDataId) =>
+        EquippedUnitSkins.TryGetValue(charDataId, out int id) ? id : 0;
+
+    /// <summary>아웃핏 보유 개수.</summary>
+    public int UnitSkinCount(int unitSkinId) => OwnedUnitSkins.TryGetValue(unitSkinId, out int n) ? n : 0;
+
+    /// <summary>그 아웃핏을 끼고 있는 소녀 수.</summary>
+    public int UnitSkinInUse(int unitSkinId) {
+        int used = 0;
+        foreach (var kv in EquippedUnitSkins) if (kv.Value == unitSkinId) used++;
+        return used;
+    }
+
+    /// <summary>
+    /// 이 소녀가 그 아웃핏을 지금 낄 수 있는지(남은 개수가 있거나 이미 끼고 있다). 최종 판정은 서버가 한다.
+    /// </summary>
+    public bool CanEquipUnitSkin(int charDataId, int unitSkinId) =>
+        unitSkinId == 0 || EquippedUnitSkinId(charDataId) == unitSkinId
+        || UnitSkinCount(unitSkinId) - UnitSkinInUse(unitSkinId) > 0;
+
+    /// <summary>지정 캐릭터의 장착 아웃핏이 주는 스탯 보정(미장착이면 0).</summary>
+    public CombatStats UnitSkinBonusFor(int charDataId) =>
+        // 조립 규칙은 CharacterBuild 한 곳에만 둔다(대전의 상대 파티도 같은 함수를 쓴다).
+        CharacterBuild.UnitSkinBonus(EquippedUnitSkinId(charDataId), _costumeDb);
+
+    /// <summary>아웃핏 장착 결과 반영(unitSkinId=0 이면 기본 아웃핏으로 되돌린 것).</summary>
+    public void ApplyUnitSkinEquip(int charDataId, int unitSkinId) {
+        if (unitSkinId == 0) EquippedUnitSkins.Remove(charDataId);
+        else EquippedUnitSkins[charDataId] = unitSkinId;
+        CostumesChanged?.Invoke();
+        // 아웃핏도 스탯을 바꾸므로 성장 변화와 같은 통로로 알린다(전투력/스탯 표시가 그대로 따라온다).
+        RaiseCharactersChanged(CharacterChangeReason.Growth, new[] { charDataId });
     }
 
     /// <summary>장착 결과 반영(costumeId=0 이면 기본 일러스트로 되돌린 것).</summary>
@@ -328,6 +394,9 @@ public sealed class PlayerStateStore {
         Diamond.Value = dto.NewDiamond;
 
         ApplyGrantedRewards(dto.Granted);
+        // 응답에는 골드/다이아 잔액만 실려 오므로 범용 재화(소탕권/의뢰해결권 등)는 지급 목록으로 더한다.
+        // 빠뜨리면 그 재화를 근거로 켜지는 배지(소탕 등)가 팝업을 열어 잔량을 다시 받을 때까지 꺼져 있다.
+        AddGrantedCurrencies(dto.Granted);
         ApplyCharExp(dto.CharExp);
     }
 
@@ -362,6 +431,12 @@ public sealed class PlayerStateStore {
 
                 case RewardItemKind.Costume:
                     if (r.RefId == 0 || !OwnedCostumes.Add(r.RefId)) continue;
+                    costumeChanged = true;
+                    break;
+
+                case RewardItemKind.UnitSkin:
+                    if (r.RefId == 0 || r.Amount < 1) continue;
+                    OwnedUnitSkins[r.RefId] = UnitSkinCount(r.RefId) + r.Amount;
                     costumeChanged = true;
                     break;
 
@@ -524,13 +599,26 @@ public sealed class PlayerStateStore {
     public void ApplyItemUse(ItemUseResult result) {
         if (result == null || !result.IsSuccess) return;
 
-        if (result.NewCount > 0) Items[result.ItemId] = result.NewCount;
-        else Items.Remove(result.ItemId);
+        SetItemCount(result.ItemId, result.NewCount);
+        // 사용 결과로 받은 아이템(경험치 추출의 캡슐 등). 서버가 받은 뒤 보유 개수를 주므로 그대로 맞춘다.
+        foreach (var g in result.GrantedItems) SetItemCount(g.ItemId, g.Count);
         ItemsChanged?.Invoke();
 
-        // 경험치를 주는 아이템만 캐릭터 상태가 바뀐다(다른 계열은 GainedExp 가 0 이라 건너뛴다).
+        // 성장 초기화로 돌려받은 지갑 재화. 서버가 받은 뒤 보유량을 주므로 그대로 맞춘다(조각은 아래 캐릭터 스냅샷에 들어 있다).
+        if (result.Refund.Diamond > 0) Diamond.Value = result.NewDiamond;
+        if (result.Refund.LimitBreakTicket > 0) LimitBreakTicket.Value = result.NewLimitBreakTicket;
+
+        // 경험치를 주는 아이템은 기존처럼 경험치 증분으로 가볍게 반영한다(전투 보상과 같은 갱신 경로).
+        // 그 밖에 캐릭터를 바꾸는 아이템(경험치 추출처럼 레벨을 되돌리는 것)은 증분으로 맞출 수 없어 사용 후 스냅샷으로 교체한다.
         if (result.CharExp != null && result.CharExp.GainedExp > 0)
             ApplyCharExp(new[] { result.CharExp });
+        else if (result.Updated != null)
+            ApplyCharacterSnapshot(result.Updated);
+    }
+
+    private void SetItemCount(int itemId, int count) {
+        if (count > 0) Items[itemId] = count;
+        else Items.Remove(itemId);
     }
 
     /// <summary>보상으로 받은 소모품을 보유 목록에 즉시 더한다(스냅샷 재요청 없이 개수만 맞춘다).</summary>
@@ -553,7 +641,7 @@ public sealed class PlayerStateStore {
 
     // ── 투자 ─────────────────────────────────────
     /// <summary>
-    /// 투자 슬롯 레벨(슬롯 번호 -> 레벨). 경험치 증폭은 서버가 하지만, 전투 효과(선제 스킬 게이지/스쿼드 재생)는
+    /// 투자 슬롯 레벨(슬롯 번호 -> 레벨). 경험치 증폭은 서버가 하지만, 전투 효과(선제 스킬 게이지/스쿼드 재생/스탯 보정)는
     /// 전투를 돌리는 클라가 적용해야 하므로 그 근거를 여기 둔다. 서버 응답으로만 채운다.
     /// </summary>
     public readonly Dictionary<int, int> InvestmentLevels = new();
@@ -561,30 +649,46 @@ public sealed class PlayerStateStore {
     /// <summary>투자 레벨이 바뀌었을 때 알림(투자 화면 갱신용).</summary>
     public event Action InvestmentChanged;
 
+    // 투자 스탯 보정은 레벨이 바뀔 때만 달라지므로 캐시한다(본부 AccountBonus 와 같은 이유).
+    // 무효화 지점은 아래 Apply 두 곳뿐이다.
+    private CombatStats _investmentBonusCache;
+    private bool _investmentBonusValid;
+
+    /// <summary>투자 슬롯이 모든 캐릭터에게 주는 전투 스탯 보정(2회 공격/회피/치명타 등).</summary>
+    public CombatStats InvestmentBonus {
+        get {
+            if (!_investmentBonusValid) {
+                _investmentBonusCache = InvestmentRules.StatBonus(InvestmentLevels);
+                _investmentBonusValid = true;
+            }
+            return _investmentBonusCache;
+        }
+    }
+
     /// <summary>서버가 내려준 투자 현황을 반영한다.</summary>
     public void ApplyInvestment(InvestmentDto dto) {
         if (dto == null) return;
         InvestmentLevels.Clear();
         foreach (var kv in dto.Levels) InvestmentLevels[kv.Key] = kv.Value;
-        InvestmentChanged?.Invoke();
+        OnInvestmentChanged();
     }
 
     /// <summary>슬롯 하나의 레벨만 갱신한다(업그레이드 직후).</summary>
     public void ApplyInvestmentLevel(int slotIndex, int level) {
         InvestmentLevels[slotIndex] = level;
+        OnInvestmentChanged();
+    }
+
+    // 투자 스탯은 모든 캐릭터의 최종 스탯에 들어가므로, 본부와 같이 성장 변경으로 알려
+    // 전투 중 유닛 스탯과 전투력 표시가 즉시 다시 계산되게 한다.
+    private void OnInvestmentChanged() {
+        _investmentBonusValid = false;
         InvestmentChanged?.Invoke();
+        RaiseCharactersChanged(CharacterChangeReason.Growth);
     }
 
     /// <summary>지정 효과의 총 증가분(1000 분율). 전투 효과가 이 값 하나만 보면 되도록 여기서 합산한다.</summary>
-    public int InvestmentPermille(InvestmentEffect effect) {
-        int permille = 0;
-        foreach (var kv in InvestmentLevels) {
-            var slot = InvestmentRules.Get(kv.Key);
-            if (slot == null || slot.Effect != effect) continue;
-            permille += InvestmentRules.PermilleAt(kv.Key, kv.Value);
-        }
-        return permille;
-    }
+    public int InvestmentPermille(InvestmentEffect effect) => InvestmentRules.PermilleOf(InvestmentLevels, effect);
 
     /// <summary>덱 구성이 바뀌었을 때 알림(HUD 갱신 등).</summary>
     public event Action DeckChanged;
@@ -689,11 +793,9 @@ public sealed class PlayerStateStore {
             if (kv.Value != null && kv.Value.EquippedCharDataId == charDataId) yield return kv.Value;
     }
 
-    /// <summary>장비 1개의 최종 스탯(성장 반영, 전용무기 보너스 제외). 상세/비교 표시와 합산이 같은 식을 쓰도록 모아둔다.</summary>
-    public static CombatStats EquipmentStatsOf(EquipmentInstanceDto inst, EquipmentData data) {
-        if (inst == null || data == null) return new CombatStats();
-        return EquipmentRules.ResolveStats(data.Slot, data.Grade, inst.Level, inst.MainPoints, inst.OptionPoints);
-    }
+    /// <summary>장비 1개의 최종 스탯(성장 + 한계돌파 반영, 전용무기 보너스 제외). 상세/비교 표시와 합산이 같은 식을 쓰도록 모아둔다.</summary>
+    public static CombatStats EquipmentStatsOf(EquipmentInstanceDto inst, EquipmentData data) =>
+        EquipmentRules.ResolveStats(inst, data);
 
     /// <summary>
     /// 지정 장비를 해당 캐릭터에게 장착했을 때의 전투력 변화량(미착용 장비 비교용).
@@ -715,8 +817,9 @@ public sealed class PlayerStateStore {
 
         var gain = EquipGainStats(inst, data, charDataId, EquippedItem(charDataId, data.Slot, db), db);
         var currentBonus = TotalBonusFor(charDataId, db);
-        float before = new CharacterRuntime(character, progress, settings, currentBonus).CombatPower;
-        float after  = new CharacterRuntime(character, progress, settings, currentBonus + gain).CombatPower;
+        var conditionals = EngravingLoadoutFor(charDataId).Conditionals;
+        float before = new CharacterRuntime(character, progress, settings, currentBonus, conditionals).CombatPower;
+        float after  = new CharacterRuntime(character, progress, settings, currentBonus + gain, conditionals).CombatPower;
         return after - before;
     }
 
@@ -744,7 +847,8 @@ public sealed class PlayerStateStore {
         }
 
         var currentBonus = TotalBonusFor(character.Id, db);
-        float before = new CharacterRuntime(character, progress, settings, currentBonus).CombatPower;
+        var conditionals = EngravingLoadoutFor(character.Id).Conditionals;
+        float before = new CharacterRuntime(character, progress, settings, currentBonus, conditionals).CombatPower;
 
         long bestId = 0;
         float bestGain = 0f;   // 0 에서 시작해 "오히려 약해지는 장비"는 추천하지 않는다.
@@ -755,7 +859,7 @@ public sealed class PlayerStateStore {
 
             equippedBySlot.TryGetValue(data.Slot, out var current);
             var gain = EquipGainStats(inst, data, character.Id, current, db);
-            float delta = new CharacterRuntime(character, progress, settings, currentBonus + gain).CombatPower - before;
+            float delta = new CharacterRuntime(character, progress, settings, currentBonus + gain, conditionals).CombatPower - before;
             if (delta <= bestGain) continue;   // 동점이면 먼저 들어온 쪽(= 목록 정렬상 앞선 쪽)을 남긴다.
             bestGain = delta;
             bestId = inst.InstanceId;
@@ -769,7 +873,7 @@ public sealed class PlayerStateStore {
                                               EquipmentInstanceDto current, EquipmentDatabase db) {
         var gain = EquipmentStatsOf(inst, data);
         if (data.IsOwnSignatureOf(charDataId))
-            gain += EquipmentRules.SignatureBonus(data.Grade, data.WeaponType, data.Id);
+            gain += EquipmentRules.SignatureBonus(data.Grade, data.WeaponType, data.Id, inst.LimitBroken);
 
         if (current == null || current.InstanceId == inst.InstanceId) return gain;
 
@@ -778,19 +882,22 @@ public sealed class PlayerStateStore {
 
         gain += EquipmentStatsOf(current, currentData) * -1f;
         if (currentData.IsOwnSignatureOf(charDataId))
-            gain += EquipmentRules.SignatureBonus(currentData.Grade, currentData.WeaponType, currentData.Id) * -1f;
+            gain += EquipmentRules.SignatureBonus(currentData.Grade, currentData.WeaponType, currentData.Id,
+                                                  current.LimitBroken) * -1f;
         return gain;
     }
 
     /// <summary>
     /// target 을 각성시킬 때 candidate 를 재료로 쓸 수 있는지. 같은 장비 id 의 다른 인스턴스여야 하며,
     /// 다른 캐릭터가 착용 중인 것은 제외한다(보고 있지 않은 캐릭터의 장비가 모르는 사이에 소모되는 사고 방지).
+    /// 한계돌파한 장비도 재료가 되지 않는다(서버 Awaken 과 같은 조건).
     /// 재료 목록과 각성 가능 표시가 같은 판정을 쓰도록 규칙을 여기 한 곳에 둔다.
     /// </summary>
     public static bool IsAwakenMaterial(EquipmentInstanceDto target, EquipmentInstanceDto candidate, int viewerCharDataId) {
         if (target == null || candidate == null) return false;
         if (candidate.InstanceId == target.InstanceId) return false;
         if (candidate.EquipDataId != target.EquipDataId) return false;
+        if (candidate.LimitBroken) return false;
         return !candidate.IsEquipped || candidate.EquippedCharDataId == viewerCharDataId;
     }
 
@@ -848,6 +955,8 @@ public sealed class PlayerStateStore {
         CurrencyType.EngravingStone,
         CurrencyType.ArenaCoin,
         CurrencyType.DispatchCertificate,
+        CurrencyType.GachaMileage,
+        CurrencyType.LimitBreakTicket,
     };
 
     /// <summary>서버 상점 카탈로그의 범용 재화(티켓/명성/각인석 등) 잔량을 반영한다(없는 키는 0으로 재설정, 서버 권위).</summary>

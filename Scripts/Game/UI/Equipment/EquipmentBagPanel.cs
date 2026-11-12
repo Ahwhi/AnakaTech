@@ -31,6 +31,14 @@ public sealed class EquipmentBagPanel : MonoBehaviour {
     [Tooltip("표시할 장비가 없을 때의 문구. 무기 탭에서는 '착용 가능한 무기가 없습니다.' 로 바뀐다. 선택.")]
     [SerializeField] private TMP_Text emptyText;
 
+    [Header("Capacity (가방 현황)")]
+    [Tooltip("보유 장비 수를 'n / N' 으로 표시한다. 장착 중인 장비도 함께 센다(한도의 기준이 보유 전체이기 때문). 선택.")]
+    [SerializeField] private TMP_Text capacityText;
+    [Tooltip("한도에 닿았을 때의 글자색. 평소 색은 실행 중에 자동으로 기억해 둔다.")]
+    [SerializeField] private Color capacityFullColor = new Color(0.90f, 0.20f, 0.20f, 1f);
+    [Tooltip("일괄 분해 팝업을 여는 버튼. 선택.")]
+    [SerializeField] private Button disassembleButton;
+
     [Header("Filter (라디오 버튼)")]
     [Tooltip("부위 필터 토글. 순서 고정: 0=전체, 1=무기, 2=방어구, 3=신발, 4=악세서리. "
            + "선택 표시는 Toggle 의 Graphic(체크마크)이 담당하므로 별도 하이라이트 오브젝트가 필요 없다.")]
@@ -59,8 +67,14 @@ public sealed class EquipmentBagPanel : MonoBehaviour {
     private bool _wired;
     private bool _gridCleaned;
 
+    private Color _capacityDefaultColor = Color.white;
+    private bool _capturedCapacityColor;
+
     /// <summary>현재 필터.</summary>
     public Filter CurrentFilter => _filter;
+
+    /// <summary>일괄 분해 요청(상위가 팝업을 연다). 패널은 목록만 책임지므로 통지만 한다.</summary>
+    public event Action DisassembleRequested;
 
     public void Initialize(MainHudContext hud, int charDataId, Action<EquipmentCard> onCardClicked) {
         _hud = hud;
@@ -72,21 +86,53 @@ public sealed class EquipmentBagPanel : MonoBehaviour {
         _charTypeKnown = ch != null;
         if (_charTypeKnown) _charType = ch.Type;
 
+        // 평소 색은 인스펙터에서 정한 값을 그대로 쓴다(한도에 닿았다 풀리면 이 색으로 되돌린다).
+        if (capacityText != null && !_capturedCapacityColor) {
+            _capacityDefaultColor = capacityText.color;
+            _capturedCapacityColor = true;
+        }
+
         // 리스너는 최초 1회만(패널 재사용이라 중복 등록 방지).
-        if (!_wired && filterToggles != null) {
-            for (int i = 0; i < filterToggles.Length; i++) {
-                if (filterToggles[i] == null) continue;
-                if (filterGroup != null) filterToggles[i].group = filterGroup;
-                var f = (Filter)i;
-                // 토글은 켜질 때/꺼질 때 모두 콜백이 온다. 꺼지는 쪽(직전 선택)은 무시해야 재구성이 두 번 돌지 않는다.
-                filterToggles[i].onValueChanged.AddListener(on => {
-                    if (!on || _filter == f) return;
+        // 배선 대상이 하나라도 비어 있을 수 있으므로 가드는 바깥에 한 번만 둔다(안쪽에 두면 그 항목이
+        // 비었을 때 _wired 가 서지 않아 다음 Initialize 에서 나머지가 다시 배선된다).
+        if (!_wired) {
+            if (disassembleButton != null) {
+                disassembleButton.onClick.AddListener(() => {
                     _hud.Sound.PlaySfx(SfxKey.ButtonClick);
-                    SetFilter(f);
+                    DisassembleRequested?.Invoke();
                 });
+            }
+
+            if (filterToggles != null) {
+                for (int i = 0; i < filterToggles.Length; i++) {
+                    if (filterToggles[i] == null) continue;
+                    if (filterGroup != null) filterToggles[i].group = filterGroup;
+                    var f = (Filter)i;
+                    // 토글은 켜질 때/꺼질 때 모두 콜백이 온다. 꺼지는 쪽(직전 선택)은 무시해야 재구성이 두 번 돌지 않는다.
+                    filterToggles[i].onValueChanged.AddListener(on => {
+                        if (!on || _filter == f) return;
+                        _hud.Sound.PlaySfx(SfxKey.ButtonClick);
+                        SetFilter(f);
+                    });
+                }
             }
             _wired = true;
         }
+
+        RefreshCapacity();
+    }
+
+    /// <summary>
+    /// 가방 현황(n / N)을 다시 그린다. 세는 기준은 "보유 장비 전체"이며 장착 중인 장비도 포함한다.
+    /// 한도의 근거가 목록을 한 패킷에 담을 수 있느냐이고 장착분도 같은 목록에 실리기 때문이다
+    /// (미장착만 세면 장착/해제할 때마다 숫자가 튀고, 한도에 걸린 이유도 설명되지 않는다).
+    /// </summary>
+    public void RefreshCapacity() {
+        if (capacityText == null || _hud == null || _hud.Store == null) return;
+
+        int owned = _hud.Store.Equipment.Count;
+        capacityText.text = $"{owned:N0} / {EquipmentRules.BagMax:N0}";
+        capacityText.color = owned >= EquipmentRules.BagMax ? capacityFullColor : _capacityDefaultColor;
     }
 
     /// <summary>필터를 지정하고 목록을 다시 만든다. 토글을 코드로 맞출 때도 이 경로를 쓴다.</summary>
@@ -123,6 +169,7 @@ public sealed class EquipmentBagPanel : MonoBehaviour {
         var ct = _buildCts.Token;
 
         CleanStrayChildrenOnce();
+        RefreshCapacity();   // 목록이 바뀌는 자리에서 현황도 함께 맞춘다(분해/각성 직후에도 숫자가 따라온다).
 
         var list = CollectVisible();
         list.Sort(Compare);

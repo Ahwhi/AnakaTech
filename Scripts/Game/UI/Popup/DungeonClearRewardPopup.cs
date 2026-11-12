@@ -80,6 +80,8 @@ public sealed class DungeonClearRewardPopup : UIView {
     /// <summary>페이드인 -> 유지 -> 페이드아웃 자동 닫힘. Setup 이후 호출한다.</summary>
     public async UniTask PlayAsync(CancellationToken ct = default) {
         await ShowAsync();
+        // 열리는 도중에 다음 보상으로 교체되어 닫혔거나 해제된 경우. 여기서 더 만질 것이 없다.
+        if (this == null || !isActiveAndEnabled) return;
 
         // 다른 팝업/HUD 입력을 가리지 않도록 표시 후 비차단으로 되돌린다(ShowAsync 가 켜므로).
         CanvasGroup.blocksRaycasts = false;

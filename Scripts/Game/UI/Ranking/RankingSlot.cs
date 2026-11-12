@@ -28,14 +28,21 @@ public sealed class RankingSlot : MonoBehaviour {
     [Tooltip("길드 마크. 길드 랭킹에서는 그 길드의 마크, 유저 랭킹에서는 소속 길드의 마크를 보여준다. " +
              "유저가 무소속이면 꺼진다.")]
     [SerializeField] private Image guildMarkImage;
+    [Tooltip("유저 줄에서 소속 길드 마크를 보여 줄지. 끄면 유저 줄에서는 길드 마크 칸이 꺼지고 길드 줄에서만 쓰인다 " +
+             "(탭마다 내용이 바뀌는 내 순위 칸처럼 한 칸을 유저/길드가 같이 쓸 때 끈다).")]
+    [SerializeField] private bool showAffiliationMark = true;
 
     [Header("Common")]
     [Tooltip("유저 닉네임 또는 길드 이름.")]
     [SerializeField] private TMP_Text nameText;
     [Tooltip("유저 랭킹은 소속 길드 이름, 길드 랭킹은 길드장 닉네임. 값이 없으면 꺼진다.")]
     [SerializeField] private TMP_Text subNameText;
+    [Tooltip("유저 줄에서 무소속일 때 보조 이름('길드 없음')의 글자색. 소속이 있으면 프리팹에 둔 원래 색으로 돌아간다.")]
+    [SerializeField] private Color noGuildColor = new Color(0.75f, 0.75f, 0.75f, 1f);
     [Tooltip("전투력 또는 업적 점수.")]
     [SerializeField] private TMP_Text scoreText;
+    [Tooltip("선택. 길드 랭킹의 길드원 수(예: 12/30). 유저 줄에서는 꺼진다.")]
+    [SerializeField] private TMP_Text memberCountText;
     [Tooltip("선택. 내 순위를 강조하는 배경.")]
     [SerializeField] private GameObject highlight;
     [Tooltip("선택. 줄 전체를 덮는 버튼. 유저 랭킹에서만 눌리며 그 유저의 프로필 팝업을 연다.")]
@@ -57,7 +64,7 @@ public sealed class RankingSlot : MonoBehaviour {
         ApplyCommon(entry, score, mine);
 
         // 소속 길드의 마크. 무소속(SubIconId = 0)이면 카탈로그가 스프라이트를 주지 않아 저절로 꺼진다.
-        ApplyGuildMark(entry.SubIconId, marks);
+        ApplyGuildMark(showAffiliationMark ? entry.SubIconId : 0, marks);
 
         // 다른 유저의 테두리는 이 화면에 떠 있는 동안 바뀌지 않으므로 구독형이 아니라 1회 표시로 붙인다.
         if (frameView != null) {
@@ -74,12 +81,14 @@ public sealed class RankingSlot : MonoBehaviour {
             else portraitView.Clear();
         }
 
-        SetSubName(string.IsNullOrEmpty(entry.SubName) ? NoGuildText : entry.SubName);
+        bool noGuild = string.IsNullOrEmpty(entry.SubName);
+        SetSubName(noGuild ? NoGuildText : entry.SubName, noGuild ? noGuildColor : (Color?)null);
+        SetActive(memberCountText != null ? memberCountText.gameObject : null, false);
         BindProfileButton(onProfile);
     }
 
     /// <summary>길드 줄. 아이콘은 길드 마크이고 보조 이름은 길드장이다.</summary>
-    /// <param name="onProfile">길드 마크를 눌렀을 때(길드 프로필 팝업). 비우면 버튼이 숨는다.</param>
+    /// <param name="onProfile">길드 마크를 눌렀을 때(길드 프로필 팝업). 비우면 버튼이 눌리지 않는다.</param>
     public void BindGuild(RankingEntryDto entry, GuildMarkCatalog marks, string score, bool mine,
                           Action<int> onProfile = null) {
         ApplyCommon(entry, score, mine);
@@ -90,7 +99,24 @@ public sealed class RankingSlot : MonoBehaviour {
         ApplyGuildMark(entry.IconId, marks);
 
         SetSubName(entry.SubName);
+        if (memberCountText != null) {
+            memberCountText.gameObject.SetActive(true);
+            memberCountText.text = $"{entry.SubValue}/{GuildRules.MaxMembers}";
+        }
         BindProfileButton(onProfile);
+    }
+
+    /// <summary>
+    /// 대상이 없는 줄(예: 길드 랭킹인데 무소속인 내 순위 칸). 순위/점수와 안내 문구만 남기고 나머지 칸은 끈다.
+    /// </summary>
+    public void BindEmpty(string name, string score) {
+        ApplyCommon(new RankingEntryDto { Name = name }, score, false);
+        SetActive(frameView != null ? frameView.gameObject : null, false);
+        SetActive(portraitView != null ? portraitView.gameObject : null, false);
+        ApplyGuildMark(0, null);
+        SetSubName(null);
+        SetActive(memberCountText != null ? memberCountText.gameObject : null, false);
+        BindProfileButton(null);
     }
 
     // 길드 마크는 두 랭킹이 같은 자리를 쓰고 어느 길드의 마크인지만 다르다(길드 줄 = 그 길드, 유저 줄 = 소속 길드).
@@ -118,16 +144,26 @@ public sealed class RankingSlot : MonoBehaviour {
                 if (topRankMarks[i] != null) topRankMarks[i].SetActive(entry.Rank == i + 1);
     }
 
-    private void SetSubName(string text) {
+    /// <param name="color">덮어쓸 글자색. null 이면 프리팹에 둔 원래 색을 쓴다(슬롯을 다시 Bind 해도 색이 남지 않게).</param>
+    private void SetSubName(string text, Color? color = null) {
         if (subNameText == null) return;
+        if (_subNameBaseColor == null) _subNameBaseColor = subNameText.color;
+
         bool has = !string.IsNullOrEmpty(text);
         subNameText.gameObject.SetActive(has);
-        if (has) subNameText.text = text;
+        if (!has) return;
+        subNameText.text = text;
+        subNameText.color = color ?? _subNameBaseColor.Value;
     }
 
+    // 보조 이름의 원래 글자색. 처음 쓸 때 한 번 기억해 두고 색을 되돌릴 때 쓴다.
+    private Color? _subNameBaseColor;
+
+    // 쓰지 않을 때는 오브젝트가 아니라 버튼 컴포넌트만 끈다. 버튼이 초상화 같은 표시 오브젝트에 함께 붙어 있으면
+    // 오브젝트를 끄는 순간 그 표시까지 사라지기 때문이다(내 순위 칸처럼 눌리지 않는 슬롯).
     private void BindProfileButton(Action<int> onProfile) {
         if (profileButton == null) return;
-        profileButton.gameObject.SetActive(onProfile != null);
+        profileButton.enabled = onProfile != null;
         profileButton.onClick.RemoveAllListeners();
         if (onProfile != null) profileButton.onClick.AddListener(() => onProfile(_targetId));
     }

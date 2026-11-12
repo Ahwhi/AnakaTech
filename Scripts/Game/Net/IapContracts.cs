@@ -14,6 +14,19 @@ public enum IapStoreKind {
 }
 
 /// <summary>
+/// 스토어에 등록할 상품 1개. 상품 종류(소모성/비소모성)는 서버 카탈로그가 정한다.
+/// 비소모성 상품(평생 패스)은 확정해도 소비되지 않고 스토어 계정에 남아 구매 복원 대상이 된다.
+/// </summary>
+public readonly struct IapProduct {
+    public readonly string Id;
+    public readonly bool NonConsumable;
+
+    public IapProduct(string id, bool nonConsumable = false) {
+        Id = id; NonConsumable = nonConsumable;
+    }
+}
+
+/// <summary>
 /// 스토어에서 결제가 끝났지만 아직 확정(소비)하지 않은 결제 1건.
 ///
 /// 이 상태가 존재하는 이유는 "돈은 냈는데 못 받는" 경우를 없애기 위해서다. 스토어에 확정을 알리기 전까지
@@ -78,7 +91,7 @@ public interface IIapService {
     /// 이미 연결돼 있으면 아직 등록되지 않은 상품만 추가로 받아 둔다.
     /// 상품 id 는 서버 카탈로그에서 온다(클라가 목록을 따로 들고 있으면 서버와 어긋난다).
     /// </summary>
-    UniTask<bool> InitializeAsync(IReadOnlyList<string> productIds, CancellationToken ct = default);
+    UniTask<bool> InitializeAsync(IReadOnlyList<IapProduct> products, CancellationToken ct = default);
 
     /// <summary>
     /// 아직 스토어에 등록되지 않은 상품만 추가로 받아 둔다. 이미 등록된 것은 다시 묻지 않는다.
@@ -86,7 +99,7 @@ public interface IIapService {
     /// 세션 도중에 새로 열리는 상품(한정 판매 등)을 위해 있다. 상품 목록은 접속할 때 한 번만 받으므로,
     /// 그 뒤에 열린 상품은 이 창구로 등록하지 않으면 결제 시점에 스토어가 상품을 찾지 못한다.
     /// </summary>
-    UniTask<bool> EnsureProductsAsync(IReadOnlyList<string> productIds, CancellationToken ct = default);
+    UniTask<bool> EnsureProductsAsync(IReadOnlyList<IapProduct> products, CancellationToken ct = default);
 
     /// <summary>
     /// 결제 창을 띄우고 결과를 기다린다. 성공하면 아직 확정되지 않은 결제를 돌려주므로,
@@ -105,4 +118,12 @@ public interface IIapService {
     /// 구독자는 서버에 지급을 요청하고 성공하면 Confirm 해야 한다.
     /// </summary>
     event Action<IapPurchase> PendingPurchaseReceived;
+
+    /// <summary>
+    /// 구매 복원(앱스토어 정책상 비소모성 상품에 필수). 스토어에 지난 거래를 다시 물어보고,
+    /// 아직 지급받지 못한 결제가 있으면 PendingPurchaseReceived 로 다시 흘려보내 평소 복구 흐름이 지급받게 한다.
+    /// 보유 판정은 서버 구매 기록이 하므로, 이미 지급된 거래는 아무 일도 일어나지 않는다.
+    /// 스토어가 복원을 받아들였는지 돌려준다.
+    /// </summary>
+    UniTask<bool> RestoreAsync(CancellationToken ct = default);
 }

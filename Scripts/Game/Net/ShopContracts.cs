@@ -55,6 +55,12 @@ public sealed class ShopOfferDto {
     /// </summary>
     public bool Flash;
 
+    /// <summary>스토어에 비소모성 상품으로 등록하는지(평생 패스). 구매 복원 대상이며, 보유 판정은 서버 구매 기록이 한다.</summary>
+    public bool NonConsumable;
+
+    /// <summary>구매에 필요한 길드 레벨(0 = 조건 없음). 잠금(Locked)의 이유를 안내할 때 쓴다(판정은 서버).</summary>
+    public int RequiredGuildLevel;
+
     // 구매 시 지급되는 구성품(표시 전용, 서버 카탈로그 권위). 가챠 오퍼는 비어 있다.
     public List<RewardItem> Grants = new();
 }
@@ -81,7 +87,7 @@ public sealed class ShopCatalogDto {
     // 가챠 천장 카운터(풀키 -> 현재 카운트). 클라 가챠 팝업의 "N회 내 확정" 표시용.
     public Dictionary<string, int> Pities = new();
 
-    // 무료 뽑기 현황(키 -> 다음 가능 시각 UTC epoch seconds). 0/과거면 지금 가능. 키: normal_char / normal_equip.
+    // 무료 뽑기 현황(키 -> 다음 가능 시각 UTC epoch seconds). 0/과거면 지금 가능. 키: special_char / special_equip(V1.12 부터 특수 모집).
     public Dictionary<string, long> FreeGachaNextUnix = new();
 }
 
@@ -190,4 +196,29 @@ public interface IShopService {
     UniTask<int> CanBuyOfferAsync(string offerId, int qty, CancellationToken ct = default);
     UniTask<GachaRatesDto> RequestGachaRatesAsync(string offerId, CancellationToken ct = default);
     UniTask<RotationInfoDto> RequestRotationInfoAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// 모집 마일리지로 SSR 소녀를 직접 고른다(로테이션과 무관). 대상과 보유량은 서버가 다시 검증한다.
+    /// 지급은 모집과 같은 길을 타므로 이미 보유한 소녀를 고르면 중복 규칙대로 조각이 들어온다.
+    /// </summary>
+    UniTask<MileagePickResultDto> PickWithMileageAsync(int charDataId, CancellationToken ct = default);
+}
+
+/// <summary>
+/// 마일리지 픽업 결과. 모집 1회와 같은 연출로 보여 줄 수 있도록 뽑기 결과와 같은 정보를 담는다.
+/// </summary>
+public sealed class MileagePickResultDto {
+    public bool IsSuccess;
+    /// <summary>0=성공,1=대상아님,2=마일리지부족,3=계정없음</summary>
+    public int FailReason;
+    public int NewMileage;
+    public int CharDataId;
+    public bool IsNew;
+    public int ShardsGained;
+    public int MaxExp;
+
+    /// <summary>모집 연출에 그대로 넘기기 위한 변환. 모집 1회 결과와 같은 모양이다.</summary>
+    public GachaRollDto ToRoll() => new() {
+        CharDataId = CharDataId, IsNew = IsNew, ShardsGained = ShardsGained, MaxExp = MaxExp,
+    };
 }

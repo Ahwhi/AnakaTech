@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 
@@ -35,6 +36,9 @@ public sealed class ItemService : IItemService {
         _net.Send(new C_UseItem { itemId = itemId, charDataId = charDataId, count = count }.Write());
         var res = await wait;
 
+        var granted = new List<ItemCountDto>(res.grantedItems.Count);
+        foreach (var g in res.grantedItems) granted.Add(new ItemCountDto { ItemId = g.itemId, Count = g.count });
+
         return new ItemUseResult {
             IsSuccess = res.isSuccess,
             FailReason = res.failReason,
@@ -43,11 +47,49 @@ public sealed class ItemService : IItemService {
             CharDataId = res.charDataId,
             CharExp = new CharExpGain {
                 CharDataId = res.charDataId,
-                GainedExp = res.gainedExp,
+                // 스토어 갱신은 NewLevel/NewExp 로 하고 이 값은 표시용이라 int 로 잘라도 된다(전체 양은 아래 GainedExp).
+                GainedExp = (int)Math.Min(res.gainedExp, int.MaxValue),
                 NewLevel = res.newLevel,
                 NewExp = res.newExp,
                 MaxExp = res.maxExp,
                 GainedStatPoints = res.gainedStatPoints
+            },
+            Updated = res.isSuccess && res.hasCharacter ? new CharacterProgress {
+                CharDataId = res.charDataId,
+                Level = res.newLevel, Exp = res.newExp, MaxExp = res.maxExp,
+                StarLevel = res.starLevel, StatPoints = res.statPoints, Shards = res.shards,
+                InvestedAttack = res.invAttack, InvestedDefense = res.invDefense, InvestedHealth = res.invHealth,
+                InvestedAttackSpeed = res.invAttackSpeed, InvestedMoveSpeed = res.invMoveSpeed, InvestedSkillAccel = res.invSkillAccel,
+                AutoStatType = res.autoStatType, LimitBroken = res.limitBroken
+            } : null,
+            GainedExp = res.gainedExp,
+            ExtractedExp = res.extractedExp,
+            GrantedItems = granted,
+            Refund = new GrowthRefund {
+                Shards = res.refundShards, Diamond = res.refundDiamond, LimitBreakTicket = res.refundLimitBreakTicket
+            },
+            NewDiamond = res.newDiamond,
+            NewLimitBreakTicket = res.newLimitBreakTicket
+        };
+    }
+
+    public async UniTask<ItemUsePreview> PreviewAsync(int itemId, int charDataId, CancellationToken ct = default) {
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.CancelAfter(ResponseTimeout);
+
+        var wait = _net.WaitPacketAsync<S_ItemUsePreview>(cts.Token);
+        _net.Send(new C_ItemUsePreview { itemId = itemId, charDataId = charDataId }.Write());
+        var res = await wait;
+
+        var grants = new List<ItemCountDto>(res.grantItems.Count);
+        foreach (var g in res.grantItems) grants.Add(new ItemCountDto { ItemId = g.itemId, Count = g.count });
+
+        return new ItemUsePreview {
+            FailReason = res.failReason, Value = res.value, GrantItems = grants,
+            CurrentLevel = res.currentLevel, ResultLevel = res.resultLevel,
+            CurrentStar = res.currentStar,
+            Refund = new GrowthRefund {
+                Shards = res.refundShards, Diamond = res.refundDiamond, LimitBreakTicket = res.refundLimitBreakTicket
             }
         };
     }

@@ -61,6 +61,8 @@ public sealed class DispatchSlotView : MonoBehaviour {
     [SerializeField] private BadgeView actionBadge;
     [Tooltip("조건 새로고침. 파견 중이 아니고 갱신 횟수가 남아야 눌린다.")]
     [SerializeField] private Button refreshButton;
+    [Tooltip("추천 배치. 남은 소녀 중 조건을 만족하는 가장 아깝지 않은 편성으로 이 슬롯을 채운다. 파견 중에는 숨긴다. 선택.")]
+    [SerializeField] private Button recommendButton;
 
     /// <summary>이 뷰가 담당하는 파견 슬롯 번호. 상위가 생성하며 정해 준다.</summary>
     public int SlotIndex { get; private set; }
@@ -72,6 +74,7 @@ public sealed class DispatchSlotView : MonoBehaviour {
     public event Action<int> SendRequested;
     public event Action<int> RefreshRequested;
     public event Action<int> ClaimRequested;
+    public event Action<int> RecommendRequested;
 
     private readonly List<RewardSlotView> _rewardSlots = new();
     private DeckCharacterCard[] _memberCards;
@@ -97,6 +100,10 @@ public sealed class DispatchSlotView : MonoBehaviour {
         if (refreshButton != null) {
             refreshButton.onClick.RemoveAllListeners();
             refreshButton.onClick.AddListener(() => RefreshRequested?.Invoke(SlotIndex));
+        }
+        if (recommendButton != null) {
+            recommendButton.onClick.RemoveAllListeners();
+            recommendButton.onClick.AddListener(() => RecommendRequested?.Invoke(SlotIndex));
         }
     }
 
@@ -166,7 +173,7 @@ public sealed class DispatchSlotView : MonoBehaviour {
     }
 
     /// <summary>슬롯 상태(대기/파견중/완료대기)에 맞춰 묶음과 버튼을 켜고 끈다.</summary>
-    public void BindState(bool running, bool finished, long endUnix, bool canSend, bool canRefresh) {
+    public void BindState(bool running, bool finished, long endUnix, bool canSend, bool canRefresh, bool canRecommend) {
         _running = running;
         _finished = finished;
         _endUnix = endUnix;
@@ -179,6 +186,11 @@ public sealed class DispatchSlotView : MonoBehaviour {
         if (refreshButton != null) {
             refreshButton.gameObject.SetActive(!running);
             refreshButton.interactable = canRefresh;
+        }
+        // 추천 배치는 편성을 바꾸는 버튼이라 편성을 바꿀 수 있는 대기 중에만 보인다(새로고침과 같은 규칙).
+        if (recommendButton != null) {
+            recommendButton.gameObject.SetActive(!running);
+            recommendButton.interactable = canRecommend;
         }
 
         ApplyActionButton();

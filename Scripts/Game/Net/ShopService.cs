@@ -69,6 +69,8 @@ public sealed class ShopService : IShopService {
                 SaleEndUnix = o.saleEndUnix,
                 Hot = o.hot,
                 Flash = o.flash,
+                NonConsumable = o.nonConsumable,
+                RequiredGuildLevel = o.requiredGuildLevel,
             });
         }
         // 구성품은 리스트 중첩을 피해 평탄하게 오므로 offerId 로 되묶는다(서버 Room 의 offerGrants 와 짝).
@@ -180,5 +182,24 @@ public sealed class ShopService : IShopService {
             });
         }
         return dto;
+    }
+
+    public async UniTask<MileagePickResultDto> PickWithMileageAsync(int charDataId, CancellationToken ct = default) {
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.CancelAfter(ResponseTimeout);
+
+        var wait = _net.WaitPacketAsync<S_GachaMileagePickResult>(cts.Token);
+        _net.Send(new C_GachaMileagePick { charDataId = charDataId }.Write());
+        var res = await wait;
+
+        return new MileagePickResultDto {
+            IsSuccess = res.isSuccess,
+            FailReason = res.failReason,
+            NewMileage = res.newMileage,
+            CharDataId = res.charDataId,
+            IsNew = res.isNew,
+            ShardsGained = res.shardsGained,
+            MaxExp = res.maxExp,
+        };
     }
 }

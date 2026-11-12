@@ -14,6 +14,8 @@ public sealed class BattleCharacterPanel : MonoBehaviour {
     [SerializeField] private BattleCharacterSlot[] slots;
     [Tooltip("레벨업 VFX 를 재생할 레이어. 메인 HUD 캔버스 아래(팝업보다 낮은 정렬)에 두어 팝업이 열리면 VFX 가 가려지게 한다. 전역 VFX 레이어(팝업 위)를 쓰면 안 됨.")]
     [SerializeField] private UIVfxLayer vfxLayer;
+    [Tooltip("레벨업 VFX 재생 여부. 슬롯이 아주 많은 화면(멸망전 40칸 등)에서는 한 번에 여러 개가 터져 화면을 덮으므로 끈다.")]
+    [SerializeField] private bool playLevelUpVfx = true;
     [Tooltip("접기/펴기를 담당하는 공용 컴포넌트. 접힘 상태 저장 키도 거기서 지정한다. 비우면 항상 펼친 상태.")]
     [SerializeField] private FoldablePanel foldable;
 
@@ -72,6 +74,7 @@ public sealed class BattleCharacterPanel : MonoBehaviour {
     // 레벨업 VFX 는 전역 레이어(팝업 위)가 아니라 HUD 로컬 레이어에 재생해 팝업이 열리면 가려지게 한다.
     // 패널이 접혀 있으면 슬롯이 화면에 없으므로 빈자리에 이펙트만 터지지 않도록 건너뛴다.
     private void PlayLevelUpVfx(BattleCharacterSlot slot) {
+        if (!playLevelUpVfx) return;
         if (foldable != null && !foldable.IsExpanded) return;
         if (_ctx.UiVfx == null || vfxLayer == null) return;
         var prefab = _ctx.UiVfx.Get("levelup");
@@ -85,6 +88,40 @@ public sealed class BattleCharacterPanel : MonoBehaviour {
 
     private void Rebind() {
         if (slots == null) return;
+        if (_ctx.Stage.RosterCharIds != null) RebindRoster(_ctx.Stage.RosterCharIds);
+        else RebindParty();
+        ApplyCameraFocus();   // 슬롯 구성이 바뀌었으니 포커스 표시도 새 배치에 맞춘다.
+    }
+
+    // 로스터를 넘기는 무대(교대 전투)는 순서를 그대로 지킨다. 전장에 선 소녀는 유닛으로, 나머지는 대기/전투불능으로 묶는다.
+    private void RebindRoster(System.Collections.Generic.IReadOnlyList<int> roster) {
+        var stage = _ctx.Stage;
+        for (int i = 0; i < slots.Length; i++) {
+            var slot = slots[i];
+            if (slot == null) continue;
+
+            var data = i < roster.Count ? _ctx.CharDb.Get(roster[i]) : null;
+            if (data == null) { slot.Clear(); continue; }
+
+            var progress = _ctx.Store.GetProgress(data.Id);
+            var unit = FindUnit(stage.Party, data.Id);
+            if (unit != null) slot.Bind(unit, data, progress);
+            else slot.BindBenched(AppearanceOf(data), progress, stage.RosterStateOf(data.Id), stage.RosterHpRatioOf(data.Id));
+        }
+    }
+
+    // 전장 밖 소녀는 유닛이 없어 외형을 직접 해석한다(장착 코스튬 반영).
+    private CharacterAppearance AppearanceOf(CharacterData data) =>
+        _ctx.Appearance != null ? _ctx.Appearance.Mine(data) : CharacterAppearance.Default(data);
+
+    private static CharacterUnit FindUnit(System.Collections.Generic.IReadOnlyList<CharacterUnit> party, int charId) {
+        if (party == null) return null;
+        for (int i = 0; i < party.Count; i++)
+            if (party[i] != null && party[i].Data != null && party[i].Data.Id == charId) return party[i];
+        return null;
+    }
+
+    private void RebindParty() {
         var party = _ctx.Stage.Party;
 
         // 대표를 좌측(슬롯 0)에 오도록 정렬한다(파티 목록 순서는 덱 순서라 대표가 0이 아닐 수 있음).
@@ -101,8 +138,6 @@ public sealed class BattleCharacterPanel : MonoBehaviour {
                 slot.Clear();
             }
         }
-
-        ApplyCameraFocus();   // 슬롯 구성이 바뀌었으니 포커스 표시도 새 배치에 맞춘다.
     }
 
     // 대표 캐릭터를 인덱스 0 으로 끌어올린 순서로 접근한다.

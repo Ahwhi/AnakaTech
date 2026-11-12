@@ -24,6 +24,8 @@ public sealed class CompositionSlotView : MonoBehaviour {
     [SerializeField] private GameObject representativeMark;
     [Tooltip("드래그한 카드가 이 슬롯 위에 올라왔을 때 켜지는 강조 표시. 선택.")]
     [SerializeField] private GameObject dropHighlight;
+    [Tooltip("이 자리의 소녀가 고정되어 빼거나 옮길 수 없을 때 켜지는 표식(전선 등). 선택. 쓰지 않는 화면은 비워 둔다.")]
+    [SerializeField] private GameObject lockedMark;
 
     /// <summary>이 슬롯의 번호(0 = 대표 슬롯). 편성 화면이 생성하며 정해 준다.</summary>
     public int SlotIndex { get; private set; }
@@ -36,6 +38,15 @@ public sealed class CompositionSlotView : MonoBehaviour {
         SlotIndex = slotIndex;
         if (representativeMark != null) representativeMark.SetActive(slotIndex == 0);
         SetDropHighlight(false);
+        SetLocked(false);
+    }
+
+    /// <summary>
+    /// 고정 표식. 표시만 하며, 실제로 드래그/드롭을 막는 판단은 이 슬롯을 쓰는 화면이 한다
+    /// (고정 규칙은 화면마다 다르므로 슬롯은 규칙을 알지 않는다).
+    /// </summary>
+    public void SetLocked(bool locked) {
+        if (lockedMark != null && lockedMark.activeSelf != locked) lockedMark.SetActive(locked);
     }
 
     /// <summary>이 슬롯이 채워졌는지 표시한다(빈 칸 안내를 켜고 끈다).</summary>

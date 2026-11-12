@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -25,10 +26,17 @@ public sealed class CharacterRuntime {
 
     private readonly BattleSettings _settings;
 
-    public CharacterRuntime(CharacterData data, CharacterProgress progress, BattleSettings settings, CombatStats equipmentBonus = default) {
+    // 전투 중에만 켜지는 조건부 효과(각인). FinalStats 에는 넣지 않고(전투 유닛이 스스로 켜고 끈다)
+    // 전투력 산출에서만 가동률로 환산해 반영한다.
+    private readonly IReadOnlyList<EngravingLoadout.Conditional> _conditionals;
+
+    /// <param name="conditionals">조건부 효과. 전투력 표시에만 쓰이며 FinalStats 에는 영향이 없다.</param>
+    public CharacterRuntime(CharacterData data, CharacterProgress progress, BattleSettings settings, CombatStats equipmentBonus = default,
+                            IReadOnlyList<EngravingLoadout.Conditional> conditionals = null) {
         Data = data;
         Progress = progress;
         _settings = settings;
+        _conditionals = conditionals;
         var composed = Compose(data, progress, settings) + equipmentBonus;
         // 사거리의 기준은 성장/투자와 무관한 무기타입 고정값이다. 다만 보정원이 명시적으로 준 사거리
         // (수련의 사거리 효과)는 기준을 덮어써 없애지 않고 그 위에 더한다.
@@ -56,23 +64,28 @@ public sealed class CharacterRuntime {
         stats.MoveSpeed   += p.InvestedMoveSpeed   * s.PointValue(StatType.MoveSpeed);
         stats.SkillAccel  += p.InvestedSkillAccel  * s.PointValue(StatType.SkillAccel);
 
+        // 한계돌파 조각 보너스(한계돌파 전이면 0). 성장치에서 나오는 값이라 여기서 함께 더한다.
+        stats += LimitBreakRules.ShardBonus(p);
+
         // 사거리는 생성자에서 무기타입 고정값으로 최종 확정한다(여기서는 건드리지 않음).
         return stats;
     }
 
     /// <summary>
     /// 표시용 전투력. 최종 스탯과 고유 스킬 화력을 실제 전투 공식에 넣어 산출한다(CombatPowerFormula).
-    /// 스킬이 없는 캐릭터는 기본 공격만으로 평가된다.
+    /// 스킬이 없는 캐릭터는 기본 공격만으로 평가된다. 조건부 효과는 가동률만큼 환산해 더한다.
+    /// 한계돌파한 캐릭터는 실제 전투와 같이 한계돌파 스킬로 평가한다.
     /// </summary>
     public float CombatPower {
         get {
-            var skill = Data != null ? Data.Skill : null;
+            var skill = Data != null ? Data.SkillFor(Progress != null && Progress.LimitBroken) : null;
             return CombatPowerFormula.Evaluate(
                 FinalStats,
                 skill != null ? skill.PowerProfile : SkillPowerProfile.None,
                 skill != null ? skill.BaseCooldown : 0f,
                 _settings,
-                RangeBonus);
+                RangeBonus,
+                _conditionals);
         }
     }
 }

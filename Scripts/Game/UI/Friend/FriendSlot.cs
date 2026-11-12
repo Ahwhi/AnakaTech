@@ -28,6 +28,10 @@ public sealed class FriendSlot : MonoBehaviour {
     [Tooltip("접속 중이 아닐 때 켜는 그룹.")]
     [SerializeField] private GameObject offlineGroup;
 
+    [Header("Stamina Gift (선택)")]
+    [Tooltip("오늘 이 친구가 나에게 기력을 보냈으면 켜는 그룹(받았든 안 받았든). 친구 탭에서만 켜진다. 자정에 초기화.")]
+    [SerializeField] private GameObject staminaGroup;
+
     [Header("Request Tab (선택)")]
     [SerializeField] private Button acceptButton;
     [SerializeField] private Button declineButton;
@@ -50,6 +54,7 @@ public sealed class FriendSlot : MonoBehaviour {
         SetActive(declineButton, false);
         SetActive(unblockButton, false);
         HideSearchParts();
+        if (staminaGroup != null) staminaGroup.SetActive(user.StaminaSentToMe);
     }
 
     /// <summary>친구 신청 탭. 수락/거절 버튼만 연다.</summary>
@@ -103,6 +108,8 @@ public sealed class FriendSlot : MonoBehaviour {
 
     private void Apply(FriendUserDto user, BattleHudContext hud, Action<int> onProfile) {
         _accountId = user.AccountId;
+        // 기력 선물 표시는 친구 탭(BindFriend)만 켠다. 같은 프리팹을 네 곳이 돌려 쓰므로 기본은 끈다.
+        if (staminaGroup != null) staminaGroup.SetActive(false);
 
         if (nicknameText != null) nicknameText.text = user.Nickname;
         // 표기는 길드원 목록(GuildMemberSlot)과 같은 규칙을 따른다.

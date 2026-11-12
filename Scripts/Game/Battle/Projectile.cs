@@ -23,6 +23,7 @@ public sealed class Projectile : MonoBehaviour {
     private AudioClip _impactClip;
     private bool _faceDir;
     private bool _arriveEvenIfTargetLost;   // 대상이 죽어도 도달 지점에서 OnHit 을 실행할지(도착 지점 폭발 등).
+    private bool _retargetOnTargetLost;     // 대상이 죽으면 가까운 생존 적으로 갈아탈지.
     private IBattleRuntime _runtime;
     private Action<Projectile> _onDone;
     private float _age;
@@ -43,6 +44,7 @@ public sealed class Projectile : MonoBehaviour {
         _impactClip = spec.ImpactClip;
         _faceDir = spec.FaceDirection;
         _arriveEvenIfTargetLost = spec.ArriveEvenIfTargetLost;
+        _retargetOnTargetLost = spec.RetargetOnTargetLost;
         _runtime = runtime;
         _onDone = onDone;
         _age = 0f;
@@ -55,15 +57,41 @@ public sealed class Projectile : MonoBehaviour {
         if (_trail != null) _trail.Clear();
 
         // hitscan(속도 0 이하): 즉시 도달 처리.
-        if (_speed <= 0f) Impact(TargetPoint());
+        if (_speed <= 0f) { RetargetIfLost(); Impact(TargetPoint()); }
     }
 
     // 대상이 파괴됐는지(파티 재구성/전장 정리 등)까지 확인한다. 판정은 계약 쪽 공용 확장(IsTargetable/Exists)에 맡긴다.
     private Vector2 TargetPoint() => _target.IsTargetable() ? _target.Position : _fallbackPoint;
 
+    /// <summary>
+    /// 대상을 잃었고 갈아타기가 켜져 있으면, 발사체 현재 위치에서 가장 가까운 생존 적으로 대상을 바꾼다.
+    /// 바꿀 적이 없으면 그대로 둔다(기본 동작: 마지막 위치로 가서 효과 없이 소멸).
+    /// 대상을 바꾸면 비행 시간을 다시 센다(먼 적으로 바뀌어도 안전 상한에 걸려 중간에 터지지 않게).
+    /// 갈아타기는 대상이 죽을 때마다만 일어나므로 무한히 날지 않는다.
+    /// </summary>
+    private void RetargetIfLost() {
+        if (!_retargetOnTargetLost || _target.IsTargetable() || _runtime == null || !_source.Exists()) return;
+
+        Vector2 here = transform.position;
+        ICombatUnit best = null;
+        float bestSqr = float.MaxValue;
+        var enemies = _runtime.Enemies(_source);
+        for (int i = 0; i < enemies.Count; i++) {
+            var e = enemies[i];
+            if (!e.IsTargetable()) continue;
+            float sqr = ((Vector2)e.Position - here).sqrMagnitude;
+            if (sqr < bestSqr) { bestSqr = sqr; best = e; }
+        }
+        if (best == null) return;
+
+        _target = best;
+        _age = 0f;
+    }
+
     private void Update() {
         if (!_active) return;
 
+        RetargetIfLost();
         _age += Time.deltaTime;
         if (_age >= maxLifetime) { Impact(TargetPoint()); return; }
 
