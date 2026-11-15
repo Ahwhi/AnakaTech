@@ -15,7 +15,7 @@ using UnityEngine;
 public sealed class StoryIndex : ScriptableObject {
     [Serializable]
     public struct Entry {
-        [Tooltip("장 번호(1~21). 서버가 내려 주는 chapter_N 의 N 이다.")]
+        [Tooltip("장 번호(1~StoryRules.ChapterCount). 서버가 내려 주는 chapter_N 의 N 이다.")]
         [Min(1)] public int chapter;
 
         [Tooltip("카드에 표시할 제목(예: 도심).")]

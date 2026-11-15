@@ -165,7 +165,7 @@ public sealed class EncyclopediaRewardPopup : UIView, IHudPopup {
             cell.SetClaimed();
             _hud.Sound.PlaySfx(SfxKey.Claim);
             _hud.Ui.ShowToast("보상을 수령했습니다.");
-            if (_hud.Badges != null) _hud.Badges.RefreshAsync(_ct).Forget();   // 도감 보상 배지 갱신
+            // 도감 배지는 수령 응답(IEncyclopediaService.Claimed)을 BadgeCenter 가 구독해 그 자리에서 끈다.
         } catch (OperationCanceledException) {
         } catch (Exception e) {
             Debug.LogException(e);

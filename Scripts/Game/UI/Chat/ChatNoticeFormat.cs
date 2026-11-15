@@ -19,10 +19,19 @@ public static class ChatNoticeFormat {
             ChatNoticeKind.TrainingMax => TrainingText(message),
             ChatNoticeKind.StarMaxChar => CharacterStarText(message, hud),
             ChatNoticeKind.StarMaxEquip => EquipStarText(message, hud),
-            ChatNoticeKind.LimitBreakChar => LimitBreakText(message, hud),
+            ChatNoticeKind.LimitBreakChar => CharacterLimitBreakText(message, hud),
+            ChatNoticeKind.LimitBreakEquip => EquipLimitBreakText(message, hud),
             _ => ""
         };
     }
+
+    /// <summary>
+    /// 한계돌파 알림인지. 한계돌파는 다른 알림보다 드문 일이라 화면이 색을 따로 준다(ChatLineView, ChatNoticeRowView).
+    /// 대상(캐릭터/장비)이 늘어도 판정이 한 곳에 모이도록 여기에 둔다.
+    /// </summary>
+    public static bool IsLimitBreak(ChatMessageDto message) =>
+        message != null && (message.NoticeKind == ChatNoticeKind.LimitBreakChar
+                            || message.NoticeKind == ChatNoticeKind.LimitBreakEquip);
 
     // "[닉네임]님이 SSR [캐릭터]을(를) 모집했습니다."
     private static string CharacterGachaText(ChatMessageDto message, BattleHudContext hud) {
@@ -60,10 +69,20 @@ public static class ChatNoticeFormat {
         $"{message.Nickname}님이 {displayName}을(를) {message.RefValue}성으로 각성했습니다.";
 
     // "[닉네임]님이 [캐릭터]을(를) 한계돌파했습니다."
-    private static string LimitBreakText(ChatMessageDto message, BattleHudContext hud) {
+    private static string CharacterLimitBreakText(ChatMessageDto message, BattleHudContext hud) {
         var data = hud != null && hud.CharDb != null ? hud.CharDb.Get(message.RefId) : null;
-        return data == null ? "" : $"{message.Nickname}님이 {data.DisplayName}을(를) 한계돌파했습니다.";
+        return data == null ? "" : LimitBreakText(message, data.DisplayName);
     }
+
+    // "[닉네임]님이 [장비]을(를) 한계돌파했습니다."
+    private static string EquipLimitBreakText(ChatMessageDto message, BattleHudContext hud) {
+        var data = hud != null && hud.EquipDb != null ? hud.EquipDb.Get(message.RefId) : null;
+        return data == null ? "" : LimitBreakText(message, data.DisplayName);
+    }
+
+    // 캐릭터든 장비든 문구는 같다. 한 곳에 두어 두 알림의 표기가 어긋나지 않게 한다.
+    private static string LimitBreakText(ChatMessageDto message, string displayName) =>
+        $"{message.Nickname}님이 {displayName}을(를) 한계돌파했습니다.";
 
     // "[닉네임]님이 [효과 수치] 수련에 성공했습니다."
     private static string TrainingText(ChatMessageDto message) {

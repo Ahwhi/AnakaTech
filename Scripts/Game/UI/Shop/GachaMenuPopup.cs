@@ -469,8 +469,7 @@ public sealed class GachaMenuPopup : UIView, IHudPopup {
 
             if (offer.GachaIsEquip) await AnimateEquipAsync(r.Result.EquipRolls);
             else await AnimateCharAsync(r.Result.Rolls);
-
-            if (_hud.Badges != null) _hud.Badges.RefreshAsync(_ct).Forget();   // 무료 뽑기 배지 갱신
+            // 무료 모집 배지는 구매 처리가 다시 받은 카탈로그(IShopService.CatalogReceived)를 BadgeCenter 가 구독해 끈다.
         } catch (OperationCanceledException) {
         } catch (Exception e) {
             Debug.LogException(e);

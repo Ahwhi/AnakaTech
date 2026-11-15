@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
@@ -24,4 +25,13 @@ public sealed class ClaimEncyclopediaResult {
 public interface IEncyclopediaService {
     UniTask<EncyclopediaRewardStatusDto> RequestRewardsAsync(CancellationToken ct = default);
     UniTask<ClaimEncyclopediaResult> ClaimAsync(int rewardType, int step, CancellationToken ct = default);
+
+    /// <summary>수령 현황을 받을 때마다 흐른다(누가 요청했든).</summary>
+    IObservable<EncyclopediaRewardStatusDto> StatusReceived { get; }
+
+    /// <summary>
+    /// 보상 수령에 성공할 때마다 흐른다. 수령 응답이 곧 최신 상태이므로 배지는 이 값으로 바로 꺼지고,
+    /// 현황 전체를 다시 조회할 필요가 없다.
+    /// </summary>
+    IObservable<ClaimEncyclopediaResult> Claimed { get; }
 }

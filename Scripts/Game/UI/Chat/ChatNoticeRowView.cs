@@ -14,6 +14,11 @@ using UnityEngine;
 public sealed class ChatNoticeRowView : ChatRowView {
     [Tooltip("공지 문구. 색/서체는 이 프리팹이 그대로 쓴다(유저 대화와 구분되게 잡아 둘 것).")]
     [SerializeField] private TMP_Text noticeText;
+    [Tooltip("한계돌파 알림 글자색. 그 밖의 공지는 프리팹에 잡아 둔 색을 그대로 쓴다.")]
+    [SerializeField] private Color limitBreakColor = new Color(0.3f, 1f, 0.3f);
+
+    // 프리팹에 잡아 둔 기본 공지색. 같은 줄을 다시 묶어도 한계돌파 색이 남지 않도록 처음 값을 기억해 둔다.
+    private Color? _baseColor;
 
     protected override void Apply(BattleHudContext hud, ChatMessageDto message, Action<int> onProfile,
                                   Action<int, string> onWhisperReply, Action<ChatMessageDto> onReport) {
@@ -22,5 +27,8 @@ public sealed class ChatNoticeRowView : ChatRowView {
         // 해석하지 못한 공지(구버전 클라가 모르는 새 종류)는 빈 문자열이 되므로 줄이 비어 보인다.
         // 목록이 그런 줄은 아예 만들지 않으므로 여기까지 오면 항상 내용이 있다.
         noticeText.text = ChatNoticeFormat.Build(message, hud);
+
+        _baseColor ??= noticeText.color;
+        noticeText.color = ChatNoticeFormat.IsLimitBreak(message) ? limitBreakColor : _baseColor.Value;
     }
 }

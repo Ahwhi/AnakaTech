@@ -61,7 +61,15 @@ public sealed class BadgeCenter : IDisposable {
     private int _guildPendingApplications;   // 처리 대기 중인 가입 신청 수(운영진 이상일 때만 서버가 채운다)
     private int _guildRaidFreeEntries;       // 오늘 남은 무료 레이드 참여 횟수
     private bool _refreshing;
-    private bool _loaded;   // 최초 서버 조회 완료 여부(그 전엔 도감 로컬 재계산으로 오탐 배지를 띄우지 않는다).
+    // 갱신 중에 들어온 갱신 요청. 버리면 그 사이 바뀐 서버 상태(수령/구매 직후)가 묵은 값으로 덮이므로,
+    // 지금 도는 갱신이 끝나면 한 번 더 돈다(요청이 여러 번 와도 한 번으로 합친다).
+    private bool _refreshRequested;
+    private bool _loaded;   // 최초 서버 조회 완료 여부.
+    private bool _encyclopediaKnown;   // 도감 수령 여부를 서버에서 받았는지(그 전엔 도감 재계산으로 오탐 배지를 띄우지 않는다).
+
+    // 공용 갱신의 수명. 갱신은 여러 화면이 함께 쓰는 작업이라 요청한 화면(팝업)이 닫혀도 멈추지 않고,
+    // 이 클래스가 사라질 때만 멈춘다.
+    private readonly CancellationTokenSource _lifetime = new();
 
     public BadgeCenter(IEncyclopediaService encyclopedia, IChargeRewardService charge, IShopService shop,
                        IMailService mail, PlayerStateStore store, IEventBadgeService events,
@@ -91,6 +99,14 @@ public sealed class BadgeCenter : IDisposable {
         _tower = tower;
         _heroes = heroes;
         _frontline = frontline;
+        // 도감 수령 현황/수령 응답과 상점 카탈로그는 누가 요청했든 받는 즉시 반영한다.
+        // 수령/모집 직후 배지가 전체 갱신(여러 번의 통신)을 기다리지 않고 그 자리에서 꺼진다.
+        if (_encyclopedia != null) {
+            _encyclopedia.StatusReceived.Subscribe(ApplyEncyclopediaStatus).AddTo(_rootSubscriptions);
+            _encyclopedia.Claimed.Subscribe(ApplyEncyclopediaClaim).AddTo(_rootSubscriptions);
+        }
+        if (_shop != null)
+            _shop.CatalogReceived.Subscribe(ApplyShopCatalog).AddTo(_rootSubscriptions);
         // 이벤트 배지가 바뀌면(읽음 처리/서버 최신화) 그대로 흘려보낸다. 구독자는 BadgeCenter 만 보면 된다.
         if (_events != null) _events.Changed.Subscribe(_ => _changed.OnNext(Unit.Default));
         // 보유 캐릭/별레벨/장비 변경 시 도감 + 덱 배지 재계산. 다이아 변동도 덱(별 승급 가능)에 영향.
@@ -241,7 +257,11 @@ public sealed class BadgeCenter : IDisposable {
     /// 씬 스코프가 사라질 때 루트 스코프 서비스에 건 구독을 끊는다(VContainer 가 불러 준다).
     /// 끊지 않으면 메인 씬을 다시 열 때마다 죽은 BadgeCenter 가 하나씩 쌓인다.
     /// </summary>
-    public void Dispose() => _rootSubscriptions.Dispose();
+    public void Dispose() {
+        _lifetime.Cancel();
+        _lifetime.Dispose();
+        _rootSubscriptions.Dispose();
+    }
 
     // 이벤트 배지(계산은 EventBadgeService 담당). 이벤트 버튼 전체 종합과 보상 키 1건.
     public EventBadge EventsBadge => _events != null ? _events.Aggregate : EventBadge.None;
@@ -276,8 +296,7 @@ public sealed class BadgeCenter : IDisposable {
             badge = Higher(badge, FrontlineBadge);
             badge = Higher(badge, DispatchBadge);
             badge = Higher(badge, DoomBadge);
-            // 스토리: V1.12 에서 메뉴 버튼을 숨겼다(V1.13 리워크). 숨긴 버튼의 배지가 햄버거에만 켜지지 않도록 뺀다.
-            // 버튼을 다시 열 때 이 줄을 되살릴 것: badge = Higher(badge, StoryBadge);
+            badge = Higher(badge, StoryBadge);
             badge = Higher(badge, PassBadge);
             badge = Higher(badge, InvestmentBadge);
             return badge;
@@ -316,134 +335,177 @@ public sealed class BadgeCenter : IDisposable {
     // 우선순위: Claimable(빨간 동그라미) > Unread(NEW) > None (enum 값 순서와 일치).
     private static EventBadge Higher(EventBadge a, EventBadge b) => (EventBadge)System.Math.Max((int)a, (int)b);
 
-    /// <summary>서버 상태(도감 수령/충전액/로테이션/오퍼)를 최신화하고 모든 배지를 재계산한다. 중복 호출은 1회로 합친다.</summary>
+    /// <summary>
+    /// 서버 상태(도감 수령/충전액/로테이션/오퍼)를 최신화하고 모든 배지를 재계산한다.
+    ///
+    /// 중복 호출은 합친다. 갱신 중에 다시 불리면 버리지 않고, 지금 도는 갱신이 끝난 뒤 한 번 더 돈다.
+    /// 앞선 갱신이 이미 지나간 항목(예: 도감 현황)은 그 뒤에 바뀐 상태를 모르기 때문이다.
+    ///
+    /// 갱신은 이 클래스의 수명으로 돈다. 요청한 팝업이 닫혀도 다른 배지가 함께 기다리는 작업이라 멈추지 않는다.
+    /// ct 는 아직 시작하지 않은 요청을 거두는 데만 쓴다.
+    /// </summary>
     public async UniTask RefreshAsync(CancellationToken ct = default) {
+        if (ct.IsCancellationRequested || _lifetime.IsCancellationRequested) return;
+        _refreshRequested = true;
         if (_refreshing) return;
+
         _refreshing = true;
         try {
-            try {
-                var ency = await _encyclopedia.RequestRewardsAsync(ct);
-                _claimedCollection = ency.ClaimedCollectionSteps ?? new HashSet<int>();
-                _claimedStar = ency.ClaimedStarSteps ?? new HashSet<int>();
-            } catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
-
-            try {
-                var charge = await _charge.RequestStatusAsync(ct);
-                _claimedTiers = charge.ClaimedTiers ?? new HashSet<int>();
-                _cumulativeWon = charge.CumulativeWon;
-            } catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
-
-            try {
-                var catalog = await _shop.RequestShopAsync(ct);
-                _rotationCharId = catalog.RotationCharId;
-                _freeNextUnix = catalog.FreeGachaNextUnix ?? new Dictionary<string, long>();
-                _offers.Clear();
-                foreach (var o in catalog.Offers) _offers.Add((o.OfferId, o.Major));
-            } catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
-
-            // 우편: 미수령 수만 최신화한다(UnreadCount 변경은 구독으로도 반영되나, 최초 진입 시 확실히 당겨온다).
-            if (_mail != null) {
-                try { await _mail.RefreshAsync(ct); }
-                catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
+            while (_refreshRequested && !_lifetime.IsCancellationRequested) {
+                _refreshRequested = false;
+                await RefreshOnceAsync(_lifetime.Token);
             }
-
-            // 이벤트 충족 상태(서버). 계산/캐시는 서비스가 하고, 여기서는 최신화만 같이 태운다.
-            if (_events != null) {
-                try { await _events.RefreshAsync(ct); }
-                catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
-            }
-
-            // 길드: 처리할 가입 신청과 남은 무료 레이드 참여. 둘 다 서버가 권한/오늘 기준까지 보고 채운 값이라
-            // 클라가 역할이나 날짜를 다시 따질 필요가 없다.
-            if (_guild != null) {
-                try {
-                    var home = await _guild.RequestHomeAsync(ct);
-                    _guildPendingApplications = home.PendingApplications;
-                    _guildRaidFreeEntries = home.RaidFreeEntries;
-                } catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
-            }
-
-            // 친구: 받은 신청 수만 최신화한다. 이후 변동은 서버 푸시(S_FriendNotify)와
-            // 팝업의 수락/거절 응답이 같은 ReactiveProperty 를 갱신하므로 여기서 다시 조회할 일이 없다.
-            if (_friend != null) {
-                try { await _friend.RefreshAsync(ct); }
-                catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
-            }
-
-            // 업적: 수령 가능한 보상이 있는지만 최신화한다. 이후 변동은 업적 팝업의 조회/수령 응답이
-            // 같은 ReactiveProperty 를 갱신하므로 여기서 다시 조회할 일이 없다.
-            if (_achievement != null) {
-                try { await _achievement.RefreshAsync(ct); }
-                catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
-            }
-
-            // 수련: 진행 중인 슬롯의 완료 시각을 받아 둔다. 이후 "시간이 다 됐는지"는 서비스가 스스로 다시 따지므로
-            // 배지를 켜기 위해 주기적으로 서버를 두드리지 않는다.
-            if (_training != null) {
-                try { await _training.RefreshAsync(ct); }
-                catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
-            }
-
-            // 쟁탈전: 오늘 무료 매칭이 남았는지만 최신화한다. 이후 변동은 매칭 응답이 같은 값을 갱신한다.
-            if (_arena != null) {
-                try { await _arena.RefreshAsync(ct); }
-                catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
-            }
-
-            // 원정대: 오늘 칠 수 있는지만 최신화한다. 이후 변동은 출격 응답이 같은 값을 갱신한다.
-            if (_expedition != null) {
-                try { await _expedition.RefreshAsync(ct); }
-                catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
-            }
-
-            // 무한 타워: 오늘 오를 수 있는지만 최신화한다. 이후 변동은 등반 응답이 같은 값을 갱신한다.
-            if (_tower != null) {
-                try { await _tower.RefreshAsync(ct); }
-                catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
-            }
-
-            // 영웅전: 오늘 도전 횟수가 남았는지만 최신화한다. 이후 변동은 입장/클리어 응답이 같은 값을 갱신한다.
-            if (_heroes != null) {
-                try { await _heroes.RefreshAsync(ct); }
-                catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
-            }
-
-            // 전선: 오늘 남은 전선 기력을 최신화한다(자정 초기화 반영). 이후 변동은 입장/종료 응답이 같은 값을 갱신한다.
-            if (_frontline != null) {
-                try { await _frontline.RefreshAsync(ct); }
-                catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
-            }
-
-            // 파견: 수련과 같은 이유로 진행 중인 슬롯의 완료 시각만 받아 둔다(이후 판정은 서비스가 시간으로 한다).
-            if (_dispatch != null) {
-                try { await _dispatch.RefreshAsync(ct); }
-                catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
-            }
-
-            // 멸망전: 받지 않은 보상이 있는지만 받아 둔다. 이후 변동은 결과 보고/수령 응답이 같은 값을 갱신한다.
-            if (_doom != null) {
-                try { await _doom.RefreshAsync(ct); }
-                catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
-            }
-
-            // 스토리: 19편의 현황을 받아 둔다(해금 판정은 서버가 한다). 이후 변동은 완독/수령 응답이 갱신한다.
-            if (_story != null) {
-                try { await _story.RefreshAsync(ct); }
-                catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
-            }
-
-            // 패스: 받을 칸이 있는지만 받아 둔다. 이후 변동은 서버 푸시(새 레벨 도달, 평생 패스 구매)와 수령 응답이 갱신한다.
-            if (_pass != null) {
-                try { await _pass.RefreshAsync(ct); }
-                catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
-            }
-
-            _loaded = true;
-            RecomputeAll();
-            _changed.OnNext(Unit.Default);
         } finally {
             _refreshing = false;
         }
+    }
+
+    private async UniTask RefreshOnceAsync(CancellationToken ct) {
+        // 도감 현황과 상점 카탈로그는 받는 즉시 구독(ApplyEncyclopediaStatus / ApplyShopCatalog)이 반영한다.
+        try { await _encyclopedia.RequestRewardsAsync(ct); }
+        catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
+
+        try {
+            var charge = await _charge.RequestStatusAsync(ct);
+            _claimedTiers = charge.ClaimedTiers ?? new HashSet<int>();
+            _cumulativeWon = charge.CumulativeWon;
+        } catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
+
+        try { await _shop.RequestShopAsync(ct); }
+        catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
+
+        // 우편: 미수령 수만 최신화한다(UnreadCount 변경은 구독으로도 반영되나, 최초 진입 시 확실히 당겨온다).
+        if (_mail != null) {
+            try { await _mail.RefreshAsync(ct); }
+            catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
+        }
+
+        // 이벤트 충족 상태(서버). 계산/캐시는 서비스가 하고, 여기서는 최신화만 같이 태운다.
+        if (_events != null) {
+            try { await _events.RefreshAsync(ct); }
+            catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
+        }
+
+        // 길드: 처리할 가입 신청과 남은 무료 레이드 참여. 둘 다 서버가 권한/오늘 기준까지 보고 채운 값이라
+        // 클라가 역할이나 날짜를 다시 따질 필요가 없다.
+        if (_guild != null) {
+            try {
+                var home = await _guild.RequestHomeAsync(ct);
+                _guildPendingApplications = home.PendingApplications;
+                _guildRaidFreeEntries = home.RaidFreeEntries;
+            } catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
+        }
+
+        // 친구: 받은 신청 수만 최신화한다. 이후 변동은 서버 푸시(S_FriendNotify)와
+        // 팝업의 수락/거절 응답이 같은 ReactiveProperty 를 갱신하므로 여기서 다시 조회할 일이 없다.
+        if (_friend != null) {
+            try { await _friend.RefreshAsync(ct); }
+            catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
+        }
+
+        // 업적: 수령 가능한 보상이 있는지만 최신화한다. 이후 변동은 업적 팝업의 조회/수령 응답이
+        // 같은 ReactiveProperty 를 갱신하므로 여기서 다시 조회할 일이 없다.
+        if (_achievement != null) {
+            try { await _achievement.RefreshAsync(ct); }
+            catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
+        }
+
+        // 수련: 진행 중인 슬롯의 완료 시각을 받아 둔다. 이후 "시간이 다 됐는지"는 서비스가 스스로 다시 따지므로
+        // 배지를 켜기 위해 주기적으로 서버를 두드리지 않는다.
+        if (_training != null) {
+            try { await _training.RefreshAsync(ct); }
+            catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
+        }
+
+        // 쟁탈전: 오늘 무료 매칭이 남았는지만 최신화한다. 이후 변동은 매칭 응답이 같은 값을 갱신한다.
+        if (_arena != null) {
+            try { await _arena.RefreshAsync(ct); }
+            catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
+        }
+
+        // 원정대: 오늘 칠 수 있는지만 최신화한다. 이후 변동은 출격 응답이 같은 값을 갱신한다.
+        if (_expedition != null) {
+            try { await _expedition.RefreshAsync(ct); }
+            catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
+        }
+
+        // 무한 타워: 오늘 오를 수 있는지만 최신화한다. 이후 변동은 등반 응답이 같은 값을 갱신한다.
+        if (_tower != null) {
+            try { await _tower.RefreshAsync(ct); }
+            catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
+        }
+
+        // 영웅전: 오늘 도전 횟수가 남았는지만 최신화한다. 이후 변동은 입장/클리어 응답이 같은 값을 갱신한다.
+        if (_heroes != null) {
+            try { await _heroes.RefreshAsync(ct); }
+            catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
+        }
+
+        // 전선: 오늘 남은 전선 기력을 최신화한다(자정 초기화 반영). 이후 변동은 입장/종료 응답이 같은 값을 갱신한다.
+        if (_frontline != null) {
+            try { await _frontline.RefreshAsync(ct); }
+            catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
+        }
+
+        // 파견: 수련과 같은 이유로 진행 중인 슬롯의 완료 시각만 받아 둔다(이후 판정은 서비스가 시간으로 한다).
+        if (_dispatch != null) {
+            try { await _dispatch.RefreshAsync(ct); }
+            catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
+        }
+
+        // 멸망전: 받지 않은 보상이 있는지만 받아 둔다. 이후 변동은 결과 보고/수령 응답이 같은 값을 갱신한다.
+        if (_doom != null) {
+            try { await _doom.RefreshAsync(ct); }
+            catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
+        }
+
+        // 스토리: 19편의 현황을 받아 둔다(해금 판정은 서버가 한다). 이후 변동은 완독/수령 응답이 갱신한다.
+        if (_story != null) {
+            try { await _story.RefreshAsync(ct); }
+            catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
+        }
+
+        // 패스: 받을 칸이 있는지만 받아 둔다. 이후 변동은 서버 푸시(새 레벨 도달, 평생 패스 구매)와 수령 응답이 갱신한다.
+        if (_pass != null) {
+            try { await _pass.RefreshAsync(ct); }
+            catch (OperationCanceledException) { return; } catch (Exception e) { Debug.LogException(e); }
+        }
+
+        _loaded = true;
+        RecomputeAll();
+        _changed.OnNext(Unit.Default);
+    }
+
+    // 도감 수령 현황을 받았을 때(누가 요청했든). 서버 값으로 통째로 바꾼다.
+    private void ApplyEncyclopediaStatus(EncyclopediaRewardStatusDto status) {
+        if (status == null) return;
+        _claimedCollection = status.ClaimedCollectionSteps ?? new HashSet<int>();
+        _claimedStar = status.ClaimedStarSteps ?? new HashSet<int>();
+        _encyclopediaKnown = true;
+        RecomputeEncyclopedia();
+        _changed.OnNext(Unit.Default);
+    }
+
+    // 도감 보상 수령 성공. 수령 응답이 곧 최신 상태라 그 단계만 받은 것으로 표시하고 바로 다시 계산한다.
+    private void ApplyEncyclopediaClaim(ClaimEncyclopediaResult claim) {
+        if (claim == null || !claim.IsSuccess) return;
+        var claimed = claim.RewardType == EncyclopediaRewardRules.RewardTypeCollection ? _claimedCollection : _claimedStar;
+        if (!claimed.Add(claim.Step)) return;
+        if (!_encyclopediaKnown) return;   // 현황을 아직 모르면 계산하지 않는다(오탐 방지). 현황이 오면 이 단계도 함께 반영된다.
+        RecomputeEncyclopedia();
+        _changed.OnNext(Unit.Default);
+    }
+
+    // 상점 카탈로그를 받았을 때(누가 요청했든). 무료 모집 가능 시각/로테이션/오퍼가 모두 여기 실려 온다.
+    // 무료 모집 응답 뒤 구매 처리(ShopPurchaseHelper)가 카탈로그를 다시 받으므로, 무료 배지는 그 자리에서 꺼진다.
+    private void ApplyShopCatalog(ShopCatalogDto catalog) {
+        if (catalog == null) return;
+        _rotationCharId = catalog.RotationCharId;
+        _freeNextUnix = catalog.FreeGachaNextUnix ?? new Dictionary<string, long>();
+        _offers.Clear();
+        if (catalog.Offers != null) foreach (var o in catalog.Offers) _offers.Add((o.OfferId, o.Major));
+        RecomputeNew();
+        _changed.OnNext(Unit.Default);
     }
 
     /// <summary>가챠 로테이션을 "봤음"으로 기록(가챠 팝업 진입 시). rotationCharId 는 팝업이 받은 현재 값.</summary>
@@ -672,7 +734,7 @@ public sealed class BadgeCenter : IDisposable {
     private void OnStoreChanged() {
         RecomputeDeck();
         if (_loaded) RecomputeInvestment();   // 별 승급으로 새 슬롯이 열리면 그 자리에서 New
-        if (_loaded) RecomputeEncyclopedia();   // 수령 여부(서버) 조회 전에는 도감 재계산 안 함(오탐 방지)
+        if (_encyclopediaKnown) RecomputeEncyclopedia();   // 수령 여부(서버) 조회 전에는 도감 재계산 안 함(오탐 방지)
         _changed.OnNext(Unit.Default);
     }
 

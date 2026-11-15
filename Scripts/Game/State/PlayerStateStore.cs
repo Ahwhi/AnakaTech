@@ -114,6 +114,19 @@ public sealed class PlayerStateStore {
     /// <summary>보유 각인의 레벨(각인 id -> 레벨). 레벨은 계정 공용이라 캐릭터별로 갖지 않는다.</summary>
     public readonly Dictionary<int, int> EngravingLevels = new();
 
+    /// <summary>
+    /// 아직 갖지 못한 각인이 남았는지. 서버는 미보유 각인 중에서 도면을 뽑고, 다 모은 계정에는 각인석으로 대신 준다.
+    /// 보상 미리보기가 이 값으로 실제 지급과 같은 품목을 보여 준다. 각인 데이터가 없으면 남은 것으로 본다(예고를 숨기지 않는다).
+    /// </summary>
+    public bool HasUnownedEngraving {
+        get {
+            if (_engravingDb == null) return true;
+            foreach (var e in _engravingDb.All)
+                if (e != null && !EngravingLevels.ContainsKey(e.Id)) return true;
+            return false;
+        }
+    }
+
     /// <summary>캐릭터별 각인 장착(캐릭터 id -> 슬롯 배열, 값 0=빈 슬롯). 길이는 항상 EngravingRules.SlotCount.</summary>
     public readonly Dictionary<int, int[]> EquippedEngravings = new();
 

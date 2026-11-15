@@ -41,6 +41,7 @@ public enum ChatNoticeKind {
     StarMaxChar = 4,           // 캐릭터 최대 별레벨 달성. RefId = 캐릭터 id, RefValue = 별레벨
     StarMaxEquip = 5,          // 장비 최대 별레벨(각성) 달성. RefId = 장비 id, RefValue = 별레벨
     LimitBreakChar = 6,        // 캐릭터 한계돌파. RefId = 캐릭터 id
+    LimitBreakEquip = 7,       // 장비 한계돌파. RefId = 장비 id
 }
 
 /// <summary>채팅 한 줄.</summary>

@@ -35,6 +35,8 @@ public sealed class ChatLineView : HudInjectedBehaviour {
     [SerializeField] private Color userColor = Color.white;
     [Tooltip("시스템 알림 글자색. 유저 대화와 확실히 구분되는 색으로 둔다.")]
     [SerializeField] private Color noticeColor = new Color(1f, 0.85f, 0.35f);
+    [Tooltip("한계돌파 알림 글자색. 드문 알림이라 다른 알림과도 구분한다.")]
+    [SerializeField] private Color limitBreakColor = new Color(0.3f, 1f, 0.3f);
     [Tooltip("길드 대화 글자색. 채팅창의 길드 채널과 같은 색으로 맞춘다.")]
     [SerializeField] private Color guildColor = new Color(0.45f, 0.9f, 0.55f);
     [Tooltip("이 줄을 눌렀을 때 열 채팅 패널 프리팹(ChatPopup).")]
@@ -103,7 +105,7 @@ public sealed class ChatLineView : HudInjectedBehaviour {
             // 해석하지 못한 알림(구버전 클라가 모르는 종류)은 빈 줄이 되므로 안내 문구를 유지한다.
             if (string.IsNullOrEmpty(notice)) return;
             lineText.text = notice;
-            lineText.color = noticeColor;
+            lineText.color = ChatNoticeFormat.IsLimitBreak(message) ? limitBreakColor : noticeColor;
             return;
         }
 

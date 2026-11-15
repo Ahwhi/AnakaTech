@@ -32,6 +32,12 @@ public abstract class UnitSkill : ScriptableObject {
              "스킬 종류와 무관하게 시전 순간 한 번 적용된다(예: C4402 미스즈).")]
     [SerializeField] [Min(0f)] private float selfHealMaxHpPercent;
 
+    [Header("Ally Heal (선택)")]
+    [Tooltip("스킬을 쓸 때 살아 있는 아군 전원(시전자 포함)이 각자 최대 체력의 이 비율(%)만큼 회복한다. " +
+             "10 = 각자 최대 체력의 10%. 0 이면 회복하지 않는다. 스킬 종류와 무관하게 시전 순간 한 번 적용된다(예: C3102 히나). " +
+             "Self Heal 과 함께 쓰면 시전자는 둘 다 받는다.")]
+    [SerializeField] [Min(0f)] private float allyHealMaxHpPercent;
+
     [Header("Cast (시전자 연출, 선택)")]
     [Tooltip("스킬 발동 순간 시전자 기준점(HitPoint)에 재생하는 VFX(차지/오라/휘두름 등). 비우면 재생 안 함.")]
     [SerializeField] private GameObject castVfxPrefab;
@@ -75,7 +81,18 @@ public abstract class UnitSkill : ScriptableObject {
     public void Execute(SkillContext ctx) {
         PlayCast(ctx);
         if (selfHealMaxHpPercent > 0f) ctx.Runtime.HealByMaxHp(ctx.Caster, selfHealMaxHpPercent / 100f);
+        if (allyHealMaxHpPercent > 0f) HealAllies(ctx, allyHealMaxHpPercent / 100f);
         OnExecute(ctx);
+    }
+
+    // 살아 있는 아군 전원을 각자의 최대 체력 비율만큼 회복한다. 죽은 유닛은 HealByMaxHp 가 걸러 준다.
+    // 아군 목록은 전장이 공유하는 버퍼라 회복 도중 다른 질의로 바뀌지 않도록 먼저 복사해 둔다.
+    private static void HealAllies(SkillContext ctx, float ratio) {
+        var allies = new List<ICombatUnit>(ctx.Runtime.Allies(ctx.Caster));
+        for (int i = 0; i < allies.Count; i++) {
+            var ally = allies[i];
+            if (ally.IsTargetable()) ctx.Runtime.HealByMaxHp(ally, ratio);
+        }
     }
 
     /// <summary>파생 스킬의 고유 로직. ctx 를 통해 시전자/적/아군 조회 및 데미지/연출을 수행한다.</summary>

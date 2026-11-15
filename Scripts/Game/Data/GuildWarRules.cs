@@ -6,7 +6,7 @@ using System.Collections.Generic;
 /// </summary>
 public static class GuildWarRules {
     /// <summary>1인당 공격 가능 횟수. 서버 GuildCatalog.WarAttacksPerMember 와 같아야 한다.</summary>
-    public const int AttacksPerMember = 5;
+    public const int AttacksPerMember = 3;
 
     /// <summary>주간 매칭 요일. 서버 GuildCatalog.WarMatchDay 와 같아야 한다.</summary>
     public const System.DayOfWeek MatchDay = System.DayOfWeek.Saturday;

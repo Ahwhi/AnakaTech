@@ -104,8 +104,9 @@ public sealed class CommissionDetailPanel : MonoBehaviour {
         if (!hasNextStage) return;
 
         // 각인 도면도 보상 목록에 들어 있으므로 별도 안내 없이 슬롯으로 함께 그려진다.
-        BuildSlots(ctx, _challengeSlots, challengeRewardParent,
-                   CommissionRewardRules.WithExpBonus(CommissionRewardRules.ClearRewards(type, challengeStage), expBonus));
+        // 각인을 다 모은 계정은 서버가 도면 대신 각인석을 주므로 그 기준으로 그린다.
+        var rewards = CommissionRewardRules.ClearRewards(type, challengeStage, ctx.Store.HasUnownedEngraving);
+        BuildSlots(ctx, _challengeSlots, challengeRewardParent, CommissionRewardRules.WithExpBonus(rewards, expBonus));
     }
 
     // 즉시해결 보상: 의뢰해결권 1장당 받는 몫. 도전 단계가 아니라 "클리어한 최고 단계"를 쓴다.

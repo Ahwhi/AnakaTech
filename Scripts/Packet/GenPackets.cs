@@ -48,265 +48,266 @@ public enum PacketID
 	S_LimitBreakResult = 40,
 	C_RequestShop = 41,
 	S_ShopCatalog = 42,
-	C_BuyOffer = 43,
-	C_PurchaseGate = 44,
-	C_CanBuyOffer = 45,
-	S_CanBuyOffer = 46,
-	C_GachaMileagePick = 47,
-	S_GachaMileagePickResult = 48,
-	C_GachaRates = 49,
-	S_GachaRates = 50,
-	C_RotationInfo = 51,
-	S_RotationInfo = 52,
-	S_BuyResult = 53,
-	C_RequestInventory = 54,
-	S_Inventory = 55,
-	C_EquipItem = 56,
-	S_EquipResult = 57,
-	C_UnequipItem = 58,
-	S_UnequipResult = 59,
-	C_AwakenEquip = 60,
-	S_AwakenResult = 61,
-	C_EquipLimitBreak = 62,
-	S_EquipLimitBreakResult = 63,
-	C_DisassembleEquip = 64,
-	C_DisassembleEquipByGrade = 65,
-	S_DisassembleEquipResult = 66,
-	C_ConvertUniversalShard = 67,
-	S_ConvertUniversalShardResult = 68,
-	C_RequestMail = 69,
-	S_MailList = 70,
-	C_ClaimMail = 71,
-	S_ClaimMailResult = 72,
-	S_MailNotify = 73,
-	C_Profile = 74,
-	S_Profile = 75,
-	C_EquipProfileFrame = 76,
-	S_EquipProfileFrameResult = 77,
-	C_CheckNickname = 78,
-	S_CheckNicknameResult = 79,
-	C_ChangeNickname = 80,
-	S_ChangeNicknameResult = 81,
-	C_EncyclopediaRewards = 82,
-	S_EncyclopediaRewards = 83,
-	C_ClaimEncyclopediaReward = 84,
-	S_ClaimEncyclopediaRewardResult = 85,
-	C_ChargeRewards = 86,
-	S_ChargeRewards = 87,
-	C_ClaimChargeReward = 88,
-	S_ClaimChargeRewardResult = 89,
-	C_EventMissions = 90,
-	S_EventMissions = 91,
-	C_Heartbeat = 92,
-	S_HeartbeatResult = 93,
-	C_ClaimEventMission = 94,
-	S_ClaimEventMissionResult = 95,
-	C_LevelUpEquip = 96,
-	S_LevelUpEquipResult = 97,
-	C_CommissionInfo = 98,
-	S_CommissionInfo = 99,
-	C_StartCommission = 100,
-	S_StartCommissionResult = 101,
-	C_ClearCommission = 102,
-	S_ClearCommissionResult = 103,
-	C_SweepCommission = 104,
-	S_SweepCommissionResult = 105,
-	C_EngravingInfo = 106,
-	S_EngravingInfo = 107,
-	C_UpgradeEngraving = 108,
-	S_UpgradeEngravingResult = 109,
-	C_EquipEngraving = 110,
-	S_EquipEngravingResult = 111,
-	C_CostumeInfo = 112,
-	S_CostumeInfo = 113,
-	C_EquipUnitSkin = 114,
-	S_EquipUnitSkinResult = 115,
-	C_EquipCostume = 116,
-	S_EquipCostumeResult = 117,
-	C_FlashSaleInfo = 118,
-	S_FlashSaleInfo = 119,
-	S_FlashSaleNotify = 120,
-	C_ChatSend = 121,
-	S_ChatSendResult = 122,
-	S_ChatMessage = 123,
-	C_DeleteWhisper = 124,
-	S_DeleteWhisperResult = 125,
-	C_ReportChat = 126,
-	S_ReportChatResult = 127,
-	C_ChatHistory = 128,
-	S_ChatHistory = 129,
-	C_HeadquartersInfo = 130,
-	S_HeadquartersInfo = 131,
-	C_UpgradeHqNode = 132,
-	S_UpgradeHqNodeResult = 133,
-	C_ItemInfo = 134,
-	S_ItemInfo = 135,
-	C_UseItem = 136,
-	S_UseItemResult = 137,
-	C_ItemUsePreview = 138,
-	S_ItemUsePreview = 139,
-	C_DeckPresets = 140,
-	S_DeckPresets = 141,
-	C_SaveDeckPreset = 142,
-	C_ApplyDeckPreset = 143,
-	C_RenameDeckPreset = 144,
-	S_DeckPresetResult = 145,
-	C_GuildHome = 146,
-	S_GuildHome = 147,
-	C_GuildList = 148,
-	S_GuildList = 149,
-	C_GuildNameCheck = 150,
-	S_GuildNameCheck = 151,
-	C_CreateGuild = 152,
-	C_GuildAction = 153,
-	S_GuildActionResult = 154,
-	C_GuildApplications = 155,
-	S_GuildApplications = 156,
-	C_ReportCombatPower = 157,
-	C_UserProfile = 158,
-	S_UserProfile = 159,
-	C_Achievements = 160,
-	S_Achievements = 161,
-	C_ClaimAchievementReward = 162,
-	S_ClaimAchievementRewardResult = 163,
-	C_Ranking = 164,
-	S_Ranking = 165,
-	C_FriendHome = 166,
-	S_FriendHome = 167,
-	C_SearchFriend = 168,
-	S_SearchFriendResult = 169,
-	C_FriendAction = 170,
-	S_FriendActionResult = 171,
-	S_FriendNotify = 172,
-	C_FriendStaminaSend = 173,
-	S_FriendStaminaSendResult = 174,
-	C_FriendStaminaClaim = 175,
-	S_FriendStaminaClaimResult = 176,
-	C_GuildRaidState = 177,
-	S_GuildRaidState = 178,
-	C_EnterGuildRaid = 179,
-	S_EnterGuildRaidResult = 180,
-	C_ReportGuildRaidDamage = 181,
-	S_GuildRaidDamageResult = 182,
-	C_GuildWarState = 183,
-	S_GuildWarState = 184,
-	C_BeginGuildWarAttack = 185,
-	S_BeginGuildWarAttackResult = 186,
-	C_ReportGuildWarAttack = 187,
-	S_GuildWarAttackResult = 188,
-	C_GuildWarLog = 189,
-	S_GuildWarLog = 190,
-	C_UserDeck = 191,
-	S_UserDeck = 192,
-	C_RedeemCoupon = 193,
-	S_RedeemCouponResult = 194,
-	C_ArenaHome = 195,
-	S_ArenaHome = 196,
-	C_ArenaSetRunes = 197,
-	S_ArenaSetRunesResult = 198,
-	C_ArenaHistory = 199,
-	S_ArenaHistory = 200,
-	C_ArenaMatch = 201,
-	S_ArenaMatchResult = 202,
-	C_ArenaReport = 203,
-	S_ArenaReportResult = 204,
-	C_ArenaLog = 205,
-	S_ArenaLog = 206,
-	C_TrainingInfo = 207,
-	S_TrainingInfo = 208,
-	C_TrainingAction = 209,
-	S_TrainingActionResult = 210,
-	C_DevTool = 211,
-	S_DevTool = 212,
-	C_OfflineReward = 213,
-	S_OfflineReward = 214,
-	C_DiamondDetail = 215,
-	S_DiamondDetail = 216,
-	C_RegisterPushToken = 217,
-	C_UnregisterPushToken = 218,
-	S_PushTokenResult = 219,
-	C_CommissionAttempt = 220,
-	C_StoryProgress = 221,
-	S_StoryProgress = 222,
-	C_CompleteStory = 223,
-	S_CompleteStoryResult = 224,
-	C_ClaimStoryReward = 225,
-	S_ClaimStoryRewardResult = 226,
-	C_Investment = 227,
-	S_Investment = 228,
-	C_UpgradeInvestment = 229,
-	S_UpgradeInvestmentResult = 230,
-	C_MainQuest = 231,
-	C_MainQuestAction = 232,
-	S_MainQuest = 233,
-	S_MainQuestNotify = 234,
-	C_ClaimMainQuest = 235,
-	S_ClaimMainQuestResult = 236,
-	C_DispatchInfo = 237,
-	S_DispatchInfo = 238,
-	C_DispatchAction = 239,
-	S_DispatchActionResult = 240,
-	S_DispatchNotify = 241,
-	C_SocialSettings = 242,
-	S_SocialSettings = 243,
-	C_Test = 244,
-	C_DoomInfo = 245,
-	S_DoomInfo = 246,
-	C_DoomResult = 247,
-	S_DoomResult = 248,
-	C_DoomClaim = 249,
-	S_DoomClaimResult = 250,
-	C_BattleFinished = 251,
-	C_PassInfo = 252,
-	S_PassInfo = 253,
-	C_PassClaim = 254,
-	S_PassClaimResult = 255,
-	C_EventRouletteInfo = 256,
-	S_EventRouletteInfo = 257,
-	C_EventRouletteSpin = 258,
-	S_EventRouletteSpinResult = 259,
-	C_ReportCharacterPower = 260,
-	C_ExpeditionHome = 261,
-	S_ExpeditionHome = 262,
-	C_EnterExpedition = 263,
-	S_EnterExpeditionResult = 264,
-	C_ExpeditionMemberDeck = 265,
-	C_ReportExpeditionDamage = 266,
-	S_ExpeditionDamageResult = 267,
-	C_ExpeditionLog = 268,
-	S_ExpeditionLog = 269,
-	C_DoomEntryInfo = 270,
-	S_DoomEntryInfo = 271,
-	C_DoomEnter = 272,
-	S_DoomEnterResult = 273,
-	C_DoomFinish = 274,
-	S_DoomFinishResult = 275,
-	C_TowerInfo = 276,
-	S_TowerInfo = 277,
-	C_TowerEnter = 278,
-	S_TowerEnterResult = 279,
-	C_TowerClear = 280,
-	S_TowerClearResult = 281,
-	C_AttendanceEventInfo = 282,
-	S_AttendanceEventInfo = 283,
-	C_ClaimAttendanceEvent = 284,
-	S_ClaimAttendanceEventResult = 285,
-	C_FrontlineInfo = 286,
-	S_FrontlineInfo = 287,
-	C_FrontlineSetMembers = 288,
-	S_FrontlineSetMembersResult = 289,
-	C_FrontlineReset = 290,
-	S_FrontlineResetResult = 291,
-	C_FrontlineEnter = 292,
-	S_FrontlineEnterResult = 293,
-	C_FrontlineFinish = 294,
-	S_FrontlineFinishResult = 295,
-	C_HeroesInfo = 296,
-	S_HeroesInfo = 297,
-	C_HeroesEnter = 298,
-	S_HeroesEnterResult = 299,
-	C_HeroesClear = 300,
-	S_HeroesClearResult = 301,
+	S_ShopOfferPage = 43,
+	C_BuyOffer = 44,
+	C_PurchaseGate = 45,
+	C_CanBuyOffer = 46,
+	S_CanBuyOffer = 47,
+	C_GachaMileagePick = 48,
+	S_GachaMileagePickResult = 49,
+	C_GachaRates = 50,
+	S_GachaRates = 51,
+	C_RotationInfo = 52,
+	S_RotationInfo = 53,
+	S_BuyResult = 54,
+	C_RequestInventory = 55,
+	S_Inventory = 56,
+	C_EquipItem = 57,
+	S_EquipResult = 58,
+	C_UnequipItem = 59,
+	S_UnequipResult = 60,
+	C_AwakenEquip = 61,
+	S_AwakenResult = 62,
+	C_EquipLimitBreak = 63,
+	S_EquipLimitBreakResult = 64,
+	C_DisassembleEquip = 65,
+	C_DisassembleEquipByGrade = 66,
+	S_DisassembleEquipResult = 67,
+	C_ConvertUniversalShard = 68,
+	S_ConvertUniversalShardResult = 69,
+	C_RequestMail = 70,
+	S_MailList = 71,
+	C_ClaimMail = 72,
+	S_ClaimMailResult = 73,
+	S_MailNotify = 74,
+	C_Profile = 75,
+	S_Profile = 76,
+	C_EquipProfileFrame = 77,
+	S_EquipProfileFrameResult = 78,
+	C_CheckNickname = 79,
+	S_CheckNicknameResult = 80,
+	C_ChangeNickname = 81,
+	S_ChangeNicknameResult = 82,
+	C_EncyclopediaRewards = 83,
+	S_EncyclopediaRewards = 84,
+	C_ClaimEncyclopediaReward = 85,
+	S_ClaimEncyclopediaRewardResult = 86,
+	C_ChargeRewards = 87,
+	S_ChargeRewards = 88,
+	C_ClaimChargeReward = 89,
+	S_ClaimChargeRewardResult = 90,
+	C_EventMissions = 91,
+	S_EventMissions = 92,
+	C_Heartbeat = 93,
+	S_HeartbeatResult = 94,
+	C_ClaimEventMission = 95,
+	S_ClaimEventMissionResult = 96,
+	C_LevelUpEquip = 97,
+	S_LevelUpEquipResult = 98,
+	C_CommissionInfo = 99,
+	S_CommissionInfo = 100,
+	C_StartCommission = 101,
+	S_StartCommissionResult = 102,
+	C_ClearCommission = 103,
+	S_ClearCommissionResult = 104,
+	C_SweepCommission = 105,
+	S_SweepCommissionResult = 106,
+	C_EngravingInfo = 107,
+	S_EngravingInfo = 108,
+	C_UpgradeEngraving = 109,
+	S_UpgradeEngravingResult = 110,
+	C_EquipEngraving = 111,
+	S_EquipEngravingResult = 112,
+	C_CostumeInfo = 113,
+	S_CostumeInfo = 114,
+	C_EquipUnitSkin = 115,
+	S_EquipUnitSkinResult = 116,
+	C_EquipCostume = 117,
+	S_EquipCostumeResult = 118,
+	C_FlashSaleInfo = 119,
+	S_FlashSaleInfo = 120,
+	S_FlashSaleNotify = 121,
+	C_ChatSend = 122,
+	S_ChatSendResult = 123,
+	S_ChatMessage = 124,
+	C_DeleteWhisper = 125,
+	S_DeleteWhisperResult = 126,
+	C_ReportChat = 127,
+	S_ReportChatResult = 128,
+	C_ChatHistory = 129,
+	S_ChatHistory = 130,
+	C_HeadquartersInfo = 131,
+	S_HeadquartersInfo = 132,
+	C_UpgradeHqNode = 133,
+	S_UpgradeHqNodeResult = 134,
+	C_ItemInfo = 135,
+	S_ItemInfo = 136,
+	C_UseItem = 137,
+	S_UseItemResult = 138,
+	C_ItemUsePreview = 139,
+	S_ItemUsePreview = 140,
+	C_DeckPresets = 141,
+	S_DeckPresets = 142,
+	C_SaveDeckPreset = 143,
+	C_ApplyDeckPreset = 144,
+	C_RenameDeckPreset = 145,
+	S_DeckPresetResult = 146,
+	C_GuildHome = 147,
+	S_GuildHome = 148,
+	C_GuildList = 149,
+	S_GuildList = 150,
+	C_GuildNameCheck = 151,
+	S_GuildNameCheck = 152,
+	C_CreateGuild = 153,
+	C_GuildAction = 154,
+	S_GuildActionResult = 155,
+	C_GuildApplications = 156,
+	S_GuildApplications = 157,
+	C_ReportCombatPower = 158,
+	C_UserProfile = 159,
+	S_UserProfile = 160,
+	C_Achievements = 161,
+	S_Achievements = 162,
+	C_ClaimAchievementReward = 163,
+	S_ClaimAchievementRewardResult = 164,
+	C_Ranking = 165,
+	S_Ranking = 166,
+	C_FriendHome = 167,
+	S_FriendHome = 168,
+	C_SearchFriend = 169,
+	S_SearchFriendResult = 170,
+	C_FriendAction = 171,
+	S_FriendActionResult = 172,
+	S_FriendNotify = 173,
+	C_FriendStaminaSend = 174,
+	S_FriendStaminaSendResult = 175,
+	C_FriendStaminaClaim = 176,
+	S_FriendStaminaClaimResult = 177,
+	C_GuildRaidState = 178,
+	S_GuildRaidState = 179,
+	C_EnterGuildRaid = 180,
+	S_EnterGuildRaidResult = 181,
+	C_ReportGuildRaidDamage = 182,
+	S_GuildRaidDamageResult = 183,
+	C_GuildWarState = 184,
+	S_GuildWarState = 185,
+	C_BeginGuildWarAttack = 186,
+	S_BeginGuildWarAttackResult = 187,
+	C_ReportGuildWarAttack = 188,
+	S_GuildWarAttackResult = 189,
+	C_GuildWarLog = 190,
+	S_GuildWarLog = 191,
+	C_UserDeck = 192,
+	S_UserDeck = 193,
+	C_RedeemCoupon = 194,
+	S_RedeemCouponResult = 195,
+	C_ArenaHome = 196,
+	S_ArenaHome = 197,
+	C_ArenaSetRunes = 198,
+	S_ArenaSetRunesResult = 199,
+	C_ArenaHistory = 200,
+	S_ArenaHistory = 201,
+	C_ArenaMatch = 202,
+	S_ArenaMatchResult = 203,
+	C_ArenaReport = 204,
+	S_ArenaReportResult = 205,
+	C_ArenaLog = 206,
+	S_ArenaLog = 207,
+	C_TrainingInfo = 208,
+	S_TrainingInfo = 209,
+	C_TrainingAction = 210,
+	S_TrainingActionResult = 211,
+	C_DevTool = 212,
+	S_DevTool = 213,
+	C_OfflineReward = 214,
+	S_OfflineReward = 215,
+	C_DiamondDetail = 216,
+	S_DiamondDetail = 217,
+	C_RegisterPushToken = 218,
+	C_UnregisterPushToken = 219,
+	S_PushTokenResult = 220,
+	C_CommissionAttempt = 221,
+	C_StoryProgress = 222,
+	S_StoryProgress = 223,
+	C_CompleteStory = 224,
+	S_CompleteStoryResult = 225,
+	C_ClaimStoryReward = 226,
+	S_ClaimStoryRewardResult = 227,
+	C_Investment = 228,
+	S_Investment = 229,
+	C_UpgradeInvestment = 230,
+	S_UpgradeInvestmentResult = 231,
+	C_MainQuest = 232,
+	C_MainQuestAction = 233,
+	S_MainQuest = 234,
+	S_MainQuestNotify = 235,
+	C_ClaimMainQuest = 236,
+	S_ClaimMainQuestResult = 237,
+	C_DispatchInfo = 238,
+	S_DispatchInfo = 239,
+	C_DispatchAction = 240,
+	S_DispatchActionResult = 241,
+	S_DispatchNotify = 242,
+	C_SocialSettings = 243,
+	S_SocialSettings = 244,
+	C_Test = 245,
+	C_DoomInfo = 246,
+	S_DoomInfo = 247,
+	C_DoomResult = 248,
+	S_DoomResult = 249,
+	C_DoomClaim = 250,
+	S_DoomClaimResult = 251,
+	C_BattleFinished = 252,
+	C_PassInfo = 253,
+	S_PassInfo = 254,
+	C_PassClaim = 255,
+	S_PassClaimResult = 256,
+	C_EventRouletteInfo = 257,
+	S_EventRouletteInfo = 258,
+	C_EventRouletteSpin = 259,
+	S_EventRouletteSpinResult = 260,
+	C_ReportCharacterPower = 261,
+	C_ExpeditionHome = 262,
+	S_ExpeditionHome = 263,
+	C_EnterExpedition = 264,
+	S_EnterExpeditionResult = 265,
+	C_ExpeditionMemberDeck = 266,
+	C_ReportExpeditionDamage = 267,
+	S_ExpeditionDamageResult = 268,
+	C_ExpeditionLog = 269,
+	S_ExpeditionLog = 270,
+	C_DoomEntryInfo = 271,
+	S_DoomEntryInfo = 272,
+	C_DoomEnter = 273,
+	S_DoomEnterResult = 274,
+	C_DoomFinish = 275,
+	S_DoomFinishResult = 276,
+	C_TowerInfo = 277,
+	S_TowerInfo = 278,
+	C_TowerEnter = 279,
+	S_TowerEnterResult = 280,
+	C_TowerClear = 281,
+	S_TowerClearResult = 282,
+	C_AttendanceEventInfo = 283,
+	S_AttendanceEventInfo = 284,
+	C_ClaimAttendanceEvent = 285,
+	S_ClaimAttendanceEventResult = 286,
+	C_FrontlineInfo = 287,
+	S_FrontlineInfo = 288,
+	C_FrontlineSetMembers = 289,
+	S_FrontlineSetMembersResult = 290,
+	C_FrontlineReset = 291,
+	S_FrontlineResetResult = 292,
+	C_FrontlineEnter = 293,
+	S_FrontlineEnterResult = 294,
+	C_FrontlineFinish = 295,
+	S_FrontlineFinishResult = 296,
+	C_HeroesInfo = 297,
+	S_HeroesInfo = 298,
+	C_HeroesEnter = 299,
+	S_HeroesEnterResult = 300,
+	C_HeroesClear = 301,
+	S_HeroesClearResult = 302,
 	
 }
 
@@ -2961,7 +2962,7 @@ public class S_LimitBreakResult : IPacket
 
 public class C_RequestShop : IPacket
 {
-	
+	public int requestId;
 
 	public ushort Protocol { get { return (ushort)PacketID.C_RequestShop; } }
 
@@ -2970,7 +2971,8 @@ public class C_RequestShop : IPacket
 		ushort count = 0;
 		count += sizeof(ushort);
 		count += sizeof(ushort);
-		
+		this.requestId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
 	}
 
 	public ArraySegment<byte> Write()
@@ -2981,7 +2983,8 @@ public class C_RequestShop : IPacket
 		count += sizeof(ushort);
 		Array.Copy(BitConverter.GetBytes((ushort)PacketID.C_RequestShop), 0, segment.Array, segment.Offset + count, sizeof(ushort));
 		count += sizeof(ushort);
-		
+		Array.Copy(BitConverter.GetBytes(this.requestId), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
 
 		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
 
@@ -2991,6 +2994,7 @@ public class C_RequestShop : IPacket
 
 public class S_ShopCatalog : IPacket
 {
+	public int requestId;
 	public int gold;
 	public int diamond;
 	public int rotationCharId;
@@ -3067,6 +3071,180 @@ public class S_ShopCatalog : IPacket
 		}	
 	}
 	public List<Category> categorys = new List<Category>();
+	public class Pity
+	{
+		public string poolKey;
+		public int count;
+	
+		public void Read(ArraySegment<byte> segment, ref ushort count)
+		{
+			ushort poolKeyLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+			count += sizeof(ushort);
+			this.poolKey = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, poolKeyLen);
+			count += poolKeyLen;
+			this.count = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+			count += sizeof(int);
+		}
+	
+		public bool Write(ArraySegment<byte> segment, ref ushort count)
+		{
+			bool success = true;
+			string poolKeyValue = this.poolKey ?? string.Empty;
+			ushort poolKeyLen = (ushort)Encoding.Unicode.GetBytes(poolKeyValue, 0, poolKeyValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+			Array.Copy(BitConverter.GetBytes(poolKeyLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+			count += sizeof(ushort);
+			count += poolKeyLen;
+			Array.Copy(BitConverter.GetBytes(this.count), 0, segment.Array, segment.Offset + count, sizeof(int));
+			count += sizeof(int);
+			return success;
+		}	
+	}
+	public List<Pity> pitys = new List<Pity>();
+	public class FreeGacha
+	{
+		public string key;
+		public long nextUnix;
+	
+		public void Read(ArraySegment<byte> segment, ref ushort count)
+		{
+			ushort keyLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+			count += sizeof(ushort);
+			this.key = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, keyLen);
+			count += keyLen;
+			this.nextUnix = BitConverter.ToInt64(segment.Array, segment.Offset + count);
+			count += sizeof(long);
+		}
+	
+		public bool Write(ArraySegment<byte> segment, ref ushort count)
+		{
+			bool success = true;
+			string keyValue = this.key ?? string.Empty;
+			ushort keyLen = (ushort)Encoding.Unicode.GetBytes(keyValue, 0, keyValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
+			Array.Copy(BitConverter.GetBytes(keyLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+			count += sizeof(ushort);
+			count += keyLen;
+			Array.Copy(BitConverter.GetBytes(this.nextUnix), 0, segment.Array, segment.Offset + count, sizeof(long));
+			count += sizeof(long);
+			return success;
+		}	
+	}
+	public List<FreeGacha> freeGachas = new List<FreeGacha>();
+
+	public ushort Protocol { get { return (ushort)PacketID.S_ShopCatalog; } }
+
+	public void Read(ArraySegment<byte> segment)
+	{
+		ushort count = 0;
+		count += sizeof(ushort);
+		count += sizeof(ushort);
+		this.requestId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.gold = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.diamond = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.rotationCharId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.rotationStartUnix = BitConverter.ToInt64(segment.Array, segment.Offset + count);
+		count += sizeof(long);
+		this.rotationEndUnix = BitConverter.ToInt64(segment.Array, segment.Offset + count);
+		count += sizeof(long);
+		this.rotationEquipId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		count += sizeof(int);
+		this.rotationEquipStartUnix = BitConverter.ToInt64(segment.Array, segment.Offset + count);
+		count += sizeof(long);
+		this.rotationEquipEndUnix = BitConverter.ToInt64(segment.Array, segment.Offset + count);
+		count += sizeof(long);
+		this.wallets.Clear();
+		ushort walletLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		for (int i = 0; i < walletLen; i++)
+		{
+			Wallet wallet = new Wallet();
+			wallet.Read(segment, ref count);
+			wallets.Add(wallet);
+		}
+		this.categorys.Clear();
+		ushort categoryLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		for (int i = 0; i < categoryLen; i++)
+		{
+			Category category = new Category();
+			category.Read(segment, ref count);
+			categorys.Add(category);
+		}
+		this.pitys.Clear();
+		ushort pityLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		for (int i = 0; i < pityLen; i++)
+		{
+			Pity pity = new Pity();
+			pity.Read(segment, ref count);
+			pitys.Add(pity);
+		}
+		this.freeGachas.Clear();
+		ushort freeGachaLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
+		count += sizeof(ushort);
+		for (int i = 0; i < freeGachaLen; i++)
+		{
+			FreeGacha freeGacha = new FreeGacha();
+			freeGacha.Read(segment, ref count);
+			freeGachas.Add(freeGacha);
+		}
+	}
+
+	public ArraySegment<byte> Write()
+	{
+		ArraySegment<byte> segment = SendBufferHelper.Open(65535);
+		ushort count = 0;
+
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_ShopCatalog), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		Array.Copy(BitConverter.GetBytes(this.requestId), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.gold), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.diamond), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.rotationCharId), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.rotationStartUnix), 0, segment.Array, segment.Offset + count, sizeof(long));
+		count += sizeof(long);
+		Array.Copy(BitConverter.GetBytes(this.rotationEndUnix), 0, segment.Array, segment.Offset + count, sizeof(long));
+		count += sizeof(long);
+		Array.Copy(BitConverter.GetBytes(this.rotationEquipId), 0, segment.Array, segment.Offset + count, sizeof(int));
+		count += sizeof(int);
+		Array.Copy(BitConverter.GetBytes(this.rotationEquipStartUnix), 0, segment.Array, segment.Offset + count, sizeof(long));
+		count += sizeof(long);
+		Array.Copy(BitConverter.GetBytes(this.rotationEquipEndUnix), 0, segment.Array, segment.Offset + count, sizeof(long));
+		count += sizeof(long);
+		Array.Copy(BitConverter.GetBytes((ushort)this.wallets.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		foreach (Wallet wallet in this.wallets)
+			wallet.Write(segment, ref count);
+		Array.Copy(BitConverter.GetBytes((ushort)this.categorys.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		foreach (Category category in this.categorys)
+			category.Write(segment, ref count);
+		Array.Copy(BitConverter.GetBytes((ushort)this.pitys.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		foreach (Pity pity in this.pitys)
+			pity.Write(segment, ref count);
+		Array.Copy(BitConverter.GetBytes((ushort)this.freeGachas.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		count += sizeof(ushort);
+		foreach (FreeGacha freeGacha in this.freeGachas)
+			freeGacha.Write(segment, ref count);
+
+		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
+
+		return SendBufferHelper.Close(count);
+	}
+}
+
+public class S_ShopOfferPage : IPacket
+{
+	public int requestId;
 	public class Offer
 	{
 		public string offerId;
@@ -3340,106 +3518,16 @@ public class S_ShopCatalog : IPacket
 		}	
 	}
 	public List<OfferGrant> offerGrants = new List<OfferGrant>();
-	public class Pity
-	{
-		public string poolKey;
-		public int count;
-	
-		public void Read(ArraySegment<byte> segment, ref ushort count)
-		{
-			ushort poolKeyLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
-			count += sizeof(ushort);
-			this.poolKey = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, poolKeyLen);
-			count += poolKeyLen;
-			this.count = BitConverter.ToInt32(segment.Array, segment.Offset + count);
-			count += sizeof(int);
-		}
-	
-		public bool Write(ArraySegment<byte> segment, ref ushort count)
-		{
-			bool success = true;
-			string poolKeyValue = this.poolKey ?? string.Empty;
-			ushort poolKeyLen = (ushort)Encoding.Unicode.GetBytes(poolKeyValue, 0, poolKeyValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
-			Array.Copy(BitConverter.GetBytes(poolKeyLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
-			count += sizeof(ushort);
-			count += poolKeyLen;
-			Array.Copy(BitConverter.GetBytes(this.count), 0, segment.Array, segment.Offset + count, sizeof(int));
-			count += sizeof(int);
-			return success;
-		}	
-	}
-	public List<Pity> pitys = new List<Pity>();
-	public class FreeGacha
-	{
-		public string key;
-		public long nextUnix;
-	
-		public void Read(ArraySegment<byte> segment, ref ushort count)
-		{
-			ushort keyLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
-			count += sizeof(ushort);
-			this.key = Encoding.Unicode.GetString(segment.Array, segment.Offset + count, keyLen);
-			count += keyLen;
-			this.nextUnix = BitConverter.ToInt64(segment.Array, segment.Offset + count);
-			count += sizeof(long);
-		}
-	
-		public bool Write(ArraySegment<byte> segment, ref ushort count)
-		{
-			bool success = true;
-			string keyValue = this.key ?? string.Empty;
-			ushort keyLen = (ushort)Encoding.Unicode.GetBytes(keyValue, 0, keyValue.Length, segment.Array, segment.Offset + count + sizeof(ushort));
-			Array.Copy(BitConverter.GetBytes(keyLen), 0, segment.Array, segment.Offset + count, sizeof(ushort));
-			count += sizeof(ushort);
-			count += keyLen;
-			Array.Copy(BitConverter.GetBytes(this.nextUnix), 0, segment.Array, segment.Offset + count, sizeof(long));
-			count += sizeof(long);
-			return success;
-		}	
-	}
-	public List<FreeGacha> freeGachas = new List<FreeGacha>();
 
-	public ushort Protocol { get { return (ushort)PacketID.S_ShopCatalog; } }
+	public ushort Protocol { get { return (ushort)PacketID.S_ShopOfferPage; } }
 
 	public void Read(ArraySegment<byte> segment)
 	{
 		ushort count = 0;
 		count += sizeof(ushort);
 		count += sizeof(ushort);
-		this.gold = BitConverter.ToInt32(segment.Array, segment.Offset + count);
+		this.requestId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
 		count += sizeof(int);
-		this.diamond = BitConverter.ToInt32(segment.Array, segment.Offset + count);
-		count += sizeof(int);
-		this.rotationCharId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
-		count += sizeof(int);
-		this.rotationStartUnix = BitConverter.ToInt64(segment.Array, segment.Offset + count);
-		count += sizeof(long);
-		this.rotationEndUnix = BitConverter.ToInt64(segment.Array, segment.Offset + count);
-		count += sizeof(long);
-		this.rotationEquipId = BitConverter.ToInt32(segment.Array, segment.Offset + count);
-		count += sizeof(int);
-		this.rotationEquipStartUnix = BitConverter.ToInt64(segment.Array, segment.Offset + count);
-		count += sizeof(long);
-		this.rotationEquipEndUnix = BitConverter.ToInt64(segment.Array, segment.Offset + count);
-		count += sizeof(long);
-		this.wallets.Clear();
-		ushort walletLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
-		count += sizeof(ushort);
-		for (int i = 0; i < walletLen; i++)
-		{
-			Wallet wallet = new Wallet();
-			wallet.Read(segment, ref count);
-			wallets.Add(wallet);
-		}
-		this.categorys.Clear();
-		ushort categoryLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
-		count += sizeof(ushort);
-		for (int i = 0; i < categoryLen; i++)
-		{
-			Category category = new Category();
-			category.Read(segment, ref count);
-			categorys.Add(category);
-		}
 		this.offers.Clear();
 		ushort offerLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
 		count += sizeof(ushort);
@@ -3458,24 +3546,6 @@ public class S_ShopCatalog : IPacket
 			offerGrant.Read(segment, ref count);
 			offerGrants.Add(offerGrant);
 		}
-		this.pitys.Clear();
-		ushort pityLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
-		count += sizeof(ushort);
-		for (int i = 0; i < pityLen; i++)
-		{
-			Pity pity = new Pity();
-			pity.Read(segment, ref count);
-			pitys.Add(pity);
-		}
-		this.freeGachas.Clear();
-		ushort freeGachaLen = BitConverter.ToUInt16(segment.Array, segment.Offset + count);
-		count += sizeof(ushort);
-		for (int i = 0; i < freeGachaLen; i++)
-		{
-			FreeGacha freeGacha = new FreeGacha();
-			freeGacha.Read(segment, ref count);
-			freeGachas.Add(freeGacha);
-		}
 	}
 
 	public ArraySegment<byte> Write()
@@ -3484,32 +3554,10 @@ public class S_ShopCatalog : IPacket
 		ushort count = 0;
 
 		count += sizeof(ushort);
-		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_ShopCatalog), 0, segment.Array, segment.Offset + count, sizeof(ushort));
+		Array.Copy(BitConverter.GetBytes((ushort)PacketID.S_ShopOfferPage), 0, segment.Array, segment.Offset + count, sizeof(ushort));
 		count += sizeof(ushort);
-		Array.Copy(BitConverter.GetBytes(this.gold), 0, segment.Array, segment.Offset + count, sizeof(int));
+		Array.Copy(BitConverter.GetBytes(this.requestId), 0, segment.Array, segment.Offset + count, sizeof(int));
 		count += sizeof(int);
-		Array.Copy(BitConverter.GetBytes(this.diamond), 0, segment.Array, segment.Offset + count, sizeof(int));
-		count += sizeof(int);
-		Array.Copy(BitConverter.GetBytes(this.rotationCharId), 0, segment.Array, segment.Offset + count, sizeof(int));
-		count += sizeof(int);
-		Array.Copy(BitConverter.GetBytes(this.rotationStartUnix), 0, segment.Array, segment.Offset + count, sizeof(long));
-		count += sizeof(long);
-		Array.Copy(BitConverter.GetBytes(this.rotationEndUnix), 0, segment.Array, segment.Offset + count, sizeof(long));
-		count += sizeof(long);
-		Array.Copy(BitConverter.GetBytes(this.rotationEquipId), 0, segment.Array, segment.Offset + count, sizeof(int));
-		count += sizeof(int);
-		Array.Copy(BitConverter.GetBytes(this.rotationEquipStartUnix), 0, segment.Array, segment.Offset + count, sizeof(long));
-		count += sizeof(long);
-		Array.Copy(BitConverter.GetBytes(this.rotationEquipEndUnix), 0, segment.Array, segment.Offset + count, sizeof(long));
-		count += sizeof(long);
-		Array.Copy(BitConverter.GetBytes((ushort)this.wallets.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
-		count += sizeof(ushort);
-		foreach (Wallet wallet in this.wallets)
-			wallet.Write(segment, ref count);
-		Array.Copy(BitConverter.GetBytes((ushort)this.categorys.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
-		count += sizeof(ushort);
-		foreach (Category category in this.categorys)
-			category.Write(segment, ref count);
 		Array.Copy(BitConverter.GetBytes((ushort)this.offers.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
 		count += sizeof(ushort);
 		foreach (Offer offer in this.offers)
@@ -3518,14 +3566,6 @@ public class S_ShopCatalog : IPacket
 		count += sizeof(ushort);
 		foreach (OfferGrant offerGrant in this.offerGrants)
 			offerGrant.Write(segment, ref count);
-		Array.Copy(BitConverter.GetBytes((ushort)this.pitys.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
-		count += sizeof(ushort);
-		foreach (Pity pity in this.pitys)
-			pity.Write(segment, ref count);
-		Array.Copy(BitConverter.GetBytes((ushort)this.freeGachas.Count), 0, segment.Array, segment.Offset + count, sizeof(ushort));
-		count += sizeof(ushort);
-		foreach (FreeGacha freeGacha in this.freeGachas)
-			freeGacha.Write(segment, ref count);
 
 		Array.Copy(BitConverter.GetBytes(count), 0, segment.Array, segment.Offset, sizeof(ushort));
 

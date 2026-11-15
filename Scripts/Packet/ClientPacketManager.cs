@@ -61,6 +61,8 @@ public class PacketManager
 		_handler.Add((ushort)PacketID.S_LimitBreakResult, PacketHandler.S_LimitBreakResultHandler);
 		_makeFunc.Add((ushort)PacketID.S_ShopCatalog, MakePacket<S_ShopCatalog>);
 		_handler.Add((ushort)PacketID.S_ShopCatalog, PacketHandler.S_ShopCatalogHandler);
+		_makeFunc.Add((ushort)PacketID.S_ShopOfferPage, MakePacket<S_ShopOfferPage>);
+		_handler.Add((ushort)PacketID.S_ShopOfferPage, PacketHandler.S_ShopOfferPageHandler);
 		_makeFunc.Add((ushort)PacketID.S_CanBuyOffer, MakePacket<S_CanBuyOffer>);
 		_handler.Add((ushort)PacketID.S_CanBuyOffer, PacketHandler.S_CanBuyOfferHandler);
 		_makeFunc.Add((ushort)PacketID.S_GachaMileagePickResult, MakePacket<S_GachaMileagePickResult>);

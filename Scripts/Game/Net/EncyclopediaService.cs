@@ -1,12 +1,18 @@
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using UniRx;
 
 /// <summary>도감 보상 통신 구현. 진행 상태 조회/수령을 패킷으로 주고받아 DTO 로 변환한다.</summary>
 public sealed class EncyclopediaService : IEncyclopediaService {
     private static readonly TimeSpan ResponseTimeout = TimeSpan.FromSeconds(8);
 
     private readonly INetworkService _net;
+    private readonly Subject<EncyclopediaRewardStatusDto> _statusReceived = new();
+    private readonly Subject<ClaimEncyclopediaResult> _claimed = new();
+
+    public IObservable<EncyclopediaRewardStatusDto> StatusReceived => _statusReceived;
+    public IObservable<ClaimEncyclopediaResult> Claimed => _claimed;
 
     public EncyclopediaService(INetworkService net) {
         _net = net;
@@ -26,6 +32,7 @@ public sealed class EncyclopediaService : IEncyclopediaService {
         };
         foreach (var c in res.claimedCollections) dto.ClaimedCollectionSteps.Add(c.step);
         foreach (var s in res.claimedStars) dto.ClaimedStarSteps.Add(s.step);
+        _statusReceived.OnNext(dto);
         return dto;
     }
 
@@ -37,7 +44,7 @@ public sealed class EncyclopediaService : IEncyclopediaService {
         _net.Send(new C_ClaimEncyclopediaReward { rewardType = rewardType, step = step }.Write());
         var res = await wait;
 
-        return new ClaimEncyclopediaResult {
+        var result = new ClaimEncyclopediaResult {
             IsSuccess = res.isSuccess,
             FailReason = res.failReason,
             RewardType = res.rewardType,
@@ -45,5 +52,7 @@ public sealed class EncyclopediaService : IEncyclopediaService {
             NewDiamond = res.newDiamond,
             GrantedGrade = res.grantedGrade,
         };
+        if (result.IsSuccess) _claimed.OnNext(result);
+        return result;
     }
 }

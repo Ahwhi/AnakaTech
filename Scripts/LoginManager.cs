@@ -44,6 +44,7 @@ public sealed class LoginManager : MonoBehaviour, ILoginService {
     private readonly Dictionary<LoginProvider, ISocialAuthProvider> _providers = new();
 
     private INetworkService _net;
+    private VersionCheckStep _version;
 
     private UniTaskCompletionSource _loggedInTcs;
     private int _busy; // 0/1 재진입 가드
@@ -79,9 +80,11 @@ public sealed class LoginManager : MonoBehaviour, ILoginService {
     /// VContainer 가 네트워크 서비스를 메서드 주입한다(형제 매니저를 전역 싱글톤으로 끌어오지 않는 단방향 배선).
     /// 연결이 끊기면 서버 세션이 사라지므로 로그인 상태를 무효화한다 -> 타이틀 복귀 후 재부팅 시 LoginStep 이 다시 로그인을 기다린다.
     /// </summary>
+    /// 끊긴 뒤 다시 붙을 때 쓰는 핸드셰이크(버전 확인)도 함께 받는다(SendLoginAsync 참고).
     [Inject]
-    public void Construct(INetworkService net) {
+    public void Construct(INetworkService net, VersionCheckStep version) {
         _net = net;
+        _version = version;
         _net.Disconnected += OnNetworkDisconnected;
     }
 
@@ -188,9 +191,14 @@ public sealed class LoginManager : MonoBehaviour, ILoginService {
     private async UniTask<S_Login> SendLoginAsync(LoginProvider provider, string authToken, string sessionToken, CancellationToken ct) {
         // 브라우저를 다녀오는 사이 연결이 끊겼을 수 있으므로, 보내기 전에 살아 있는지 확인한다.
         // 끊긴 소켓으로 보내면 서버에는 아무 기록도 남지 않고 클라만 응답을 기다리다 타임아웃한다.
+        //
+        // 새 연결은 새 서버 세션이라 부트에서 마친 핸드셰이크(C_Version)가 남아 있지 않다. 다시 하지 않으면
+        // 서버는 이 접속의 플랫폼을 모른 채 계정을 만들어 가입 플랫폼이 비고(운영 지표의 "알 수 없음"),
+        // 강제 업데이트/점검 판정도 건너뛴다. 브라우저 로그인을 쓰는 신규 가입이 거의 이 경로를 탄다.
         if (!_net.IsConnected) {
             try {
                 await _net.ConnectAsync(ct);
+                if (_version != null) await _version.ExecuteAsync(ct);
             } catch (OperationCanceledException) when (!ct.IsCancellationRequested) {
                 return null;
             } catch (Exception e) {

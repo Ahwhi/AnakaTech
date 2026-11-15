@@ -9,8 +9,8 @@ public static class StoryRules {
     /// <summary>장 스토리 키 접두사. 서버 StoryCatalog.ChapterPrefix 와 같아야 한다.</summary>
     public const string ChapterPrefix = "chapter_";
 
-    /// <summary>장 스토리 편 수. 서버 StoryCatalog.ChapterCount 와 같아야 한다.</summary>
-    public const int ChapterCount = 23;
+    /// <summary>장 스토리 편 수(V1.14 리워크 11편). 서버 StoryCatalog.ChapterCount 와 같아야 한다.</summary>
+    public const int ChapterCount = 11;
 
     /// <summary>한 편을 끝까지 읽고 받는 다이아. 서버 StoryCatalog.ChapterDiamondReward 와 같아야 한다.</summary>
     public const int ChapterDiamondReward = 1000;

@@ -179,6 +179,12 @@ public sealed class GachaRatesDto {
 /// <summary>상점 통신 추상화(AttendanceService 와 동일한 WaitPacketAsync + Send 패턴).</summary>
 public interface IShopService {
     UniTask<ShopCatalogDto> RequestShopAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// 카탈로그를 받을 때마다 흐른다(누가 요청했든). 무료 모집 가능 시각/로테이션/오퍼처럼 카탈로그에 실려 오는
+    /// 상태를 보는 쪽(배지 등)은 이것만 구독하면 되고, 따로 서버를 다시 두드릴 필요가 없다.
+    /// </summary>
+    IObservable<ShopCatalogDto> CatalogReceived { get; }
     /// <summary>
     /// 구매 요청. 재화로 사는 상품은 store/receipt 를 비워 두고, 현금 상품은 스토어 결제를 끝낸 뒤
     /// 그 영수증을 실어 보낸다(서버가 스토어에 되물어 확인한 뒤에만 지급한다).

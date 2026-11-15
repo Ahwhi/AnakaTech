@@ -33,7 +33,7 @@ public static class ExpeditionRules {
     public const int ClearedRewardLevel = 10;
 
     /// <summary>1회 전투 제한 시간(초). 서버 ExpeditionCatalog.BattleSeconds 와 같아야 한다.</summary>
-    public const int BattleSeconds = 30;
+    public const int BattleSeconds = 20;   // V1.14: 30 -> 20초
 
     public static readonly ExpeditionLocation[] Locations = {
         ExpeditionLocation.CommTower, ExpeditionLocation.SupplyDepot, ExpeditionLocation.Recruitment,

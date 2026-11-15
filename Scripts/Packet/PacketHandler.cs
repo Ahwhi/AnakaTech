@@ -87,6 +87,10 @@ class PacketHandler {
     public static void S_ShopCatalogHandler(PacketSession session, IPacket packet) {
     }
 
+    // 상점 상품 페이지는 ShopService 가 PacketReceived 로 모은다(정적 핸들러는 무동작).
+    public static void S_ShopOfferPageHandler(PacketSession session, IPacket packet) {
+    }
+
     public static void S_BuyResultHandler(PacketSession session, IPacket packet) {
     }
 

@@ -41,10 +41,20 @@ public static class CommissionRewardRules {
         clearedStage >= MaxStage ? MaxStage : clearedStage + 1;
 
     /// <summary>
+    /// 아직 처음 깰 단계가 남았는지. 마지막 단계까지 깼으면 NextStage 는 마지막 단계에 머물지만,
+    /// 그 단계의 도전 보상은 이미 받았으므로 도전할 것이 없는 상태로 본다.
+    /// </summary>
+    public static bool HasNextStage(int clearedStage) => clearedStage < MaxStage;
+
+    /// <summary>
     /// 의뢰도전으로 그 단계를 처음 클리어했을 때 1회만 받는 보상(서버 CommissionCatalog.ClearRewards 미러).
     /// 각인 도면도 다른 보상과 같은 슬롯으로 나온다(대상은 서버가 미보유 중에서 뽑으므로 예고는 전용 아이콘으로 그린다).
     /// </summary>
-    public static List<RewardItem> ClearRewards(CommissionType type, int stage) {
+    /// <param name="hasUnownedEngraving">
+    /// 아직 갖지 못한 각인이 남았는지. 다 모았으면 서버가 도면 대신 각인석(1레벨 강화 비용만큼)을 주므로
+    /// 미리보기도 도면을 빼고 그 양을 각인석에 더해 보여 준다(GameDataRepository.GrantEngravingBlueprint 와 같은 규칙).
+    /// </param>
+    public static List<RewardItem> ClearRewards(CommissionType type, int stage, bool hasUnownedEngraving = true) {
         int s = Clamp(stage);
         var list = new List<RewardItem>();
 
@@ -66,10 +76,23 @@ public static class CommissionRewardRules {
                 break;
         }
 
-        if (GrantsBlueprint(type, s))
-            list.Add(RewardItem.RandomEngraving());
+        if (GrantsBlueprint(type, s)) {
+            if (hasUnownedEngraving) list.Add(RewardItem.RandomEngraving());
+            else AddCurrency(list, CurrencyKeys.EngravingStone, EngravingRules.UpgradeStoneCost(1));
+        }
 
         return list;
+    }
+
+    // 같은 재화가 이미 목록에 있으면 수량을 합치고, 없으면 새로 담는다(같은 재화가 두 칸으로 갈라져 보이지 않게).
+    private static void AddCurrency(List<RewardItem> list, string key, int amount) {
+        for (int i = 0; i < list.Count; i++) {
+            var r = list[i];
+            if (r.Kind != RewardItemKind.Currency || r.CurrencyKey != key) continue;
+            list[i] = RewardItem.Currency(key, r.Amount + amount);
+            return;
+        }
+        list.Add(RewardItem.Currency(key, amount));
     }
 
     /// <summary>

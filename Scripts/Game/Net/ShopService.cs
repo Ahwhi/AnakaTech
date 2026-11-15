@@ -1,25 +1,61 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using UniRx;
 
 /// <summary>상점 통신 구현. 카탈로그 요청/구매/확률조회를 패킷으로 주고받아 DTO 로 변환한다.</summary>
 public sealed class ShopService : IShopService {
     private static readonly TimeSpan ResponseTimeout = TimeSpan.FromSeconds(8);
 
     private readonly INetworkService _net;
+    private readonly Subject<ShopCatalogDto> _catalogReceived = new();
+
+    public IObservable<ShopCatalogDto> CatalogReceived => _catalogReceived;
 
     public ShopService(INetworkService net) {
         _net = net;
     }
 
+    // 상점 요청마다 새로 매기는 번호. 응답 패킷이 어느 요청의 것인지 가리는 데만 쓴다.
+    private int _nextRequestId;
+
+    /// <summary>
+    /// 상점 카탈로그 요청. 상품 목록은 패킷 크기 한계 때문에 S_ShopOfferPage 여러 개로 나뉘어 먼저 오고,
+    /// 헤더(S_ShopCatalog)가 마지막에 와서 끝을 알린다. 모든 응답에 요청 번호가 실려 오므로
+    /// 요청이 겹치거나 앞선 요청이 시간 초과로 버려져도 다른 요청의 페이지와 섞이지 않는다.
+    /// </summary>
     public async UniTask<ShopCatalogDto> RequestShopAsync(CancellationToken ct = default) {
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         cts.CancelAfter(ResponseTimeout);
 
-        var wait = _net.WaitPacketAsync<S_ShopCatalog>(cts.Token);
-        _net.Send(new C_RequestShop().Write());
-        var res = await wait;
+        int requestId = ++_nextRequestId;
+        var pages = new List<S_ShopOfferPage>();
+        var done = new UniTaskCompletionSource<S_ShopCatalog>();
+
+        void OnPacket(IPacket packet) {
+            switch (packet) {
+                case S_ShopOfferPage page when page.requestId == requestId:
+                    pages.Add(page);
+                    break;
+                case S_ShopCatalog header when header.requestId == requestId:
+                    done.TrySetResult(header);
+                    break;
+            }
+        }
+
+        // 취소는 CancelAfter 타이머(스레드풀)에서 올 수 있다. await 재개가 메인 스레드에서 일어나도록 마샬링한다.
+        using var cancelReg = cts.Token.Register(() => UniTask.Post(() => done.TrySetCanceled()));
+
+        S_ShopCatalog res;
+        _net.PacketReceived += OnPacket;
+        try {
+            _net.Send(new C_RequestShop { requestId = requestId }.Write());
+            res = await done.Task;
+        } finally {
+            _net.PacketReceived -= OnPacket;
+        }
 
         var dto = new ShopCatalogDto {
             Gold = res.gold,
@@ -38,7 +74,7 @@ public sealed class ShopService : IShopService {
             dto.CategoryNames[c.key] = c.displayName;
             dto.CategoryHasAllTab[c.key] = c.hasAllTab;
         }
-        foreach (var o in res.offers) {
+        foreach (var o in pages.SelectMany(p => p.offers)) {
             dto.Offers.Add(new ShopOfferDto {
                 OfferId = o.offerId,
                 DisplayName = o.displayName,
@@ -76,10 +112,11 @@ public sealed class ShopService : IShopService {
         // 구성품은 리스트 중첩을 피해 평탄하게 오므로 offerId 로 되묶는다(서버 Room 의 offerGrants 와 짝).
         var byOfferId = new Dictionary<string, ShopOfferDto>(dto.Offers.Count);
         foreach (var o in dto.Offers) byOfferId[o.OfferId] = o;
-        foreach (var g in res.offerGrants) {
+        foreach (var g in pages.SelectMany(p => p.offerGrants)) {
             if (byOfferId.TryGetValue(g.offerId, out var target))
                 target.Grants.Add(RewardItem.FromGrant(g.kind, g.value, g.qty, g.currencyKey));
         }
+        _catalogReceived.OnNext(dto);
         return dto;
     }
 

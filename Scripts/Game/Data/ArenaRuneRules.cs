@@ -31,9 +31,9 @@ public static class ArenaRuneRules {
         new[] { 1.5f, 2f, 2.5f, 3f, 5f },     // 공격속도(x)
         new[] { 2f, 3f, 4f, 5f, 10f },        // 방어구관통력(x)
         new[] { 10f, 20f, 30f, 40f, 50f },    // 최종데미지(+%)
-        new[] { 10f, 20f, 30f, 40f, 50f },    // 피격데미지감소(+%)
+        new[] { 10f, 20f, 30f, 50f, 100f },   // 피격데미지감소(+%). 점근 감쇄(Resist01)라 100 을 더해도 무적이 되지 않는다.
         new[] { 2f, 3f, 4f, 5f, 10f },        // 방어력(x)
-        new[] { 10f, 20f, 30f, 40f, 50f },    // 체력(x)
+        new[] { 10f, 20f, 30f, 50f, 100f },   // 체력(x)
     };
 
     /// <summary>해당 계열의 레벨별 수치(배수 또는 가산 %). level 은 1~MaxLevel 로 보정된다.</summary>

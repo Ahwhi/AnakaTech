@@ -93,9 +93,7 @@ public sealed class CommissionPopup : UIView, IHudPopup {
             int challenge = CommissionRewardRules.NextStage(cleared);
             _challengeStage[type] = challenge;
 
-            // 도전할 단계 데이터가 있어야 도전 버튼이 열린다(마지막 단계까지 깬 경우 등).
-            bool hasNextStage = _ctx.CommissionDb != null && _ctx.CommissionDb.Get(type, challenge) != null;
-            entry.Bind(type, cleared, challenge, hasNextStage, OnEntrySelected);
+            entry.Bind(type, cleared, challenge, HasNextStage(type, cleared, challenge), OnEntrySelected);
         }
 
         // 최초 진입이면 첫 줄(레이드)을 자동 선택한다. 이미 고른 게 있으면 그 선택을 유지한다.
@@ -131,10 +129,14 @@ public sealed class CommissionPopup : UIView, IHudPopup {
 
         int cleared = _ctx.Store.ClearedStageOf(type);
         int challenge = _challengeStage.TryGetValue(type, out int s) ? s : CommissionRewardRules.NextStage(cleared);
-        bool hasData = _ctx.CommissionDb != null && _ctx.CommissionDb.Get(type, challenge) != null;
-
-        detailPanel.Bind(_ctx, type, cleared, challenge, hasData);
+        detailPanel.Bind(_ctx, type, cleared, challenge, HasNextStage(type, cleared, challenge));
     }
+
+    // 처음 깰 단계가 남았고 그 단계의 전장 데이터도 있어야 도전할 수 있다.
+    // 마지막 단계까지 깼으면 도전 단계가 마지막 단계에 머물러 데이터는 있지만, 받을 도전 보상이 없으므로 닫는다.
+    private bool HasNextStage(CommissionType type, int cleared, int challenge) =>
+        CommissionRewardRules.HasNextStage(cleared)
+        && _ctx.CommissionDb != null && _ctx.CommissionDb.Get(type, challenge) != null;
 
     // ── 의뢰도전: 도전 가능 확인(무료) -> 의뢰 씬 전환 ──
     private void OnChallenge(CommissionType type) {
